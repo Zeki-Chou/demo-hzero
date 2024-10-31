@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.TaskMapper">
+
+
+    <sql id = "BaseSql">
+        tt.creation_date, 
+        tt.created_by, 
+        tt.last_updated_by, 
+        tt.last_update_date, 
+        tt.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.Task">
+        select
+        <include refid = "BaseSql"/>
+        from todo_task tt
+        <where>
+        </where>
+    </select>
+</mapper>
+
