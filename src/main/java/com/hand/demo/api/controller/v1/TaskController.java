@@ -51,7 +51,6 @@ public class TaskController extends BaseController {
     @GetMapping("/{id}/detail")
     public ResponseEntity<Task> detail(@PathVariable Long id) {
         Task task = taskRepository.selectByPrimary(id);
-
         return Results.success(task);
     }
 
