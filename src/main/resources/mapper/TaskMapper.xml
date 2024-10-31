@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.TaskMapper">
+
+
+    <sql id = "BaseSql">
+        tt.ID,
+        tt.EMPLOYEE_ID,
+        tt.STATE,
+        tt.TASK_DESCRIPTION,
+        tt.TASK_NUMBER,
+        tt.task_type,
+        tt.TENANT_ID,
+        tt.creation_date, 
+        tt.created_by, 
+        tt.last_updated_by, 
+        tt.last_update_date, 
+        tt.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.Task">
+        select
+        <include refid = "BaseSql"/>
+        from todo_task tt
+        <where>
+            <if test="id !=null">
+                and tt.ID = #{id,jdbcType = INTEGER}
+            </if>
+            <if test="employeeId !=null">
+                and tt.EMPLOYEE_ID = #{employeeId,jdbcType = INTEGER}
+            </if>
+            <if test="state !=null">
+                and tt.STATE = #{state,jdbcType = VARCHAR}
+            </if>
+            <if test="taskDescription !=null">
+                and tt.TASK_DESCRIPTION = #{taskDescription,jdbcType = VARCHAR}
+            </if>
+            <if test="taskNumber !=null">
+                and tt.TASK_NUMBER = #{taskNumber,jdbcType = VARCHAR}
+            </if>
+            <if test="taskType !=null">
+                and tt.task_type = #{taskType,jdbcType = VARCHAR}
+            </if>
+            <if test="tenantId !=null">
+                and tt.TENANT_ID = #{tenantId,jdbcType = INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>
+
