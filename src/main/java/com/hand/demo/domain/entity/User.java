@@ -66,6 +66,7 @@ public class User extends AuditDomain {
 
 
     public void setTenantId(Long organizationId) {
+
     }
 }
 
