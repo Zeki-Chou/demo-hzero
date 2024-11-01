@@ -1,5 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
+import com.hand.demo.infra.feign.ServiceFeign;
+import com.hand.demo.infra.feign.fallback.ServiceFeignCallback;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -23,8 +25,8 @@ import java.util.List;
 /**
  * 任务表(Task)表控制层
  *
- * @author
- * @since 2024-10-31 16:42:16
+ * @author fatih khoiri
+ * @since 2024-10-28 14:39:19
  */
 
 @RestController("taskController.v1")
@@ -37,7 +39,10 @@ public class TaskController extends BaseController {
     @Autowired
     private TaskService taskService;
 
-    @ApiOperation(value = "任务表列表")
+    @Autowired
+    private ServiceFeign serviceFeign;
+
+    @ApiOperation(value = "List Task New")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     public ResponseEntity<Page<Task>> list(Task task, @PathVariable Long organizationId,
@@ -47,7 +52,14 @@ public class TaskController extends BaseController {
         return Results.success(list);
     }
 
-    @ApiOperation(value = "任务表明细")
+    @ApiOperation(value = "External User")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/list-external")
+    public ResponseEntity<List<Object>> listExternal() {
+        return serviceFeign.onlineUserList();
+    }
+
+    @ApiOperation(value = "Detail Task New")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/{id}/detail")
     public ResponseEntity<Task> detail(@PathVariable Long id) {
@@ -55,10 +67,11 @@ public class TaskController extends BaseController {
         return Results.success(task);
     }
 
-    @ApiOperation(value = "创建或更新任务表")
+    @ApiOperation(value = "Save Task New")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
-    public ResponseEntity<List<Task>> save(@PathVariable Long organizationId, @RequestBody List<Task> tasks) {
+    public ResponseEntity<List<Task>> save(@PathVariable Long organizationId,
+                                           @RequestBody List<Task> tasks) {
         validObject(tasks);
         SecurityTokenHelper.validTokenIgnoreInsert(tasks);
         tasks.forEach(item -> item.setTenantId(organizationId));
@@ -66,7 +79,7 @@ public class TaskController extends BaseController {
         return Results.success(tasks);
     }
 
-    @ApiOperation(value = "删除任务表")
+    @ApiOperation(value = "Remove Task New")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> remove(@RequestBody List<Task> tasks) {

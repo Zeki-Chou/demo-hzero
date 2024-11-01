@@ -11,12 +11,13 @@
         tt.TASK_NUMBER,
         tt.task_type,
         tt.TENANT_ID,
-        tt.creation_date, 
-        tt.created_by, 
-        tt.last_updated_by, 
-        tt.last_update_date, 
+        tt.creation_date,
+        tt.created_by,
+        tt.last_updated_by,
+        tt.last_update_date,
         tt.object_version_number
     </sql>
+
 
     <select id = "selectList" resultType = "com.hand.demo.domain.entity.Task">
         select
@@ -45,6 +46,53 @@
                 and tt.TENANT_ID = #{tenantId,jdbcType = INTEGER}
             </if>
         </where>
+    </select>
+
+    <resultMap id="userTaskResultMap" type="com.hand.demo.api.dto.UserDTO">
+        <result column="user_id" property="id" jdbcType="DECIMAL"/>
+        <result column="employee_name" property="employeeName" jdbcType="VARCHAR"/>
+        <result column="employee_number" property="employeeNumber" jdbcType="VARCHAR"/>
+        <collection property="taskList" ofType="com.hand.demo.domain.entity.Task">
+            <result column="task_id" property="id" jdbcType="DECIMAL"/>
+            <result column="employee_id" property="employeeId" jdbcType="DECIMAL"/>
+            <result column="state" property="state" jdbcType="VARCHAR"/>
+            <result column="task_number" property="taskNumber" jdbcType="VARCHAR"/>
+            <result column="task_description" property="taskDescription" jdbcType="VARCHAR"/>
+            <result column="tenant_id" property="tenantId" jdbcType="DECIMAL"/>
+            <result column="creation_date" property="creationDate" jdbcType="DATE"/>
+            <result column="created_by" property="createdBy" jdbcType="DECIMAL"/>
+            <result column="last_update_date" property="lastUpdateDate" jdbcType="DATE"/>
+            <result column="last_updated_by" property="lastUpdatedBy" jdbcType="DECIMAL"/>
+            <result column="object_version_number" property="objectVersionNumber" jdbcType="DECIMAL"/>
+        </collection>
+    </resultMap>
+
+
+    <select id="selectUserTasks" resultMap="userTaskResultMap">
+        SELECT
+        u.ID AS user_id,
+        u.EMPLOYEE_NAME,
+        u.EMPLOYEE_NUMBER,
+        t.ID AS task_id,
+        t.EMPLOYEE_ID,
+        t.STATE AS state,
+        t.TASK_NUMBER,
+        t.TASK_DESCRIPTION,
+        t.TENANT_ID
+        FROM
+        todo_user u
+        JOIN
+        todo_task t
+        ON
+        u.ID = t.EMPLOYEE_ID
+        WHERE
+        1 = 1
+        <if test="employeeNumber != null and employeeNumber != ''">
+            AND u.EMPLOYEE_NUMBER = #{employeeNumber}
+        </if>
+        <if test="taskNumber != null and taskNumber != ''">
+            AND t.TASK_NUMBER = #{taskNumber}
+        </if>
     </select>
 </mapper>
 

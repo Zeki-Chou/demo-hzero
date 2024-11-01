@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.InvCountHeaderMapper">
+
+
+    <sql id = "BaseSql">
+        tich.count_header_id,
+        tich.approved_time,
+        tich.ATTRIBUTE1,
+        tich.ATTRIBUTE10,
+        tich.ATTRIBUTE11,
+        tich.ATTRIBUTE12,
+        tich.ATTRIBUTE13,
+        tich.ATTRIBUTE14,
+        tich.ATTRIBUTE15,
+        tich.ATTRIBUTE2,
+        tich.ATTRIBUTE3,
+        tich.ATTRIBUTE4,
+        tich.ATTRIBUTE5,
+        tich.ATTRIBUTE6,
+        tich.ATTRIBUTE7,
+        tich.ATTRIBUTE8,
+        tich.ATTRIBUTE9,
+        tich.ATTRIBUTE_CATEGORY,
+        tich.count_mode,
+        tich.count_number,
+        tich.count_status,
+        tich.count_type,
+        tich.countor_ids,
+        tich.remark,
+        tich.supervisor_ids,
+        tich.tenant_id,
+        tich.workflow_id,
+        tich.creation_date, 
+        tich.created_by, 
+        tich.last_updated_by, 
+        tich.last_update_date, 
+        tich.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.InvCountHeader">
+        select
+        <include refid = "BaseSql"/>
+        from todo_inv_count_header tich
+        <where>
+            <if test="countHeaderId !=null">
+                and tich.count_header_id = #{countHeaderId,jdbcType = INTEGER}
+            </if>
+            <if test="approvedTime !=null">
+                and tich.approved_time = #{approvedTime,jdbcType = TIMESTAMP}
+            </if>
+            <if test="attribute1 !=null">
+                and tich.ATTRIBUTE1 = #{attribute1,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute10 !=null">
+                and tich.ATTRIBUTE10 = #{attribute10,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute11 !=null">
+                and tich.ATTRIBUTE11 = #{attribute11,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute12 !=null">
+                and tich.ATTRIBUTE12 = #{attribute12,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute13 !=null">
+                and tich.ATTRIBUTE13 = #{attribute13,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute14 !=null">
+                and tich.ATTRIBUTE14 = #{attribute14,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute15 !=null">
+                and tich.ATTRIBUTE15 = #{attribute15,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute2 !=null">
+                and tich.ATTRIBUTE2 = #{attribute2,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute3 !=null">
+                and tich.ATTRIBUTE3 = #{attribute3,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute4 !=null">
+                and tich.ATTRIBUTE4 = #{attribute4,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute5 !=null">
+                and tich.ATTRIBUTE5 = #{attribute5,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute6 !=null">
+                and tich.ATTRIBUTE6 = #{attribute6,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute7 !=null">
+                and tich.ATTRIBUTE7 = #{attribute7,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute8 !=null">
+                and tich.ATTRIBUTE8 = #{attribute8,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute9 !=null">
+                and tich.ATTRIBUTE9 = #{attribute9,jdbcType = VARCHAR}
+            </if>
+            <if test="attributeCategory !=null">
+                and tich.ATTRIBUTE_CATEGORY = #{attributeCategory,jdbcType = VARCHAR}
+            </if>
+            <if test="countMode !=null">
+                and tich.count_mode = #{countMode,jdbcType = VARCHAR}
+            </if>
+            <if test="countNumber !=null">
+                and tich.count_number = #{countNumber,jdbcType = VARCHAR}
+            </if>
+            <if test="countStatus !=null">
+                and tich.count_status = #{countStatus,jdbcType = VARCHAR}
+            </if>
+            <if test="countType !=null">
+                and tich.count_type = #{countType,jdbcType = VARCHAR}
+            </if>
+            <if test="countorIds !=null">
+                and tich.countor_ids = #{countorIds,jdbcType = OTHER}
+            </if>
+            <if test="remark !=null">
+                and tich.remark = #{remark,jdbcType = OTHER}
+            </if>
+            <if test="supervisorIds !=null">
+                and tich.supervisor_ids = #{supervisorIds,jdbcType = OTHER}
+            </if>
+            <if test="tenantId !=null">
+                and tich.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+            <if test="workflowId !=null">
+                and tich.workflow_id = #{workflowId,jdbcType = INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>
+

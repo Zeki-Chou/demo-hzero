@@ -1,5 +1,6 @@
 package com.hand.demo.infra.mapper;
 
+import com.hand.demo.api.dto.UserDTO;
 import io.choerodon.mybatis.common.BaseMapper;
 import com.hand.demo.domain.entity.Task;
 
@@ -8,8 +9,8 @@ import java.util.List;
 /**
  * 任务表(Task)应用服务
  *
- * @author
- * @since 2024-10-31 16:42:15
+ * @author fatih khoiri
+ * @since 2024-10-28 14:39:19
  */
 public interface TaskMapper extends BaseMapper<Task> {
     /**
@@ -19,5 +20,6 @@ public interface TaskMapper extends BaseMapper<Task> {
      * @return 返回值
      */
     List<Task> selectList(Task task);
+    List<UserDTO> selectUserTasks(UserDTO userDTO);
 }
 
