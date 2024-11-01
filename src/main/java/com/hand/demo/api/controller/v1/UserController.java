@@ -24,7 +24,7 @@ import java.util.List;
  * User Table(User)表控制层
  *
  * @author
- * @since 2024-10-31 16:45:13
+ * @since 2024-11-01 08:00:19
  */
 
 @RestController("userController.v1")
@@ -41,7 +41,7 @@ public class UserController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     public ResponseEntity<Page<User>> list(User user, @PathVariable Long organizationId,
-                                           @ApiIgnore @SortDefault(value = User.FIELD_${pk.obj.name.toUpperCase()},
+                                           @ApiIgnore @SortDefault(value = User.FIELD_ID,
                                                    direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<User> list = userService.selectList(pageRequest, user);
         return Results.success(list);
@@ -49,15 +49,9 @@ public class UserController extends BaseController {
 
     @ApiOperation(value = "User Table明细")
     @Permission(level = ResourceLevel.ORGANIZATION)
-    @GetMapping("/{${pk.name}}/detail")
-    public ResponseEntity<User> detail(@PathVariable Long $ {
-        pk.name
-    })
-
-    {
-        User user = userRepository.selectByPrimary($ {
-        pk.name
-    })
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<User> detail(@PathVariable Long id) {
+        User user = userRepository.selectByPrimary(id);
         return Results.success(user);
     }
 

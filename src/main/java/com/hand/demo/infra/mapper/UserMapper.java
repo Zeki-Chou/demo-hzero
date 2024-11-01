@@ -9,7 +9,7 @@ import java.util.List;
  * User Table(User)应用服务
  *
  * @author
- * @since 2024-10-31 16:45:12
+ * @since 2024-11-01 08:00:18
  */
 public interface UserMapper extends BaseMapper<User> {
     /**

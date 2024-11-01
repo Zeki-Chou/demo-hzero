@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * User Table(User)应用服务
  *
  * @author
- * @since 2024-10-31 16:45:13
+ * @since 2024-11-01 08:00:18
  */
 @Service
 public class UserServiceImpl implements UserService {
@@ -30,12 +30,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void saveData(List<User> users) {
-        List<User> insertList = users.stream().filter(line -> line.get$tool.firstUpperCase($ {
-            pk.name
-        })() == null).collect(Collectors.toList());
-        List<User> updateList = users.stream().filter(line -> line.get$tool.firstUpperCase($ {
-            pk.name
-        })() != null).collect(Collectors.toList());
+        List<User> insertList = users.stream().filter(line -> line.getId() == null).collect(Collectors.toList());
+        List<User> updateList = users.stream().filter(line -> line.getId() != null).collect(Collectors.toList());
         userRepository.batchInsertSelective(insertList);
         userRepository.batchUpdateByPrimaryKeySelective(updateList);
     }

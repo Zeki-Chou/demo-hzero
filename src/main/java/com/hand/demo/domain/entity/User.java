@@ -22,7 +22,7 @@ import lombok.Setter;
  * User Table(User)实体类
  *
  * @author
- * @since 2024-10-31 16:45:12
+ * @since 2024-11-01 08:00:18
  */
 
 @Getter
@@ -33,8 +33,38 @@ import lombok.Setter;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "todo_user")
 public class User extends AuditDomain {
-    private static final long serialVersionUID = 275264362983160516L;
+    private static final long serialVersionUID = 864137401138933447L;
 
+    public static final String FIELD_ID = "id";
+    public static final String FIELD_EMAIL = "email";
+    public static final String FIELD_EMPLOYEE_NAME = "employeeName";
+    public static final String FIELD_EMPLOYEE_NUMBER = "employeeNumber";
+    public static final String FIELD_USER_ACCOUNT = "userAccount";
+    public static final String FIELD_USER_PASSWORD = "userPassword";
 
+    @ApiModelProperty("Table Id")
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @ApiModelProperty(value = "Email")
+    private String email;
+
+    @ApiModelProperty(value = "Employee Name", required = true)
+    @NotBlank
+    private String employeeName;
+
+    @ApiModelProperty(value = "Employee Number", required = true)
+    @NotBlank
+    private String employeeNumber;
+
+    @ApiModelProperty(value = "User Account")
+    private String userAccount;
+
+    @ApiModelProperty(value = "User Password")
+    private String userPassword;
+
+    @ApiModelProperty(value = "Tenant Id")
+    private Long TenantId;
 }
 
