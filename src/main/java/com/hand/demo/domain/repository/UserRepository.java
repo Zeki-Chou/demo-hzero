@@ -9,7 +9,7 @@ import java.util.List;
  * User Table(User)资源库
  *
  * @author
- * @since 2024-10-31 16:43:24
+ * @since 2024-10-31 09:41:10
  */
 public interface UserRepository extends BaseRepository<User> {
     /**
@@ -23,8 +23,8 @@ public interface UserRepository extends BaseRepository<User> {
     /**
      * 根据主键查询（可关联表）
      *
-     * @param $pk.name 主键
+     * @param id 主键
      * @return 返回值
      */
-    User selectByPrimary(Long $pk.name);
+    User selectByPrimary(Long id);
 }

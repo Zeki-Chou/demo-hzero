@@ -10,9 +10,45 @@ import java.util.List;
  * User Table(User)应用服务
  *
  * @author
- * @since 2024-10-31 16:43:24
+ * @since 2024-10-31 09:41:10
  */
 public interface UserService {
+
+    Page<User> list(Long tenantId, User user, PageRequest pageRequest);
+
+    /**
+     * 用户表详情
+     *
+     * @param tenantId 租户ID
+     * @param id 主键
+     * @return 用户表列表
+     */
+    User detail(Long tenantId, Long id);
+
+    /**
+     * 创建用户表
+     *
+     * @param tenantId 租户ID
+     * @param user 用户表
+     * @return 用户表
+     */
+    User create(Long tenantId, User user);
+
+    /**
+     * 更新用户表
+     *
+     * @param tenantId 租户ID
+     * @param user 用户表
+     * @return 用户表
+     */
+    User update(Long tenantId, User user);
+
+    /**
+     * 删除用户表
+     *
+     * @param user 用户表
+     */
+    void remove(User user);
 
     /**
      * 查询数据
@@ -28,7 +64,9 @@ public interface UserService {
      *
      * @param users 数据
      */
-    void saveData(List<User> users);
+    void saveData(List<User> users, List<User> responseUsers);
+
+//    void saveDataDigits(List<User> users, List<User> responseUsers);
 
 }
 

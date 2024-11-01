@@ -1,5 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
+import com.hand.demo.infra.feign.DemoFeign;
+import com.hand.demo.infra.feign.TaskFeign;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -24,7 +26,7 @@ import java.util.List;
  * 任务表(Task)表控制层
  *
  * @author
- * @since 2024-10-31 16:43:24
+ * @since 2024-10-28 14:36:17
  */
 
 @RestController("taskController.v1")
@@ -36,6 +38,9 @@ public class TaskController extends BaseController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private TaskFeign taskFeign;
 
     @ApiOperation(value = "任务表列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
@@ -55,7 +60,7 @@ public class TaskController extends BaseController {
         return Results.success(task);
     }
 
-    @ApiOperation(value = "创建或更新任务表")
+    @ApiOperation(value = "SAVE BARU")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<Task>> save(@PathVariable Long organizationId, @RequestBody List<Task> tasks) {
@@ -74,6 +79,5 @@ public class TaskController extends BaseController {
         taskRepository.batchDeleteByPrimaryKey(tasks);
         return Results.success();
     }
-
 }
 

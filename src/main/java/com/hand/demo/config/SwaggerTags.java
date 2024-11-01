@@ -13,11 +13,15 @@ import springfox.documentation.spring.web.plugins.Docket;
 public class SwaggerTags {
 
     public static final String EXAMPLE = "Example";
+    public static final String USER = "User";
+    public static final String TASK = "Task";
 
     @Autowired
     public SwaggerTags(Docket docket) {
         docket.tags(
-                new Tag(EXAMPLE, "EXAMPLE 案例")
-        );
+                new Tag(EXAMPLE, "EXAMPLE 案例"),
+                new Tag(USER, "USER BOS"),
+                new Tag(TASK, "TASK BOS")
+                );
     }
 }

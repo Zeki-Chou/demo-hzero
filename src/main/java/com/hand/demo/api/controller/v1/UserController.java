@@ -18,13 +18,14 @@ import com.hand.demo.domain.entity.User;
 import com.hand.demo.domain.repository.UserRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * User Table(User)表控制层
  *
  * @author
- * @since 2024-10-31 16:43:24
+ * @since 2024-10-31 09:41:10
  */
 
 @RestController("userController.v1")
@@ -41,7 +42,7 @@ public class UserController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     public ResponseEntity<Page<User>> list(User user, @PathVariable Long organizationId,
-                                           @ApiIgnore @SortDefault(value = User.FIELD_${pk.obj.name.toUpperCase()},
+                                           @ApiIgnore @SortDefault(value = User.FIELD_ID,
                                                    direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<User> list = userService.selectList(pageRequest, user);
         return Results.success(list);
@@ -49,27 +50,23 @@ public class UserController extends BaseController {
 
     @ApiOperation(value = "User Table明细")
     @Permission(level = ResourceLevel.ORGANIZATION)
-    @GetMapping("/{${pk.name}}/detail")
-    public ResponseEntity<User> detail(@PathVariable Long $ {
-        pk.name
-    })
-
-    {
-        User user = userRepository.selectByPrimary($ {
-        pk.name
-    })
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<User> detail(@PathVariable Long id) {
+        User user = userRepository.selectByPrimary(id);
         return Results.success(user);
     }
 
-    @ApiOperation(value = "创建或更新User Table")
+    @ApiOperation(value = "Save User")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<User>> save(@PathVariable Long organizationId, @RequestBody List<User> users) {
         validObject(users);
         SecurityTokenHelper.validTokenIgnoreInsert(users);
-        users.forEach(item -> item.setTenantId(organizationId));
-        userService.saveData(users);
-        return Results.success(users);
+
+        List<User> responseUsers = new ArrayList<>();
+        userService.saveData(users, responseUsers);
+
+        return Results.success(responseUsers);
     }
 
     @ApiOperation(value = "删除User Table")

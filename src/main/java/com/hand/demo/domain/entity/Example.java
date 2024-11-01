@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.choerodon.mybatis.annotation.ModifyAudit;
 import io.choerodon.mybatis.annotation.VersionAudit;
 import io.choerodon.mybatis.domain.AuditDomain;
+import lombok.Data;
 import org.hzero.core.util.Regexs;
 
 /**
@@ -20,6 +21,7 @@ import org.hzero.core.util.Regexs;
 @VersionAudit
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Table(name = "example")
+@Data
 public class Example extends AuditDomain {
 
     public static final String FIELD_ID = "id";
@@ -37,28 +39,4 @@ public class Example extends AuditDomain {
 
     @NotNull(message = "error.name.null")
     private String name;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 }
