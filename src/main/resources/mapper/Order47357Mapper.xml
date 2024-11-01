@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.Order47357Mapper">
+
+
+    <sql id = "BaseSql">
+        po4.id,
+        po4.approved_time,
+        po4.ATTRIBUTE1,
+        po4.ATTRIBUTE10,
+        po4.ATTRIBUTE11,
+        po4.ATTRIBUTE12,
+        po4.ATTRIBUTE13,
+        po4.ATTRIBUTE14,
+        po4.ATTRIBUTE15,
+        po4.ATTRIBUTE2,
+        po4.ATTRIBUTE3,
+        po4.ATTRIBUTE4,
+        po4.ATTRIBUTE5,
+        po4.ATTRIBUTE6,
+        po4.ATTRIBUTE7,
+        po4.ATTRIBUTE8,
+        po4.ATTRIBUTE9,
+        po4.ATTRIBUTE_CATEGORY,
+        po4.buyer_ids,
+        po4.PURCHASE_NUMBER,
+        po4.supplier_id,
+        po4.tenant_id,
+        po4.workflow_id,
+        po4.creation_date, 
+        po4.created_by, 
+        po4.last_updated_by, 
+        po4.last_update_date, 
+        po4.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.Order47357">
+        select
+        <include refid = "BaseSql"/>
+        from purchase_order_47357 po4
+        <where>
+            <if test="id !=null">
+                and po4.id = #{id,jdbcType = INTEGER}
+            </if>
+            <if test="buyerIds !=null">
+                and po4.buyer_ids = #{buyerIds,jdbcType = VARCHAR}
+            </if>
+            <if test="purchaseNumber !=null">
+                and po4.PURCHASE_NUMBER = #{purchaseNumber,jdbcType = VARCHAR}
+            </if>
+            <if test="supplierId !=null">
+                and po4.supplier_id = #{supplierId,jdbcType = INTEGER}
+            </if>
+            <if test="tenantId !=null">
+                and po4.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+            <if test="workflowId !=null">
+                and po4.workflow_id = #{workflowId,jdbcType = INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>
+
