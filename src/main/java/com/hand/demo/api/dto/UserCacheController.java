@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/{organizationId}/userCache")
 public class UserCacheController extends BaseController {
     @Autowired
+
     private UserCacheService service;
 
     @ApiOperation(value = "User Id")
