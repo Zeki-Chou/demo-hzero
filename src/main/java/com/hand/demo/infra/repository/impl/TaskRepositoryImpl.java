@@ -1,6 +1,5 @@
 package com.hand.demo.infra.repository.impl;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.stereotype.Component;
 import com.hand.demo.domain.entity.Task;
@@ -14,7 +13,7 @@ import java.util.List;
  * 任务表(Task)资源库
  *
  * @author
- * @since 2024-10-31 16:44:57
+ * @since 2024-10-28 16:11:57
  */
 @Component
 public class TaskRepositoryImpl extends BaseRepositoryImpl<Task> implements TaskRepository {
@@ -27,14 +26,19 @@ public class TaskRepositoryImpl extends BaseRepositoryImpl<Task> implements Task
     }
 
     @Override
-    public Task selectByPrimary(Long $pk.name) {
+    public Task selectByPrimary(Long id) {
         Task task = new Task();
-        task.set$tool.firstUpperCase($pk.name) ($pk.name);
+        task.setId(id);
         List<Task> tasks = taskMapper.selectList(task);
         if (tasks.size() == 0) {
             return null;
         }
         return tasks.get(0);
+    }
+
+    @Override
+    public Long selectLastId(){
+        return taskMapper.selectLastId();
     }
 
 }

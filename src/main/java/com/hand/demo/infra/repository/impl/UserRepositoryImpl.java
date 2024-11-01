@@ -1,41 +1,29 @@
 package com.hand.demo.infra.repository.impl;
 
-import org.apache.commons.collections.CollectionUtils;
+import com.hand.demo.domain.dto.UserTaskDTO;
+import com.hand.demo.infra.mapper.UserMapper;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
-import org.springframework.stereotype.Component;
 import com.hand.demo.domain.entity.User;
 import com.hand.demo.domain.repository.UserRepository;
-import com.hand.demo.infra.mapper.UserMapper;
+import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * User Table(User)资源库
+ * 用户表 资源库实现
  *
- * @author
- * @since 2024-10-31 16:44:56
+ * @author azhar.naufal@hand-global.com 2024-10-17 13:48:26
  */
 @Component
 public class UserRepositoryImpl extends BaseRepositoryImpl<User> implements UserRepository {
-    @Resource
-    private UserMapper userMapper;
+    private final UserMapper userMapper;
 
-    @Override
-    public List<User> selectList(User user) {
-        return userMapper.selectList(user);
+    public UserRepositoryImpl(UserMapper userMapper) {
+        this.userMapper = userMapper;
     }
 
     @Override
-    public User selectByPrimary(Long id) {
-        User user = new User();
-        user.setId(id);
-        List<User> users = userMapper.selectList(user);
-        if (users.size() == 0) {
-            return null;
-        }
-        return users.get(0);
+    public List<UserTaskDTO> selectUserTaskByEmpOrTaskNumber(String employeeNumber, String taskNumber){
+        return userMapper.selectUserTaskByEmpOrTaskNumber(employeeNumber, taskNumber);
     }
-
 }
-

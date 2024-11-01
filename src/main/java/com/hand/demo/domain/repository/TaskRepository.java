@@ -9,7 +9,7 @@ import java.util.List;
  * 任务表(Task)资源库
  *
  * @author
- * @since 2024-10-31 16:44:57
+ * @since 2024-10-28 16:11:57
  */
 public interface TaskRepository extends BaseRepository<Task> {
     /**
@@ -23,8 +23,10 @@ public interface TaskRepository extends BaseRepository<Task> {
     /**
      * 根据主键查询（可关联表）
      *
-     * @param $pk.name 主键
+     * @param id 主键
      * @return 返回值
      */
-    Task selectByPrimary(Long $pk.name);
+    Task selectByPrimary(Long id);
+
+    Long selectLastId();
 }

@@ -1,5 +1,6 @@
 package com.hand.demo.api.controller.v1;
 
+import com.hand.demo.infra.feign.TaskFeign;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -24,7 +25,7 @@ import java.util.List;
  * 任务表(Task)表控制层
  *
  * @author
- * @since 2024-10-31 16:44:57
+ * @since 2024-10-28 16:11:57
  */
 
 @RestController("taskController.v1")
@@ -35,13 +36,16 @@ public class TaskController extends BaseController {
     private TaskRepository taskRepository;
 
     @Autowired
+    private TaskFeign taskFeign;
+
+    @Autowired
     private TaskService taskService;
 
     @ApiOperation(value = "任务表列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     public ResponseEntity<Page<Task>> list(Task task, @PathVariable Long organizationId,
-                                           @ApiIgnore @SortDefault(value = Task.FIELD_${pk.obj.name.toUpperCase()},
+                                           @ApiIgnore @SortDefault(value = Task.FIELD_ID,
                                                    direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<Task> list = taskService.selectList(pageRequest, task);
         return Results.success(list);
@@ -49,15 +53,9 @@ public class TaskController extends BaseController {
 
     @ApiOperation(value = "任务表明细")
     @Permission(level = ResourceLevel.ORGANIZATION)
-    @GetMapping("/{${pk.name}}/detail")
-    public ResponseEntity<Task> detail(@PathVariable Long $ {
-        pk.name
-    })
-
-    {
-        Task task = taskRepository.selectByPrimary($ {
-        pk.name
-    })
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<Task> detail(@PathVariable Long id) {
+        Task task = taskRepository.selectByPrimary(id);
         return Results.success(task);
     }
 
@@ -80,6 +78,21 @@ public class TaskController extends BaseController {
         taskRepository.batchDeleteByPrimaryKey(tasks);
         return Results.success();
     }
+
+
+    @ApiOperation(value = "listOther")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/listOther")
+    public ResponseEntity<List<Object>> listFromJoseph() {
+        return (taskFeign.onlineUserList());
+    }
+
+//    @ApiOperation(value = "save-azzam")
+//    @Permission(level = ResourceLevel.ORGANIZATION)
+//    @PostMapping("/save-azzam")
+//    public ResponseEntity<List<Task>> saveAzzam(@PathVariable Long organizationId, @RequestBody List<Task> tasks) {
+//        return Results.success(taskFeign.save(organizationId, tasks));
+//    }
 
 }
 

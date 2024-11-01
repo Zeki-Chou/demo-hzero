@@ -1,30 +1,18 @@
 package com.hand.demo.domain.repository;
 
+import com.hand.demo.domain.dto.UserTaskDTO;
+import com.hand.demo.infra.mapper.UserMapper;
 import org.hzero.mybatis.base.BaseRepository;
 import com.hand.demo.domain.entity.User;
 
 import java.util.List;
 
 /**
- * User Table(User)资源库
+ * 用户表资源库
  *
- * @author
- * @since 2024-10-31 16:44:56
+ * @author azhar.naufal@hand-global.com 2024-10-17 13:48:26
  */
 public interface UserRepository extends BaseRepository<User> {
-    /**
-     * 查询
-     *
-     * @param user 查询条件
-     * @return 返回值
-     */
-    List<User> selectList(User user);
 
-    /**
-     * 根据主键查询（可关联表）
-     *
-     * @param id 主键
-     * @return 返回值
-     */
-    User selectByPrimary(Long id);
+    List<UserTaskDTO> selectUserTaskByEmpOrTaskNumber(String employeeNumber, String taskNumber);
 }
