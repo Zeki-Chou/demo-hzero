@@ -1,17 +1,23 @@
 package com.hand.demo.infra.mapper;
 
-import io.choerodon.mybatis.common.BaseMapper;
+import com.hand.demo.api.dto.UserTasksDTO;
 import com.hand.demo.domain.entity.User;
+import io.choerodon.mybatis.common.BaseMapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 /**
- * User Table(User)应用服务
+ * 用户表Mapper
  *
- * @author
- * @since 2024-10-31 16:46:05
+ * @author joseph.julio@hand-global.com 2024-10-17 13:56:56
  */
 public interface UserMapper extends BaseMapper<User> {
+    List<UserTasksDTO> findUsersWithTasks(
+            @Param("employeeNumber") String employeeNumber,
+            @Param("taskNumber") String taskNumber
+    );
+
     /**
      * 基础查询
      *
@@ -20,4 +26,3 @@ public interface UserMapper extends BaseMapper<User> {
      */
     List<User> selectList(User user);
 }
-

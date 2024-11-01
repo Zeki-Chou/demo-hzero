@@ -17,12 +17,13 @@ import java.util.Date;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * User Table(User)实体类
  *
  * @author
- * @since 2024-10-31 16:46:05
+ * @since 2024-10-31 09:23:28
  */
 
 @Getter
@@ -32,8 +33,9 @@ import lombok.Setter;
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "todo_user")
+@Accessors(chain = true)
 public class User extends AuditDomain {
-    private static final long serialVersionUID = 925622134744246733L;
+    private static final long serialVersionUID = 132690695877699727L;
 
     public static final String FIELD_ID = "id";
     public static final String FIELD_EMAIL = "email";

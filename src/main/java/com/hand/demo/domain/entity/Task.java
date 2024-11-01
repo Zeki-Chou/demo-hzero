@@ -15,25 +15,20 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Date;
 
-import lombok.Getter;
-import lombok.Setter;
-
 /**
  * 任务表(Task)实体类
  *
  * @author
- * @since 2024-10-31 16:47:17
+ * @since 2024-10-28 14:39:56
  */
 
-@Getter
-@Setter
 @ApiModel("任务表")
 @VersionAudit
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "todo_task")
 public class Task extends AuditDomain {
-    private static final long serialVersionUID = 558094999447594859L;
+    private static final long serialVersionUID = -95698524498097136L;
 
     public static final String FIELD_ID = "id";
     public static final String FIELD_EMPLOYEE_ID = "employeeId";
@@ -69,6 +64,62 @@ public class Task extends AuditDomain {
     @NotNull
     private Long tenantId;
 
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getTaskDescription() {
+        return taskDescription;
+    }
+
+    public void setTaskDescription(String taskDescription) {
+        this.taskDescription = taskDescription;
+    }
+
+    public String getTaskNumber() {
+        return taskNumber;
+    }
+
+    public void setTaskNumber(String taskNumber) {
+        this.taskNumber = taskNumber;
+    }
+
+    public String getTaskType() {
+        return taskType;
+    }
+
+    public void setTaskType(String taskType) {
+        this.taskType = taskType;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
 
 }
 

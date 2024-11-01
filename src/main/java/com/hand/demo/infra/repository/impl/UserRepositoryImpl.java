@@ -1,25 +1,32 @@
 package com.hand.demo.infra.repository.impl;
 
-import org.apache.commons.collections.CollectionUtils;
+import com.hand.demo.api.dto.UserTasksDTO;
+import com.hand.demo.infra.mapper.UserMapper;
+import lombok.AllArgsConstructor;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
-import org.springframework.stereotype.Component;
 import com.hand.demo.domain.entity.User;
 import com.hand.demo.domain.repository.UserRepository;
-import com.hand.demo.infra.mapper.UserMapper;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * User Table(User)资源库
+ * 用户表 资源库实现
  *
- * @author
- * @since 2024-10-31 16:46:05
+ * @author joseph.julio@hand-global.com 2024-10-17 13:56:56
  */
 @Component
+@AllArgsConstructor
 public class UserRepositoryImpl extends BaseRepositoryImpl<User> implements UserRepository {
-    @Resource
     private UserMapper userMapper;
+
+    public List<UserTasksDTO> findUsersWithTasks(
+            String employeeNumber,
+            String taskNumber
+    ) {
+        return userMapper.findUsersWithTasks(employeeNumber, taskNumber);
+    }
 
     @Override
     public List<User> selectList(User user) {
@@ -36,6 +43,4 @@ public class UserRepositoryImpl extends BaseRepositoryImpl<User> implements User
         }
         return users.get(0);
     }
-
 }
-

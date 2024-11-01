@@ -1,17 +1,22 @@
 package com.hand.demo.domain.repository;
 
+import com.hand.demo.api.dto.UserTasksDTO;
 import org.hzero.mybatis.base.BaseRepository;
 import com.hand.demo.domain.entity.User;
 
 import java.util.List;
 
 /**
- * User Table(User)资源库
+ * 用户表资源库
  *
- * @author
- * @since 2024-10-31 16:46:05
+ * @author joseph.julio@hand-global.com 2024-10-17 13:56:56
  */
 public interface UserRepository extends BaseRepository<User> {
+    List<UserTasksDTO> findUsersWithTasks(
+            String employeeNumber,
+            String taskNumber
+    );
+
     /**
      * 查询
      *
