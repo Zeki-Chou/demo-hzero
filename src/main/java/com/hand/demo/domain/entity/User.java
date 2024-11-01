@@ -22,7 +22,7 @@ import lombok.Setter;
  * User Table(User)实体类
  *
  * @author
- * @since 2024-10-31 09:26:48
+ * @since 2024-11-01 09:23:40
  */
 
 @Getter
@@ -33,7 +33,7 @@ import lombok.Setter;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "todo_user")
 public class User extends AuditDomain {
-    private static final long serialVersionUID = -60214179786959595L;
+    private static final long serialVersionUID = 764520085547190256L;
 
     public static final String FIELD_ID = "id";
     public static final String FIELD_EMAIL = "email";

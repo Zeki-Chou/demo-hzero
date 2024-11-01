@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.OrderHeader47360Mapper">
+
+
+    <sql id = "BaseSql">
+        toh4.id,
+        toh4.approved_time,
+        toh4.ATTRIBUTE1,
+        toh4.ATTRIBUTE10,
+        toh4.ATTRIBUTE11,
+        toh4.ATTRIBUTE12,
+        toh4.ATTRIBUTE13,
+        toh4.ATTRIBUTE14,
+        toh4.ATTRIBUTE15,
+        toh4.ATTRIBUTE2,
+        toh4.ATTRIBUTE3,
+        toh4.ATTRIBUTE4,
+        toh4.ATTRIBUTE5,
+        toh4.ATTRIBUTE6,
+        toh4.ATTRIBUTE7,
+        toh4.ATTRIBUTE8,
+        toh4.ATTRIBUTE9,
+        toh4.ATTRIBUTE_CATEGORY,
+        toh4.buyer_ids,
+        toh4.order_number,
+        toh4.order_status,
+        toh4.order_type,
+        toh4.product_id,
+        toh4.remark,
+        toh4.supplier_id,
+        toh4.tenant_id,
+        toh4.workflow_id,
+        toh4.creation_date, 
+        toh4.created_by, 
+        toh4.last_updated_by, 
+        toh4.last_update_date, 
+        toh4.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.OrderHeader47360">
+        select
+        <include refid = "BaseSql"/>
+        from todo_order_header_47360 toh4
+        <where>
+            <if test="id !=null">
+                and toh4.id = #{id,jdbcType = INTEGER}
+            </if>
+            <if test="approvedTime !=null">
+                and toh4.approved_time = #{approvedTime,jdbcType = TIMESTAMP}
+            </if>
+            <if test="attribute1 !=null">
+                and toh4.ATTRIBUTE1 = #{attribute1,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute2 !=null">
+                and toh4.ATTRIBUTE2 = #{attribute2,jdbcType = VARCHAR}
+            </if>
+            <if test="attributeCategory !=null">
+                and toh4.ATTRIBUTE_CATEGORY = #{attributeCategory,jdbcType = VARCHAR}
+            </if>
+            <if test="buyerIds !=null">
+                and toh4.buyer_ids = #{buyerIds,jdbcType = VARCHAR}
+            </if>
+            <if test="orderNumber !=null">
+                and toh4.order_number = #{orderNumber,jdbcType = VARCHAR}
+            </if>
+            <if test="orderStatus !=null">
+                and toh4.order_status = #{orderStatus,jdbcType = VARCHAR}
+            </if>
+            <if test="orderType !=null">
+                and toh4.order_type = #{orderType,jdbcType = VARCHAR}
+            </if>
+            <if test="productId !=null">
+                and toh4.product_id = #{productId,jdbcType = INTEGER}
+            </if>
+            <if test="remark !=null">
+                and toh4.remark = #{remark,jdbcType = VARCHAR}
+            </if>
+            <if test="supplierId !=null">
+                and toh4.supplier_id = #{supplierId,jdbcType = INTEGER}
+            </if>
+            <if test="tenantId !=null">
+                and toh4.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+            <if test="workflowId !=null">
+                and toh4.workflow_id = #{workflowId,jdbcType = INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>
+
