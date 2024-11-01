@@ -1,24 +1,24 @@
 package com.hand.demo.domain.repository;
 
 import org.hzero.mybatis.base.BaseRepository;
-import com.hand.demo.domain.entity.Task;
+import com.hand.demo.domain.entity.User;
 
 import java.util.List;
 
 /**
- * 任务表(Task)资源库
+ * User Table(User)资源库
  *
  * @author
- * @since 2024-10-28 17:05:28
+ * @since 2024-10-28 17:04:00
  */
-public interface TaskRepository extends BaseRepository<Task> {
+public interface UserRepository extends BaseRepository<User> {
     /**
      * 查询
      *
-     * @param task 查询条件
+     * @param user 查询条件
      * @return 返回值
      */
-    List<Task> selectList(Task task);
+    List<User> selectList(User user);
 
     /**
      * 根据主键查询（可关联表）
@@ -26,5 +26,5 @@ public interface TaskRepository extends BaseRepository<Task> {
      * @param id 主键
      * @return 返回值
      */
-    Task selectByPrimary(Long id);
+    User selectByPrimary(Long id);
 }
