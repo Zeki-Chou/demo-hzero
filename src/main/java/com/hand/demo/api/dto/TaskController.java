@@ -1,4 +1,4 @@
-package com.hand.demo.api.controller.v1;
+package com.hand.demo.api.dto;
 
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.OrderHeader47356Mapper">
+
+
+    <sql id = "BaseSql">
+        poh4.id,
+        poh4.approved_time,
+        poh4.attribute15,
+        poh4.attribute_category,
+        poh4.buyer_ids,
+        poh4.count_status,
+        poh4.purchase_order_number,
+        poh4.supplier_id,
+        poh4.tenant_id,
+        poh4.workflow_id,
+        poh4.creation_date,
+        poh4.created_by,
+        poh4.last_updated_by,
+        poh4.last_update_date,
+        poh4.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.OrderHeader47356">
+        select
+        <include refid = "BaseSql"/>
+        from purchase_order_header_47356 poh4
+        <where>
+            <if test="id !=null">
+                and poh4.id = #{id,jdbcType = INTEGER}
+            </if>
+            <if test="approvedTime !=null">
+                and poh4.approved_time = #{approvedTime,jdbcType = TIMESTAMP}
+            </if>
+            <if test="attribute15 !=null">
+                and poh4.attribute15 = #{attribute15,jdbcType = VARCHAR}
+            </if>
+            <if test="attributeCategory !=null">
+                and poh4.attribute_category = #{attributeCategory,jdbcType = VARCHAR}
+            </if>
+            <if test="buyerIds !=null">
+                and poh4.buyer_ids = #{buyerIds,jdbcType = VARCHAR}
+            </if>
+            <if test="countStatus !=null">
+                and poh4.count_status = #{countStatus,jdbcType = VARCHAR}
+            </if>
+            <if test="purchaseOrderNumber !=null">
+                and poh4.purchase_order_number = #{purchaseOrderNumber,jdbcType = VARCHAR}
+            </if>
+            <if test="supplierId !=null">
+                and poh4.supplier_id = #{supplierId,jdbcType = INTEGER}
+            </if>
+            <if test="tenantId !=null">
+                and poh4.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+            <if test="workflowId !=null">
+                and poh4.workflow_id = #{workflowId,jdbcType = INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>
+
