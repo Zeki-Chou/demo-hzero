@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.OrderHeader47355Mapper">
+
+
+    <sql id = "BaseSql">
+        poh4.id,
+        poh4.approval_status,
+        poh4.approved_time,
+        poh4.ATTRIBUTE1,
+        poh4.ATTRIBUTE10,
+        poh4.ATTRIBUTE11,
+        poh4.ATTRIBUTE12,
+        poh4.ATTRIBUTE13,
+        poh4.ATTRIBUTE14,
+        poh4.ATTRIBUTE15,
+        poh4.ATTRIBUTE2,
+        poh4.ATTRIBUTE3,
+        poh4.ATTRIBUTE4,
+        poh4.ATTRIBUTE5,
+        poh4.ATTRIBUTE6,
+        poh4.ATTRIBUTE7,
+        poh4.ATTRIBUTE8,
+        poh4.ATTRIBUTE9,
+        poh4.ATTRIBUTE_CATEGORY,
+        poh4.buyer_id,
+        poh4.order_number,
+        poh4.supplier_id,
+        poh4.tenant_id,
+        poh4.creation_date, 
+        poh4.created_by, 
+        poh4.last_updated_by, 
+        poh4.last_update_date, 
+        poh4.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.OrderHeader47355">
+        select
+        <include refid = "BaseSql"/>
+        from purchase_order_header_47355 poh4
+        <where>
+            <if test="id !=null">
+                and poh4.id = #{id,jdbcType = INTEGER}
+            </if>
+            <if test="approvalStatus !=null">
+                and poh4.approval_status = #{approvalStatus,jdbcType = VARCHAR}
+            </if>
+            <if test="approvedTime !=null">
+                and poh4.approved_time = #{approvedTime,jdbcType = TIMESTAMP}
+            </if>
+            <if test="attribute1 !=null">
+                and poh4.ATTRIBUTE1 = #{attribute1,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute10 !=null">
+                and poh4.ATTRIBUTE10 = #{attribute10,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute11 !=null">
+                and poh4.ATTRIBUTE11 = #{attribute11,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute12 !=null">
+                and poh4.ATTRIBUTE12 = #{attribute12,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute13 !=null">
+                and poh4.ATTRIBUTE13 = #{attribute13,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute14 !=null">
+                and poh4.ATTRIBUTE14 = #{attribute14,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute15 !=null">
+                and poh4.ATTRIBUTE15 = #{attribute15,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute2 !=null">
+                and poh4.ATTRIBUTE2 = #{attribute2,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute3 !=null">
+                and poh4.ATTRIBUTE3 = #{attribute3,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute4 !=null">
+                and poh4.ATTRIBUTE4 = #{attribute4,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute5 !=null">
+                and poh4.ATTRIBUTE5 = #{attribute5,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute6 !=null">
+                and poh4.ATTRIBUTE6 = #{attribute6,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute7 !=null">
+                and poh4.ATTRIBUTE7 = #{attribute7,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute8 !=null">
+                and poh4.ATTRIBUTE8 = #{attribute8,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute9 !=null">
+                and poh4.ATTRIBUTE9 = #{attribute9,jdbcType = VARCHAR}
+            </if>
+            <if test="attributeCategory !=null">
+                and poh4.ATTRIBUTE_CATEGORY = #{attributeCategory,jdbcType = VARCHAR}
+            </if>
+            <if test="buyerId !=null">
+                and poh4.buyer_id = #{buyerId,jdbcType = OTHER}
+            </if>
+            <if test="orderNumber !=null">
+                and poh4.order_number = #{orderNumber,jdbcType = VARCHAR}
+            </if>
+            <if test="supplierId !=null">
+                and poh4.supplier_id = #{supplierId,jdbcType = INTEGER}
+            </if>
+            <if test="tenantId !=null">
+                and poh4.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>
+
