@@ -1,24 +1,23 @@
 package com.hand.demo.infra.repository.impl;
 
-import org.apache.commons.collections.CollectionUtils;
+import com.hand.demo.api.controller.dto.UserTaskInfoDTO;
+import com.hand.demo.infra.mapper.UserMapper;
+import lombok.AllArgsConstructor;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
-import org.springframework.stereotype.Component;
 import com.hand.demo.domain.entity.User;
 import com.hand.demo.domain.repository.UserRepository;
-import com.hand.demo.infra.mapper.UserMapper;
+import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * User Table(User)资源库
+ * 用户表 资源库实现
  *
- * @author Allan
- * @since 2024-11-01 08:06:02
+ * @author allan.sugianto@hand-global.com 2024-10-17 14:34:10
  */
 @Component
+@AllArgsConstructor
 public class UserRepositoryImpl extends BaseRepositoryImpl<User> implements UserRepository {
-    @Resource
     private UserMapper userMapper;
 
     @Override
@@ -28,14 +27,10 @@ public class UserRepositoryImpl extends BaseRepositoryImpl<User> implements User
 
     @Override
     public User selectByPrimary(Long id) {
-        User user = new User();
-        user.setId(id);
-        List<User> users = userMapper.selectList(user);
-        if (users.size() == 0) {
-            return null;
-        }
-        return users.get(0);
+        return userMapper.selectByPrimaryKey(id);
     }
 
+    public List<UserTaskInfoDTO> selectUserWithTask(UserTaskInfoDTO dto) {
+        return userMapper.selectUserWithTask(dto);
+    }
 }
-

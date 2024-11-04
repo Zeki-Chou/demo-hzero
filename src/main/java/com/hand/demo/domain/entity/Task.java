@@ -22,7 +22,7 @@ import lombok.Setter;
  * 任务表(Task)实体类
  *
  * @author
- * @since 2024-11-01 08:10:06
+ * @since 2024-10-28 14:57:35
  */
 
 @Getter
@@ -33,7 +33,7 @@ import lombok.Setter;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "todo_task")
 public class Task extends AuditDomain {
-    private static final long serialVersionUID = -76369644983166481L;
+    private static final long serialVersionUID = -31595256299043509L;
 
     public static final String FIELD_ID = "id";
     public static final String FIELD_EMPLOYEE_ID = "employeeId";

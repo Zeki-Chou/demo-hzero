@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
-import com.hand.demo.api.dto.PurchaseOrderDTO;
+import cn.hutool.core.bean.BeanUtil;
+import com.hand.demo.api.controller.dto.PurchaseOrderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -9,9 +10,12 @@ import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
 import org.hzero.core.base.BaseController;
+import org.hzero.core.cache.Cacheable;
+import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.core.util.Results;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.hand.demo.app.service.PurchaseOrderService;
@@ -24,8 +28,8 @@ import java.util.List;
 /**
  * (PurchaseOrder)表控制层
  *
- * @author
- * @since 2024-11-01 16:59:21
+ * @author Allan
+ * @since 2024-11-01 10:50:58
  */
 
 @RestController("purchaseOrderController.v1")

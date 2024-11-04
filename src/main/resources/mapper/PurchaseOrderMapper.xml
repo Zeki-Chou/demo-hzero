@@ -44,9 +44,6 @@
             <if test="countStatus !=null">
                 and po4.count_status = #{countStatus,jdbcType = VARCHAR}
             </if>
-            <if test="purchaseOrderNumber !=null">
-                and po4.purchase_order_number = #{purchaseOrderNumber,jdbcType = VARCHAR}
-            </if>
             <if test="supplierId !=null">
                 and po4.supplier_id = #{supplierId,jdbcType = INTEGER}
             </if>

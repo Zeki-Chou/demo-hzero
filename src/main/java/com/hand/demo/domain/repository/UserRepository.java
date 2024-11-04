@@ -1,5 +1,6 @@
 package com.hand.demo.domain.repository;
 
+import com.hand.demo.api.controller.dto.UserTaskInfoDTO;
 import org.hzero.mybatis.base.BaseRepository;
 import com.hand.demo.domain.entity.User;
 
@@ -8,8 +9,8 @@ import java.util.List;
 /**
  * User Table(User)资源库
  *
- * @author Allan
- * @since 2024-11-01 08:06:01
+ * @author
+ * @since 2024-10-31 10:21:06
  */
 public interface UserRepository extends BaseRepository<User> {
     /**
@@ -27,4 +28,6 @@ public interface UserRepository extends BaseRepository<User> {
      * @return 返回值
      */
     User selectByPrimary(Long id);
+
+    public List<UserTaskInfoDTO> selectUserWithTask(UserTaskInfoDTO dto);
 }

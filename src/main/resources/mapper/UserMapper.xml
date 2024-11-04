@@ -10,10 +10,10 @@
         tu.employee_number,
         tu.user_account,
         tu.user_password,
-        tu.creation_date, 
-        tu.created_by, 
-        tu.last_updated_by, 
-        tu.last_update_date, 
+        tu.creation_date,
+        tu.created_by,
+        tu.last_updated_by,
+        tu.last_update_date,
         tu.object_version_number
     </sql>
 
@@ -39,6 +39,72 @@
             </if>
             <if test="userPassword !=null">
                 and tu.user_password = #{userPassword,jdbcType = VARCHAR}
+            </if>
+        </where>
+    </select>
+
+    <!-- 可根据自己的需求，是否要使用 -->
+    <resultMap id="BaseResultMap" type="com.hand.demo.api.controller.dto.UserTaskInfoDTO">
+        <result column="ID" property="id" jdbcType="DECIMAL"/>
+        <result column="EMPLOYEE_NAME" property="employeeName" jdbcType="VARCHAR"/>
+        <result column="EMPLOYEE_NUMBER" property="employeeNumber" jdbcType="VARCHAR"/>
+        <result column="EMAIL" property="email" jdbcType="VARCHAR"/>
+        <result column="object_version_number" property="objectVersionNumber" jdbcType="DECIMAL"/>
+        <result column="creation_date" property="creationDate" jdbcType="DATE"/>
+        <result column="created_by" property="createdBy" jdbcType="DECIMAL"/>
+        <result column="last_updated_by" property="lastUpdatedBy" jdbcType="DECIMAL"/>
+        <result column="last_update_date" property="lastUpdateDate" jdbcType="DATE"/>
+        <collection property="tasks" ofType="com.hand.demo.domain.entity.Task" javaType="ArrayList">
+            <result column="ID" property="id" jdbcType="DECIMAL"/>
+            <result column="EMPLOYEE_ID" property="employeeId" jdbcType="DECIMAL"/>
+            <result column="STATE" property="state" jdbcType="VARCHAR"/>
+            <result column="TASK_NUMBER" property="taskNumber" jdbcType="VARCHAR"/>
+            <result column="TASK_DESCRIPTION" property="taskDescription" jdbcType="VARCHAR"/>
+            <result column="TENANT_ID" property="tenantId" jdbcType="DECIMAL"/>
+            <result column="object_version_number" property="objectVersionNumber" jdbcType="DECIMAL"/>
+            <result column="creation_date" property="creationDate" jdbcType="DATE"/>
+            <result column="created_by" property="createdBy" jdbcType="DECIMAL"/>
+            <result column="last_updated_by" property="lastUpdatedBy" jdbcType="DECIMAL"/>
+            <result column="last_update_date" property="lastUpdateDate" jdbcType="DATE"/>
+        </collection>
+    </resultMap>
+
+
+    <sql id="base_column_list">
+        tu.id,
+        tu.EMPLOYEE_NAME,
+        tu.EMPLOYEE_NUMBER,
+        tu.EMAIL
+    </sql>
+
+    <select id="selectUserTask" resultMap="BaseResultMap">
+        select
+        <include refid="base_column_list" />
+        from todo_user tu
+        join todo_task tt on tu.id = tt.EMPLOYEE_ID
+    </select>
+
+    <select id="selectUserWithTask" resultMap="BaseResultMap">
+        select
+        <include refid="base_column_list"/>
+        ,tt.ID as taskId
+        ,tt.STATE
+        ,tt.TASK_NUMBER
+        ,tt.TASK_DESCRIPTION
+        ,tt.TENANT_ID
+        from todo_user tu
+        join todo_task tt on tu.id = tt.EMPLOYEE_ID
+        <where>
+            <if test="id != null">
+                and tu.id = #{id}
+            </if>
+            <if test="taskNumber != null">
+                and tu.id in (
+                select tu1.id
+                from todo_user tu1
+                join todo_task tt1 on tu1.id = tt1.EMPLOYEE_ID
+                where tt1.TASK_NUMBER = #{taskNumber}
+                )
             </if>
         </where>
     </select>

@@ -1,4 +1,4 @@
-package com.hand.demo.api.dto;
+package com.hand.demo.api.controller.dto;
 
 import lombok.Data;
 import org.hzero.common.HZeroCacheKey;

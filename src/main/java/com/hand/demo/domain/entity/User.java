@@ -6,6 +6,8 @@ import io.choerodon.mybatis.annotation.VersionAudit;
 import io.choerodon.mybatis.domain.AuditDomain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -15,16 +17,12 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Date;
 
-import lombok.Getter;
-import lombok.Setter;
-
 /**
  * User Table(User)实体类
  *
- * @author Allan
- * @since 2024-11-01 08:06:01
+ * @author
+ * @since 2024-10-31 09:27:17
  */
-
 @Getter
 @Setter
 @ApiModel("User Table")
@@ -33,7 +31,7 @@ import lombok.Setter;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "todo_user")
 public class User extends AuditDomain {
-    private static final long serialVersionUID = -89260123464955999L;
+    private static final long serialVersionUID = -10614396729693629L;
 
     public static final String FIELD_ID = "id";
     public static final String FIELD_EMAIL = "email";
@@ -65,8 +63,53 @@ public class User extends AuditDomain {
     private String userPassword;
 
 
-    public void setTenantId(Long organizationId) {
-
+    public Long getId() {
+        return id;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getEmployeeName() {
+        return employeeName;
+    }
+
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
+    }
+
+    public String getEmployeeNumber() {
+        return employeeNumber;
+    }
+
+    public void setEmployeeNumber(String employeeNumber) {
+        this.employeeNumber = employeeNumber;
+    }
+
+    public String getUserAccount() {
+        return userAccount;
+    }
+
+    public void setUserAccount(String userAccount) {
+        this.userAccount = userAccount;
+    }
+
+    public String getUserPassword() {
+        return userPassword;
+    }
+
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
+    }
+
 }
 

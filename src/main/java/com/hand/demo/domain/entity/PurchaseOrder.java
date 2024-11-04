@@ -24,7 +24,7 @@ import lombok.Setter;
  * (PurchaseOrder)实体类
  *
  * @author
- * @since 2024-11-01 16:59:20
+ * @since 2024-11-01 10:50:58
  */
 
 @Getter
@@ -35,7 +35,7 @@ import lombok.Setter;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "purchase_order_47359")
 public class PurchaseOrder extends AuditDomain {
-    private static final long serialVersionUID = -32840207446477294L;
+    private static final long serialVersionUID = 706626372133444317L;
 
     public static final String FIELD_ID = "id";
     public static final String FIELD_APPROVED_TIME = "approvedTime";

@@ -8,6 +8,7 @@ import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
 import org.hzero.core.base.BaseController;
+import org.hzero.core.base.Result;
 import org.hzero.core.util.Results;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ import java.util.List;
  * 任务表(Task)表控制层
  *
  * @author
- * @since 2024-11-01 08:10:07
+ * @since 2024-10-28 14:57:35
  */
 
 @RestController("taskController.v1")
@@ -62,8 +63,7 @@ public class TaskController extends BaseController {
         validObject(tasks);
         SecurityTokenHelper.validTokenIgnoreInsert(tasks);
         tasks.forEach(item -> item.setTenantId(organizationId));
-        taskService.saveData(tasks);
-        return Results.success(tasks);
+        return Results.success(taskService.saveData(tasks));
     }
 
     @ApiOperation(value = "删除任务表")
@@ -73,6 +73,23 @@ public class TaskController extends BaseController {
         SecurityTokenHelper.validToken(tasks);
         taskRepository.batchDeleteByPrimaryKey(tasks);
         return Results.success();
+    }
+
+    @ApiOperation(value = "create task with code rule")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @PostMapping("/code-rule")
+    public ResponseEntity<String> createTaskCodeRule() {
+        return Results.success(taskService.createTaskWithCodeRule());
+    }
+
+    @ApiOperation(value = "Task Detail Feign")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/detail-feign")
+    public ResponseEntity<List<Object>> detailFeign(Task task, @PathVariable Long organizationId,
+                                                  @ApiIgnore @SortDefault(value = Task.FIELD_ID,
+                                                          direction = Sort.Direction.DESC) PageRequest pageRequest) {
+        List<Object> taskPageResult = taskService.findTaskDetailFeign(task, organizationId, pageRequest);
+        return Results.success(taskPageResult);
     }
 
 }

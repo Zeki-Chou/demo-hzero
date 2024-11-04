@@ -1,23 +1,23 @@
 package com.hand.demo.infra.mapper;
 
-import io.choerodon.mybatis.common.BaseMapper;
+import com.hand.demo.api.controller.dto.UserTaskInfoDTO;
 import com.hand.demo.domain.entity.User;
+import io.choerodon.mybatis.common.BaseMapper;
 
 import java.util.List;
 
 /**
- * User Table(User)应用服务
+ * 用户表Mapper
  *
- * @author Allan
- * @since 2024-11-01 08:06:01
+ * @author allan.sugianto@hand-global.com 2024-10-17 14:34:10
  */
 public interface UserMapper extends BaseMapper<User> {
     /**
      * 基础查询
-     *
      * @param user 查询条件
      * @return 返回值
      */
     List<User> selectList(User user);
+    List<User> selectUserTask();
+    List<UserTaskInfoDTO> selectUserWithTask(UserTaskInfoDTO dto);
 }
-

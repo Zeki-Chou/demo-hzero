@@ -9,8 +9,8 @@ import java.util.List;
 /**
  * User Table(User)应用服务
  *
- * @author Allan
- * @since 2024-11-01 08:06:02
+ * @author
+ * @since 2024-10-31 10:27:59
  */
 public interface UserService {
 
@@ -29,6 +29,50 @@ public interface UserService {
      * @param users 数据
      */
     void saveData(List<User> users);
+
+    /**
+     * 用户表查询参数
+     *
+     * @param tenantId 租户ID
+     * @param user 用户表
+     * @param pageRequest 分页
+     * @return 用户表列表
+     */
+    Page<User> list(Long tenantId, User user, PageRequest pageRequest);
+
+    /**
+     * 用户表详情
+     *
+     * @param tenantId 租户ID
+     * @param id 主键
+     * @return 用户表列表
+     */
+    User detail(Long tenantId, Long id);
+
+    /**
+     * 创建用户表
+     *
+     * @param tenantId 租户ID
+     * @param user 用户表
+     * @return 用户表
+     */
+    User create(Long tenantId, User user);
+
+    /**
+     * 更新用户表
+     *
+     * @param tenantId 租户ID
+     * @param user 用户表
+     * @return 用户表
+     */
+    User update(Long tenantId, User user);
+
+    /**
+     * 删除用户表
+     *
+     * @param user 用户表
+     */
+    void remove(User user);
 
 }
 

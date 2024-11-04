@@ -23,8 +23,8 @@ import java.util.List;
 /**
  * User Table(User)表控制层
  *
- * @author Allan
- * @since 2024-11-01 08:06:02
+ * @author
+ * @since 2024-10-31 10:28:00
  */
 
 @RestController("userController.v1")
@@ -37,7 +37,7 @@ public class UserController extends BaseController {
     @Autowired
     private UserService userService;
 
-    @ApiOperation(value = "User Table列表")
+    @ApiOperation(value = "User List")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     public ResponseEntity<Page<User>> list(User user, @PathVariable Long organizationId,
@@ -47,7 +47,7 @@ public class UserController extends BaseController {
         return Results.success(list);
     }
 
-    @ApiOperation(value = "User Table明细")
+    @ApiOperation(value = "User Detail")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/{id}/detail")
     public ResponseEntity<User> detail(@PathVariable Long id) {
@@ -55,18 +55,18 @@ public class UserController extends BaseController {
         return Results.success(user);
     }
 
-    @ApiOperation(value = "创建或更新User Table")
+    @ApiOperation(value = "Create User")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<User>> save(@PathVariable Long organizationId, @RequestBody List<User> users) {
         validObject(users);
         SecurityTokenHelper.validTokenIgnoreInsert(users);
-        users.forEach(item -> item.setTenantId(organizationId));
+//        users.forEach(item -> item.setTenantId(organizationId));
         userService.saveData(users);
         return Results.success(users);
     }
 
-    @ApiOperation(value = "删除User Table")
+    @ApiOperation(value = "Remove User")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> remove(@RequestBody List<User> users) {

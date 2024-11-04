@@ -9,7 +9,7 @@ import java.util.List;
  * (PurchaseOrder)资源库
  *
  * @author
- * @since 2024-11-01 16:59:20
+ * @since 2024-11-01 10:50:58
  */
 public interface PurchaseOrderRepository extends BaseRepository<PurchaseOrder> {
     /**

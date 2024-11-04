@@ -1,12 +1,14 @@
 package com.hand.demo.app.service.impl;
 
-import com.hand.demo.api.dto.BuyerDTO;
-import com.hand.demo.api.dto.PurchaseOrderDTO;
+import com.hand.demo.api.controller.dto.BuyerDTO;
+import com.hand.demo.api.controller.dto.PurchaseOrderDTO;
+import com.hand.demo.infra.constant.PurchaseStatus;
 import com.hand.demo.infra.util.Utils;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import org.apache.avro.generic.GenericData;
 import org.hzero.core.cache.ProcessCacheValue;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +18,15 @@ import com.hand.demo.domain.entity.PurchaseOrder;
 import com.hand.demo.domain.repository.PurchaseOrderRepository;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * (PurchaseOrder)应用服务
  *
- * @author
- * @since 2024-11-01 16:59:21
+ * @author Allan
+ * @since 2024-11-01 10:50:58
  */
 @Service
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {

@@ -1,6 +1,6 @@
 package com.hand.demo.app.service;
 
-import com.hand.demo.api.dto.PurchaseOrderDTO;
+import com.hand.demo.api.controller.dto.PurchaseOrderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.PurchaseOrder;
@@ -11,7 +11,7 @@ import java.util.List;
  * (PurchaseOrder)应用服务
  *
  * @author
- * @since 2024-11-01 16:59:21
+ * @since 2024-11-01 10:50:58
  */
 public interface PurchaseOrderService {
 

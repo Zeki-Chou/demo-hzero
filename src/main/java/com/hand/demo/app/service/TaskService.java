@@ -10,7 +10,7 @@ import java.util.List;
  * 任务表(Task)应用服务
  *
  * @author
- * @since 2024-11-01 08:10:06
+ * @since 2024-10-28 14:57:35
  */
 public interface TaskService {
 
@@ -28,7 +28,10 @@ public interface TaskService {
      *
      * @param tasks 数据
      */
-    void saveData(List<Task> tasks);
+    List<Task> saveData(List<Task> tasks);
 
+    String createTaskWithCodeRule();
+
+    List<Object> findTaskDetailFeign(Task task, Long organizationId, PageRequest pageRequest);
 }
 

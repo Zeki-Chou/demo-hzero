@@ -1,4 +1,4 @@
-package com.hand.demo.api.dto;
+package com.hand.demo.api.controller.dto;
 
 import com.hand.demo.domain.entity.PurchaseOrder;
 import lombok.Data;

@@ -10,7 +10,9 @@ management:
 spring:
   profiles:
     active: default
-  cloud:
+    cloud:
+      inetutils:
+        preferred-networks: 10.221
     config:
       fail-fast: false
       # 是否启用配置中心
@@ -39,6 +41,6 @@ eureka:
   client:
     serviceUrl:
       # 注册中心地址
-      defaultZone: ${EUREKA_DEFAULT_ZONE:http://dev.hzero.com.cn:8000/eureka}
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://172.22.4.112:8000/eureka}
     registryFetchIntervalSeconds: 10
     disable-delta: true
