@@ -43,20 +43,20 @@ public class OrderHeader47356ServiceImpl implements OrderHeader47356Service {
 
     @ProcessCacheValue
     public UserCacheDTO getOrderById(Long organizationId, Long id) {
-        OrderHeader47356 getOrder = orderHeader47356Repository.selectByPrimary(id);
+        OrderHeader47356 orderHeader47356 = orderHeader47356Repository.selectByPrimary(id);
 
-        String[] buyer_list = getOrder.getBuyerIds().split(",");
+        String[] buyer_list = orderHeader47356.getBuyerIds().split(",");
         List<UserCacheListDTO> cache = new ArrayList<>();
 
         for(int i = 0; i < buyer_list.length; i++) {
-            UserCacheListDTO user_cache = new UserCacheListDTO();
-            user_cache.setId(buyer_list[i]);
-            cache.add(user_cache);
+            UserCacheListDTO userCacheListDTO = new UserCacheListDTO();
+            userCacheListDTO.setId(buyer_list[i]);
+            cache.add(userCacheListDTO);
         }
 
         UserCacheDTO response = new UserCacheDTO();
         response.setList_buyer(cache);
-        BeanUtils.copyProperties(getOrder,response);
+        BeanUtils.copyProperties(orderHeader47356,response);
 
         return response;
     }
