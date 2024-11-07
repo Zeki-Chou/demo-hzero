@@ -12,6 +12,8 @@ import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
 import org.hzero.core.util.Results;
+import org.hzero.export.annotation.ExcelExport;
+import org.hzero.export.vo.ExportParam;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -45,8 +48,8 @@ public class InvoiceApplyHeaderController extends BaseController {
     @GetMapping
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
-                                                         @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
-                                                                 direction = Sort.Direction.DESC) PageRequest pageRequest) {
+                                                            @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
+                                                                    direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
         return Results.success(list);
     }
@@ -96,8 +99,23 @@ public class InvoiceApplyHeaderController extends BaseController {
     @DeleteMapping("/delete-id")
     public ResponseEntity<?> delete(@RequestParam Long headerId) {
 //        SecurityTokenHelper.validToken(invoiceApplyHeaders);
-        InvoiceApplyHeaderDTO dto =  invoiceApplyHeaderService.delete(headerId);
+        InvoiceApplyHeaderDTO dto = invoiceApplyHeaderService.delete(headerId);
         return Results.success(dto);
+    }
+
+    @ApiOperation(value = "Get List Excel")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("get-excel")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @ExcelExport(InvoiceApplyHeaderDTO.class)
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> listExcel(InvoiceApplyHeader invoiceApplyHeader,
+                                                                 @PathVariable Long organizationId,
+                                                                 @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
+                                                                         direction = Sort.Direction.DESC) PageRequest pageRequest,
+                                                                 ExportParam exportParam,
+                                                                 HttpServletResponse httpServletResponse) {
+        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        return Results.success(list);
     }
 
 }

@@ -295,10 +295,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     private InvoiceApplyHeaderDTO changeToDTO(InvoiceApplyHeader invoiceApplyHeaderDTO) {
         InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
+        BeanUtils.copyProperties(invoiceApplyHeaderDTO, dto);
         Condition condition = new Condition(InvoiceApplyLine.class);
         Condition.Criteria criteria = condition.createCriteria();
         criteria.andEqualTo("applyHeaderId",dto.getInvoiceApplyLines());
-        BeanUtils.copyProperties(invoiceApplyHeaderDTO, dto);
+        dto.setInvoiceApplyLines(invoiceApplyLineRepository.selectByCondition(condition));
         return dto;
     }
 }
