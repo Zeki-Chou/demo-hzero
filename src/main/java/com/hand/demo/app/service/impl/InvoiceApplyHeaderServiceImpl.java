@@ -1,5 +1,6 @@
 package com.hand.demo.app.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
@@ -19,6 +20,8 @@ import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
+import org.hzero.core.redis.RedisHelper;
+import org.hzero.core.redis.RedisQueueHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
@@ -48,6 +51,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private final LovAdapter lovAdapter;
 
     private final CodeRuleBuilder codeRuleBuilder;
+
+    private RedisHelper redisHelper;
 
     @Override
 //    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
@@ -128,7 +133,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
         invoiceApplyLineService.saveData(invoiceApplyLines);
 
-        // Batch update for existing headers
         List<InvoiceApplyHeader> oriHeaderList = updateList.stream().map(headerDto -> {
             InvoiceApplyHeader iah = new InvoiceApplyHeader();
             BeanUtils.copyProperties(headerDto, iah);
@@ -145,12 +149,26 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public InvoiceApplyHeaderDTO detail(Long applyHeaderId) {
+        String key = "invoiceDetail_47355";
+
+        if(redisHelper.hasKey(key)) {
+           if(redisHelper.strGet(key) != null && !redisHelper.strGet(key).isEmpty()) {
+               System.out.println("alsjdnqwed: reddiss");
+               return JSON.parseObject(redisHelper.strGet(key), InvoiceApplyHeaderDTO.class);
+           }
+        }
+
         InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(applyHeaderId);
         List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select("applyHeaderId", applyHeaderId);
 
         InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = new InvoiceApplyHeaderDTO();
         BeanUtils.copyProperties(invoiceApplyHeader, invoiceApplyHeaderDTO);
         invoiceApplyHeaderDTO.setHeaderLines(invoiceApplyLines);
+
+        String headerJson = JSON.toJSONString(invoiceApplyHeaderDTO);
+        redisHelper.strSet(key, headerJson);
+        System.out.println("alsjdnqwed: no reddiss");
+
         return invoiceApplyHeaderDTO;
     }
 
