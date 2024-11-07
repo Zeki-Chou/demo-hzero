@@ -128,6 +128,10 @@
             <artifactId>hzero-boot-import</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.hzero.starter</groupId>
+            <artifactId>hzero-starter-export</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.hzero.boot</groupId>
             <artifactId>hzero-boot-report</artifactId>
         </dependency>

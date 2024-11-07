@@ -90,3 +90,27 @@ logging:
     org.apache.ibatis: debug
     io.choerodon: debug
     org.hzero: debug
+hzero:
+  export:
+    # 默认请求模式，允许的值 SYNC ASYNC，默认null
+    # 默认请求模式设置为同步，则所有调用均为同步调用；默认请求模式设置为异步，则所有调用均为异步调用
+    # 当defaultRequestMode="ASYNC" && enableAsync=false时，服务会启动报错
+    default-request-mode:
+    # 是否开启异步，默认为false
+    enable-async: true
+    # 异步阈值，若导出的数据总量超过该阈值，强制执行异步导出
+    async-threshold:
+    # 默认最大sheet数，默认值5
+    single-excel-max-sheet-num: 5
+    # 默认sheet页最大行数，默认值1000000
+    single-sheet-max-row: 1000000
+    # 异步线程池核心线程数
+    core-pool-size: 3
+    # 异步线程池最大线程数
+    maximum-pool-size: 10
+    # 异步线程池线存活时间
+    keep-alive-time: 0
+    # 异步线程池线等待队列大小
+    queue-size:
+    # # 异步线程池线程名称
+    async-thread-name: async-export-executor
