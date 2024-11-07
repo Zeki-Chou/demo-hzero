@@ -19,6 +19,8 @@ import java.util.Date;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hzero.export.annotation.ExcelColumn;
+import org.hzero.export.annotation.ExcelSheet;
 
 /**
  * (InvoiceApplyLine)实体类
@@ -34,6 +36,7 @@ import lombok.Setter;
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "47355_invoice_apply_line")
+@ExcelSheet(en = "Invoice Apply Line")
 public class InvoiceApplyLine extends AuditDomain {
     private static final long serialVersionUID = 638145003703827841L;
 
@@ -69,9 +72,11 @@ public class InvoiceApplyLine extends AuditDomain {
     @ApiModelProperty("PK")
     @Id
     @GeneratedValue
+    @ExcelColumn(en = "Apply Line ID", order = 1)
     private Long applyLineId;
 
     @ApiModelProperty(value = "header id")
+    @ExcelColumn(en = "Apply Header ID", order = 2)
     private Long applyHeaderId;
 
     private String attribute1;
@@ -104,30 +109,41 @@ public class InvoiceApplyLine extends AuditDomain {
 
     private String attribute9;
 
+    @ExcelColumn(en = "Content Name", order = 3)
     private String contentName;
 
     @ApiModelProperty(value = "total_amount - tax_amount")
+    @ExcelColumn(en = "Exclude Tax Amount", order = 4)
     private BigDecimal excludeTaxAmount;
 
+    @ExcelColumn(en = "Invoice Name", order = 5)
     private String invoiceName;
 
+    @ExcelColumn(en = "Quantity", order = 6)
     private BigDecimal quantity;
 
+    @ExcelColumn(en = "Remark", order = 7)
     private Object remark;
 
     @ApiModelProperty(value = "total_amount * tax_rate")
+    @ExcelColumn(en = "Tax Amount", order = 8)
     private BigDecimal taxAmount;
 
+    @ExcelColumn(en = "Tax Classification Number", order = 9)
     private String taxClassificationNumber;
 
     @ApiModelProperty(value = "eg: 0.08")
+    @ExcelColumn(en = "Tax Rate", order = 10)
     private BigDecimal taxRate;
 
+    @ExcelColumn(en = "Tenant ID", order = 11)
     private Long tenantId;
 
     @ApiModelProperty(value = "unit_price * quantity")
+    @ExcelColumn(en = "Total Amount", order = 12)
     private BigDecimal totalAmount;
 
+    @ExcelColumn(en = "Unit Price", order = 13)
     private BigDecimal unitPrice;
 
 

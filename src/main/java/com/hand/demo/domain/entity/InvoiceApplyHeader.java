@@ -23,6 +23,7 @@ import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
 import org.hzero.boot.platform.lov.annotation.LovValue;
+import org.hzero.export.annotation.ExcelColumn;
 
 /**
  * (InvoiceApplyHeader)实体类
@@ -76,13 +77,16 @@ public class InvoiceApplyHeader extends AuditDomain {
     @ApiModelProperty("PK")
     @Id
     @GeneratedValue
+    @ExcelColumn(en = "Apply Header ID", order = 1)
     private Long applyHeaderId;
 
+    @ExcelColumn(en = "Apply Header Number", order = 2)
     private String applyHeaderNumber;
 
     @NotEmpty
     @LovValue(lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS)
     @ApiModelProperty(value = "（need Value Set） D : Draft S : Success F : Fail C : Canceled")
+    @ExcelColumn(en = "Apply Status", order = 3)
     private String applyStatus;
 
     private String attribute1;
@@ -115,42 +119,54 @@ public class InvoiceApplyHeader extends AuditDomain {
 
     private String attribute9;
 
+    @ExcelColumn(en = "Bill to Address", order = 4)
     private String billToAddress;
 
+    @ExcelColumn(en = "Bill to Email", order = 5)
     private String billToEmail;
 
+    @ExcelColumn(en = "Bill to Person", order = 6)
     private String billToPerson;
 
+    @ExcelColumn(en = "Bill to Phone", order = 7)
     private String billToPhone;
 
     @ApiModelProperty(value = "1 : deleted 0 : normal")
+    @ExcelColumn(en = "Del Flag", order = 8)
     private Integer delFlag;
 
     @ApiModelProperty(value = "sum(line exclude_tax_amount)")
+    @ExcelColumn(en = "Exclude Tax Amount", order = 9)
     private BigDecimal excludeTaxAmount;
 
     @NotEmpty
     @LovValue(lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_INV_COLOR)
     @ApiModelProperty(value = "(need Value Set) R : Red invoice B : Blue invoice")
+    @ExcelColumn(en = "Invoice Color", order = 10)
     private String invoiceColor;
 
     @NotEmpty
     @LovValue(lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE)
     @ApiModelProperty(value = "(need Value Set) P : Paper invoice E : E-invoice")
+    @ExcelColumn(en = "Invoice Type", order = 11)
     private String invoiceType;
 
+    @ExcelColumn(en = "Remark", order = 12)
     private Object remark;
 
+    @ExcelColumn(en = "Submit Time", order = 13)
     private Date submitTime;
 
     @ApiModelProperty(value = "sum(line tax_amount)")
+    @ExcelColumn(en = "Tax Amount", order = 14)
     private BigDecimal taxAmount;
 
+    @ExcelColumn(en = "Tenant ID", order = 15)
     private Long tenantId;
 
     @ApiModelProperty(value = "sum(line total_amount)")
+    @ExcelColumn(en = "Total Amount", order = 16)
     private BigDecimal totalAmount;
-
 
 }
 

@@ -1,6 +1,7 @@
 package com.hand.demo.app.service.impl;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.entity.Task;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
@@ -24,8 +25,10 @@ import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * (InvoiceApplyHeader)应用服务
@@ -39,6 +42,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
 
     private InvoiceApplyLineRepository invoiceApplyLineRepository;
+
+    private InvoiceApplyLineService invoiceApplyLineService;
 
     private final LovAdapter lovAdapter;
 
@@ -85,54 +90,52 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOs) {
 
         List<InvoiceApplyHeaderDTO> insertList = invoiceApplyHeaderDTOs.stream()
-                .filter(line -> line.getApplyHeaderId() == null)
-                .peek(header -> {
-                    valueSetValidation(header.getApplyStatus(), header.getInvoiceType(), header.getInvoiceColor());
-                })
+                .filter(header -> header.getApplyHeaderId() == null)
+                .peek(header -> valueSetValidation(header.getApplyStatus(), header.getInvoiceType(), header.getInvoiceColor()))
                 .collect(Collectors.toList());
 
-        List<InvoiceApplyHeader> updateList = invoiceApplyHeaderDTOs.stream()
-                .filter(line -> line.getApplyHeaderId() != null)
-                .peek(header -> {
-                    valueSetValidation(header.getApplyStatus(), header.getInvoiceType(), header.getInvoiceColor());
-                })
+        List<InvoiceApplyHeaderDTO> updateList = invoiceApplyHeaderDTOs.stream()
+                .filter(header -> header.getApplyHeaderId() != null)
+                .peek(header -> valueSetValidation(header.getApplyStatus(), header.getInvoiceType(), header.getInvoiceColor()))
                 .collect(Collectors.toList());
 
         List<String> batchCode = codeRuleBuilder.generateCode(insertList.size(), TaskConstants.CODE_RULE, null);
 
-        for(int i = 0; i < insertList.size(); i++) {
-            InvoiceApplyHeader invoiceApplyHeader = insertList.get(i);
-            invoiceApplyHeader.setApplyHeaderNumber(batchCode.get(i));
+        for (int i = 0; i < insertList.size(); i++) {
+            InvoiceApplyHeaderDTO headerDTO = insertList.get(i);
+            headerDTO.setApplyHeaderNumber(batchCode.get(i));
         }
 
-        insertList.forEach(header -> {
-            invoiceApplyHeaderRepository.insert(header);
+        List<InvoiceApplyHeaderDTO> insertUpdateList = Stream.concat(insertList.stream(), updateList.stream())
+                .collect(Collectors.toList());
+
+        List<InvoiceApplyLine> invoiceApplyLines = new ArrayList<>();
+        insertUpdateList.forEach(header -> {
+            if(header.getApplyHeaderId() == null) {
+                invoiceApplyHeaderRepository.insert(header);
+            }
             Long applyHeaderId = header.getApplyHeaderId();
             List<InvoiceApplyLine> applyLines = header.getHeaderLines();
-            if(applyLines != null) {
-                List<InvoiceApplyLine> mappedApplyLines = applyLines.stream()
-                        .peek(line -> line.setApplyHeaderId(applyHeaderId))
-                        .collect(Collectors.toList());
 
-                mappedApplyLines.forEach(line -> {
-                    line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
-                    line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
-                    line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
+            if (applyLines != null) {
+                applyLines.forEach(line -> {
+                    line.setApplyHeaderId(applyHeaderId);
+
+                    invoiceApplyLines.add(line);
                 });
-
-                invoiceApplyLineRepository.batchInsertSelective(mappedApplyLines);
-
-
-                mappedApplyLines.forEach(line -> {
-                    header.setTotalAmount(header.getTotalAmount().add(line.getTotalAmount()));
-                    header.setTaxAmount(header.getTaxAmount().add(line.getTaxAmount()));
-                    header.setExcludeTaxAmount(header.getExcludeTaxAmount().add(line.getExcludeTaxAmount()));
-                });
-                invoiceApplyHeaderRepository.updateByPrimaryKey(header);
             }
         });
 
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+        invoiceApplyLineService.saveData(invoiceApplyLines);
+
+        // Batch update for existing headers
+        List<InvoiceApplyHeader> oriHeaderList = updateList.stream().map(headerDto -> {
+            InvoiceApplyHeader iah = new InvoiceApplyHeader();
+            BeanUtils.copyProperties(headerDto, iah);
+            return iah;
+        }).collect(Collectors.toList());
+
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(oriHeaderList);
     }
 
     @Override

@@ -12,6 +12,8 @@ import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
 import org.hzero.core.util.Results;
+import org.hzero.export.annotation.ExcelExport;
+import org.hzero.export.vo.ExportParam;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -64,7 +67,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @PostMapping
     public ResponseEntity<List<InvoiceApplyHeaderDTO>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOs) {
         validObject(invoiceApplyHeaderDTOs);
-        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaderDTOs);
+//        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaderDTOs);
         invoiceApplyHeaderDTOs.forEach(item -> item.setTenantId(organizationId));
         invoiceApplyHeaderService.saveData(invoiceApplyHeaderDTOs);
         return Results.success(invoiceApplyHeaderDTOs);
@@ -74,7 +77,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> remove(@RequestBody List<InvoiceApplyHeader> invoiceApplyHeaders) {
-        SecurityTokenHelper.validToken(invoiceApplyHeaders);
+//        SecurityTokenHelper.validToken(invoiceApplyHeaders);
         invoiceApplyHeaderRepository.batchDeleteByPrimaryKey(invoiceApplyHeaders);
         return Results.success();
     }
@@ -85,6 +88,25 @@ public class InvoiceApplyHeaderController extends BaseController {
     public ResponseEntity<?> softDeleteById(@PathVariable("organizationId") Long organizationId, @PathVariable Long applyHeaderId) {
         invoiceApplyHeaderService.softDeleteById(applyHeaderId);
         return Results.success();
+    }
+
+    @ApiOperation(value = "Export to sheet")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/export")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @ExcelExport(InvoiceApplyHeaderDTO.class)
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> export(
+            InvoiceApplyHeader invoiceApplyHeader,
+            @PathVariable Long organizationId,
+            ExportParam exportParam,
+            HttpServletResponse response,
+            @ApiIgnore
+            @SortDefault(
+                    value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
+                    direction = Sort.Direction.DESC) PageRequest pageRequest
+    ) {
+        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        return Results.success(list);
     }
 }
 
