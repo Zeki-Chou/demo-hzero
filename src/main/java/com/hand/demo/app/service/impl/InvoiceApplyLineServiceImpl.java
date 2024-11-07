@@ -1,6 +1,7 @@
 package com.hand.demo.app.service.impl;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyLineDTO;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import io.choerodon.core.domain.Page;
@@ -45,6 +46,31 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Override
     public Page<InvoiceApplyLine> selectList(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLine) {
         return PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyLineRepository.selectList(invoiceApplyLine));
+    }
+
+    @Override
+    public Page<InvoiceApplyLineDTO> selectListExcel(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLine) {
+        Page<InvoiceApplyLineDTO> pageResult = PageHelper.doPageAndSort(pageRequest,
+                () -> invoiceApplyLineRepository.selectList(invoiceApplyLine));
+        List<InvoiceApplyLineDTO> invoiceApplyLineDTOS = new ArrayList<>();
+
+
+        for (int i = 0; i < pageResult.size(); i++) {
+            InvoiceApplyLineDTO dataDto = new InvoiceApplyLineDTO();
+            BeanUtils.copyProperties(pageResult.get(i), dataDto);
+            String headerNumber = invoiceApplyHeaderRepository.selectByPrimary(dataDto.getApplyHeaderId()).getApplyHeaderNumber();
+            dataDto.setHeaderNumber(headerNumber);
+            invoiceApplyLineDTOS.add(dataDto);
+        }
+
+        Page<InvoiceApplyLineDTO> dtoPage = new Page<>();
+        dtoPage.setContent(invoiceApplyLineDTOS);
+        dtoPage.setTotalPages(pageResult.getTotalPages());
+        dtoPage.setTotalElements(pageResult.getTotalElements());
+        dtoPage.setNumber(pageResult.getNumber());
+        dtoPage.setSize(pageResult.getSize());
+
+        return dtoPage;
     }
 
     @Override

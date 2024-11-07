@@ -1,6 +1,7 @@
 package com.hand.demo.app.service;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyLineDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
@@ -23,6 +24,8 @@ public interface InvoiceApplyLineService {
      * @return 返回值
      */
     Page<InvoiceApplyLine> selectList(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLines);
+
+    Page<InvoiceApplyLineDTO> selectListExcel(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLine);
 
     /**
      * 保存数据

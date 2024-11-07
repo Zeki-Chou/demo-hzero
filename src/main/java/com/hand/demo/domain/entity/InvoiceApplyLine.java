@@ -19,6 +19,7 @@ import java.util.Date;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hzero.export.annotation.ExcelColumn;
 
 /**
  * (InvoiceApplyLine)实体类
@@ -66,11 +67,13 @@ public class InvoiceApplyLine extends AuditDomain {
     public static final String FIELD_TOTAL_AMOUNT = "totalAmount";
     public static final String FIELD_UNIT_PRICE = "unitPrice";
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_APPLY_LINE_ID, order = 2)
     @ApiModelProperty("PK")
     @Id
     @GeneratedValue
     private Long applyLineId;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_APPLY_HEADER_ID, order = 3)
     @ApiModelProperty(value = "header id")
     private Long applyHeaderId;
 
@@ -106,28 +109,38 @@ public class InvoiceApplyLine extends AuditDomain {
 
     private String contentName;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_EXCLUDE_TAX_AMOUNT, order = 5)
     @ApiModelProperty(value = "total_amount - tax_amount")
     private BigDecimal excludeTaxAmount;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_INVOICE_NAME, order = 6)
     private String invoiceName;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_QUANTITY, order = 7)
     private BigDecimal quantity;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_REMARK, order = 8)
     private Object remark;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_TAX_AMOUNT, order = 9)
     @ApiModelProperty(value = "total_amount * tax_rate")
     private BigDecimal taxAmount;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_TAX_CLASSIFICATION_NUMBER, order = 10)
     private String taxClassificationNumber;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_TAX_RATE, order = 11)
     @ApiModelProperty(value = "eg: 0.08")
     private BigDecimal taxRate;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_TENANT_ID, order = 12)
     private Long tenantId;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_TOTAL_AMOUNT, order = 13)
     @ApiModelProperty(value = "unit_price * quantity")
     private BigDecimal totalAmount;
 
+    @ExcelColumn(en = InvoiceApplyLine.FIELD_UNIT_PRICE, order = 14)
     private BigDecimal unitPrice;
 
 
