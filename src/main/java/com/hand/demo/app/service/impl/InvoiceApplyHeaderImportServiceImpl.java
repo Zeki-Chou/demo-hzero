@@ -43,63 +43,106 @@ public class InvoiceApplyHeaderImportServiceImpl extends BatchImportHandler {
     @Override
     public Boolean doImport(List<String> data) {
         try {
-            List<InvoiceApplyHeader> invoiceApplyHeaders = new ArrayList<>();
-
-            for (String header : data) {
-                if (!header.isEmpty() || header.length() != 0) {
-                    try {
-                        InvoiceApplyHeader invoiceApplyHeader = objectMapper.readValue(header, InvoiceApplyHeader.class);
-                        invoiceApplyHeaders.add(invoiceApplyHeader);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-
+            List<InvoiceApplyHeader> invoiceApplyHeaders = parseDataToInvoiceApplyHeaders(data);
             validationOfHeader(invoiceApplyHeaders);
 
+            List<InvoiceApplyHeader> insertList = filterInsertList(invoiceApplyHeaders);
+            List<InvoiceApplyHeader> updateList = filterUpdateList(invoiceApplyHeaders);
 
-            List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream()
-                    .filter(header -> header.getApplyHeaderNumber() == null)
-                    .collect(Collectors.toList());
+            processInsertList(insertList);
+            processUpdateList(updateList);
 
-            List<InvoiceApplyHeader> updateList = invoiceApplyHeaders.stream()
-                    .filter(header -> header.getApplyHeaderNumber() != null)
-                    .collect(Collectors.toList());
-
-            if (!insertList.isEmpty()) {
-                Map<String, String> variableMap = new HashMap<>();
-                variableMap.put("customSegment", "-");
-                for (InvoiceApplyHeader header : insertList) {
-                    header.setTotalAmount(BigDecimal.valueOf(0));
-                    header.setExcludeTaxAmount(BigDecimal.valueOf(0));
-                    header.setTaxAmount(BigDecimal.valueOf(0));
-                    header.setTenantId(0L);
-                    if (header.getApplyHeaderNumber() == null) {
-                        String batchCodes = codeRuleBuilder.generateCode(InvHeaderConstant.RULE_CODE, variableMap);
-                        header.setApplyHeaderNumber(batchCodes);
-                    }
-                    invoiceApplyHeaderRepository.insertSelective(header);
-                }
-            }
-
-
-            if (!updateList.isEmpty()) {
-                for (InvoiceApplyHeader updateHeader: updateList) {
-                    Condition condition = new Condition(InvoiceApplyHeader.class);
-                    Condition.Criteria criteria = condition.createCriteria();
-                    criteria.orEqualTo(InvoiceApplyHeader.FIELD_APPLY_HEADER_NUMBER, updateHeader.getApplyHeaderNumber());
-                    List<InvoiceApplyHeader> headerDatas = invoiceApplyHeaderRepository.selectByCondition(condition);
-                    updateHeader.setApplyHeaderId(headerDatas.get(0).getApplyHeaderId());
-                    updateHeader.setObjectVersionNumber(headerDatas.get(0).getObjectVersionNumber());
-                }
-                invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
-            }
             return true;
         } catch (Exception e) {
             throw new CommonException(e);
         }
     }
+
+    private List<InvoiceApplyHeader> parseDataToInvoiceApplyHeaders(List<String> data) {
+        List<InvoiceApplyHeader> invoiceApplyHeaders = new ArrayList<>();
+        for (String header : data) {
+            if (!header.isEmpty()) {
+                try {
+                    InvoiceApplyHeader invoiceApplyHeader = objectMapper.readValue(header, InvoiceApplyHeader.class);
+                    invoiceApplyHeaders.add(invoiceApplyHeader);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return invoiceApplyHeaders;
+    }
+
+    private List<InvoiceApplyHeader> filterInsertList(List<InvoiceApplyHeader> headers) {
+        return headers.stream()
+                .filter(header -> header.getApplyHeaderNumber() == null)
+                .collect(Collectors.toList());
+    }
+
+    private List<InvoiceApplyHeader> filterUpdateList(List<InvoiceApplyHeader> headers) {
+        return headers.stream()
+                .filter(header -> header.getApplyHeaderNumber() != null)
+                .collect(Collectors.toList());
+    }
+
+    private void processInsertList(List<InvoiceApplyHeader> insertList) {
+        if (insertList.isEmpty()) return;
+
+        Map<String, String> variableMap = initializeVariableMap();
+        for (InvoiceApplyHeader header : insertList) {
+            initializeHeaderAmounts(header);
+            header.setTenantId(0L);
+            setApplyHeaderNumberIfAbsent(header, variableMap);
+            invoiceApplyHeaderRepository.insertSelective(header);
+        }
+    }
+
+    private Map<String, String> initializeVariableMap() {
+        Map<String, String> variableMap = new HashMap<>();
+        variableMap.put("customSegment", "-");
+        return variableMap;
+    }
+
+    private void initializeHeaderAmounts(InvoiceApplyHeader header) {
+        header.setTotalAmount(BigDecimal.valueOf(0));
+        header.setExcludeTaxAmount(BigDecimal.valueOf(0));
+        header.setTaxAmount(BigDecimal.valueOf(0));
+    }
+
+    private void setApplyHeaderNumberIfAbsent(InvoiceApplyHeader header, Map<String, String> variableMap) {
+        if (header.getApplyHeaderNumber() == null) {
+            String batchCodes = codeRuleBuilder.generateCode(InvHeaderConstant.RULE_CODE, variableMap);
+            header.setApplyHeaderNumber(batchCodes);
+        }
+    }
+
+    private void processUpdateList(List<InvoiceApplyHeader> updateList) {
+        if (updateList.isEmpty()) return;
+
+        for (InvoiceApplyHeader updateHeader : updateList) {
+            updateHeaderPrimaryKeyAndVersion(updateHeader);
+        }
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+    }
+
+    private void updateHeaderPrimaryKeyAndVersion(InvoiceApplyHeader updateHeader) {
+        Condition condition = createHeaderCondition(updateHeader.getApplyHeaderNumber());
+        List<InvoiceApplyHeader> headerData = invoiceApplyHeaderRepository.selectByCondition(condition);
+
+        if (!headerData.isEmpty()) {
+            InvoiceApplyHeader existingHeader = headerData.get(0);
+            updateHeader.setApplyHeaderId(existingHeader.getApplyHeaderId());
+            updateHeader.setObjectVersionNumber(existingHeader.getObjectVersionNumber());
+        }
+    }
+
+    private Condition createHeaderCondition(String applyHeaderNumber) {
+        Condition condition = new Condition(InvoiceApplyHeader.class);
+        Condition.Criteria criteria = condition.createCriteria();
+        criteria.orEqualTo(InvoiceApplyHeader.FIELD_APPLY_HEADER_NUMBER, applyHeaderNumber);
+        return condition;
+    }
+
 
     private void validationOfHeader(List<InvoiceApplyHeader> invoiceApplyHeaders) {
         List<LovValueDTO> validApplyTypesList = lovAdapter.queryLovValue(InvHeaderConstant.APPLY_TYPE_CODE,

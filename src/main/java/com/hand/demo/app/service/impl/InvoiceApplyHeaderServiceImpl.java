@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +65,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             invoiceApplyHeaderDTOS.add(changeToDTO(data));
         }
 
+        for (InvoiceApplyHeaderDTO dataDTO: invoiceApplyHeaderDTOS) {
+            dataDTO.setInvoiceApplyLines(invoiceApplyLineRepository.select(InvoiceApplyLine.FIELD_APPLY_HEADER_ID,
+                    dataDTO.getApplyHeaderId()));
+        }
+
         Page<InvoiceApplyHeaderDTO> dtoPage = new Page<>();
         dtoPage.setContent(invoiceApplyHeaderDTOS);
         dtoPage.setTotalPages(pageResult.getTotalPages());
@@ -96,117 +102,146 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
         validationOfHeader(invoiceApplyHeaders);
-        List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream()
-                .filter(header -> header.getApplyHeaderId() == null)
-                .collect(Collectors.toList());
 
-        List<InvoiceApplyHeader> updateList = invoiceApplyHeaders.stream()
-                .filter(header -> header.getApplyHeaderId() != null)
-                .collect(Collectors.toList());
+        List<InvoiceApplyHeader> insertList = filterInsertList(invoiceApplyHeaders);
+        List<InvoiceApplyHeader> updateList = filterUpdateList(invoiceApplyHeaders);
 
         if (!insertList.isEmpty()) {
-            Map<String, String> variableMap = new HashMap<>();
-            variableMap.put("customSegment", "-");
-
-            for (InvoiceApplyHeader header : insertList) {
-                header.setTotalAmount(BigDecimal.valueOf(0));
-                header.setExcludeTaxAmount(BigDecimal.valueOf(0));
-                header.setTaxAmount(BigDecimal.valueOf(0));
-                invoiceApplyHeaderRepository.insert(header);
-                Long generatedId = header.getApplyHeaderId();
-
-                InvoiceApplyHeaderDTO headerDTO = changeToDTO(header);
-
-                if (headerDTO.getInvoiceApplyLines() != null && !headerDTO.getInvoiceApplyLines().isEmpty()) {
-                    headerDTO.getInvoiceApplyLines().forEach(line -> {
-                        line.setApplyHeaderId(generatedId);
-                        line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
-                        line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
-                        line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
-                    });
-
-                    List<InvoiceApplyLine> newLines = headerDTO.getInvoiceApplyLines().stream()
-                            .filter(line -> line.getApplyLineId() == null)
-                            .collect(Collectors.toList());
-
-                    if (!newLines.isEmpty()) {
-                        invoiceApplyLineRepository.batchInsert(newLines);
-                    }
-
-                    BigDecimal totalAmount = newLines.stream()
-                            .map(InvoiceApplyLine::getTotalAmount)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    BigDecimal excludeTaxAmount = newLines.stream()
-                            .map(InvoiceApplyLine::getExcludeTaxAmount)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    BigDecimal taxAmount = newLines.stream()
-                            .map(InvoiceApplyLine::getTaxAmount)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                    String batchCodes = codeRuleBuilder.generateCode(InvHeaderConstant.RULE_CODE, variableMap);
-                    header.setTotalAmount(totalAmount);
-                    header.setExcludeTaxAmount(excludeTaxAmount);
-                    header.setTaxAmount(taxAmount);
-                    header.setApplyHeaderNumber(batchCodes);
-                    redisHelper.delKey(header.getApplyHeaderNumber());
-                    invoiceApplyHeaderRepository.updateByPrimaryKey(header);
-                }
-            }
+            processInsertList(insertList);
         }
-
 
         if (!updateList.isEmpty()) {
-            invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+            processUpdateList(updateList);
+        }
+    }
 
-            for (InvoiceApplyHeader header : updateList) {
-                InvoiceApplyHeaderDTO headerDTO = changeToDTO(header);
+    private List<InvoiceApplyHeader> filterInsertList(List<InvoiceApplyHeaderDTO> headers) {
+        return headers.stream()
+                .filter(header -> header.getApplyHeaderId() == null)
+                .collect(Collectors.toList());
+    }
 
-                if (headerDTO.getInvoiceApplyLines() != null && !headerDTO.getInvoiceApplyLines().isEmpty()) {
-                    List<InvoiceApplyLine> newLines = headerDTO.getInvoiceApplyLines().stream()
-                            .filter(line -> line.getApplyLineId() == null)
-                            .collect(Collectors.toList());
+    private List<InvoiceApplyHeader> filterUpdateList(List<InvoiceApplyHeaderDTO> headers) {
+        return headers.stream()
+                .filter(header -> header.getApplyHeaderId() != null)
+                .collect(Collectors.toList());
+    }
 
-                    List<InvoiceApplyLine> existingLines = headerDTO.getInvoiceApplyLines().stream()
-                            .filter(line -> line.getApplyLineId() != null)
-                            .collect(Collectors.toList());
+    private void processInsertList(List<InvoiceApplyHeader> insertList) {
+        Map<String, String> variableMap = initializeVariableMap();
 
-                    for(InvoiceApplyLine line : newLines) {
-                        line.setApplyHeaderId(header.getApplyHeaderId());
-                        line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
-                        line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
-                        line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
+        for (InvoiceApplyHeader header : insertList) {
+            initializeHeaderAmounts(header);
+            invoiceApplyHeaderRepository.insert(header);
 
-                        invoiceApplyLineRepository.insert(line);
-                    }
+            Long generatedId = header.getApplyHeaderId();
+            InvoiceApplyHeaderDTO headerDTO = changeToDTO(header);
 
-
-                    for (InvoiceApplyLine line : existingLines) {
-                        line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
-                        line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
-                        line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
-
-                        invoiceApplyLineRepository.updateByPrimaryKey(line);
-                    }
-
-                    BigDecimal totalAmount = headerDTO.getInvoiceApplyLines().stream()
-                            .map(InvoiceApplyLine::getTotalAmount)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    BigDecimal excludeTaxAmount = headerDTO.getInvoiceApplyLines().stream()
-                            .map(InvoiceApplyLine::getExcludeTaxAmount)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    BigDecimal taxAmount = headerDTO.getInvoiceApplyLines().stream()
-                            .map(InvoiceApplyLine::getTaxAmount)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                    header.setTotalAmount(totalAmount);
-                    header.setExcludeTaxAmount(excludeTaxAmount);
-                    header.setTaxAmount(taxAmount);
-                    redisHelper.delKey(header.getApplyHeaderNumber());
-                    invoiceApplyHeaderRepository.updateByPrimaryKey(header);
-                }
+            if (headerDTO.getInvoiceApplyLines() != null && !headerDTO.getInvoiceApplyLines().isEmpty()) {
+                processInvoiceApplyLines(headerDTO.getInvoiceApplyLines(), generatedId);
+                updateHeaderAmounts(header, headerDTO.getInvoiceApplyLines(), variableMap);
             }
         }
+    }
 
+    private Map<String, String> initializeVariableMap() {
+        Map<String, String> variableMap = new HashMap<>();
+        variableMap.put("customSegment", "-");
+        return variableMap;
+    }
+
+    private void initializeHeaderAmounts(InvoiceApplyHeader header) {
+        header.setTotalAmount(BigDecimal.valueOf(0));
+        header.setExcludeTaxAmount(BigDecimal.valueOf(0));
+        header.setTaxAmount(BigDecimal.valueOf(0));
+    }
+
+    private void processInvoiceApplyLines(List<InvoiceApplyLine> lines, Long headerId) {
+        for (InvoiceApplyLine line : lines) {
+            line.setApplyHeaderId(headerId);
+            calculateLineAmounts(line);
+        }
+
+        List<InvoiceApplyLine> newLines = lines.stream()
+                .filter(line -> line.getApplyLineId() == null)
+                .collect(Collectors.toList());
+
+        if (!newLines.isEmpty()) {
+            invoiceApplyLineRepository.batchInsert(newLines);
+        }
+    }
+
+    private void calculateLineAmounts(InvoiceApplyLine line) {
+        line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
+        line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
+        line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
+    }
+
+    private void updateHeaderAmounts(InvoiceApplyHeader header, List<InvoiceApplyLine> lines, Map<String, String> variableMap) {
+        BigDecimal totalAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTotalAmount);
+        BigDecimal excludeTaxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getExcludeTaxAmount);
+        BigDecimal taxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTaxAmount);
+
+        header.setTotalAmount(totalAmount);
+        header.setExcludeTaxAmount(excludeTaxAmount);
+        header.setTaxAmount(taxAmount);
+        header.setApplyHeaderNumber(codeRuleBuilder.generateCode(InvHeaderConstant.RULE_CODE, variableMap));
+
+        redisHelper.delKey(header.getApplyHeaderNumber());
+        invoiceApplyHeaderRepository.updateByPrimaryKey(header);
+    }
+
+    private BigDecimal calculateTotalAmount(List<InvoiceApplyLine> lines, Function<InvoiceApplyLine, BigDecimal> mapper) {
+        return lines.stream()
+                .map(mapper)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private void processUpdateList(List<InvoiceApplyHeader> updateList) {
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+
+        for (InvoiceApplyHeader header : updateList) {
+            InvoiceApplyHeaderDTO headerDTO = changeToDTO(header);
+
+            if (headerDTO.getInvoiceApplyLines() != null && !headerDTO.getInvoiceApplyLines().isEmpty()) {
+                processExistingAndNewLines(headerDTO.getInvoiceApplyLines(), header.getApplyHeaderId());
+                updateHeaderAmountsForExisting(header, headerDTO.getInvoiceApplyLines());
+            }
+        }
+    }
+
+    private void processExistingAndNewLines(List<InvoiceApplyLine> lines, Long headerId) {
+        List<InvoiceApplyLine> newLines = lines.stream()
+                .filter(line -> line.getApplyLineId() == null)
+                .collect(Collectors.toList());
+
+        List<InvoiceApplyLine> existingLines = lines.stream()
+                .filter(line -> line.getApplyLineId() != null)
+                .collect(Collectors.toList());
+
+        for (InvoiceApplyLine line : newLines) {
+            line.setApplyHeaderId(headerId);
+            calculateLineAmounts(line);
+            invoiceApplyLineRepository.insert(line);
+        }
+
+        for (InvoiceApplyLine line : existingLines) {
+            calculateLineAmounts(line);
+            invoiceApplyLineRepository.updateByPrimaryKey(line);
+        }
+    }
+
+    private void updateHeaderAmountsForExisting(InvoiceApplyHeader header, List<InvoiceApplyLine> lines) {
+        BigDecimal totalAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTotalAmount);
+        BigDecimal excludeTaxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getExcludeTaxAmount);
+        BigDecimal taxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTaxAmount);
+
+        header.setTotalAmount(totalAmount);
+        header.setExcludeTaxAmount(excludeTaxAmount);
+        header.setTaxAmount(taxAmount);
+
+        redisHelper.delKey(header.getApplyHeaderNumber());
+        invoiceApplyHeaderRepository.updateByPrimaryKey(header);
     }
 
 
@@ -296,10 +331,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private InvoiceApplyHeaderDTO changeToDTO(InvoiceApplyHeader invoiceApplyHeaderDTO) {
         InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
         BeanUtils.copyProperties(invoiceApplyHeaderDTO, dto);
-        Condition condition = new Condition(InvoiceApplyLine.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        criteria.andEqualTo("applyHeaderId",dto.getInvoiceApplyLines());
-        dto.setInvoiceApplyLines(invoiceApplyLineRepository.selectByCondition(condition));
         return dto;
     }
 }
