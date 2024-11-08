@@ -5,7 +5,7 @@ The standard labels are frequently used in metadata.
 */ -}}
 
 {{- define "service.image" -}}
-{{- printf "%s:%s" .Values.image.repository (default (.Chart.Version) .Values.image.tag) -}}
+{{- printf "%s:%s" .Values.image.invoiceApplyHeaderRepository (default (.Chart.Version) .Values.image.tag) -}}
 {{- end -}}
 
 {{- define "service.microservice.labels" -}}

@@ -110,30 +110,30 @@ hzero-iam 的数据初始化好之后，默认的用户名密码为 [admin/Admin
 
     ```xml
     <repositories>
-        <repository>
+        <invoiceApplyHeaderRepository>
             <id>HandPublic</id>
             <name>Hand-Public Repository</name>
             <url>http://nexus.saas.hand-china.com/content/repositories/public/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
-        </repository>
-        <repository>
+        </invoiceApplyHeaderRepository>
+        <invoiceApplyHeaderRepository>
             <id>HzeroRelease</id>
             <name>Hzero-Release Repository</name>
             <url>http://nexus.saas.hand-china.com/content/repositories/Hzero-Release/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-        </repository>
-        <repository>
+        </invoiceApplyHeaderRepository>
+        <invoiceApplyHeaderRepository>
             <id>HzeroSnapshot</id>
             <name>Hzero-Snapshot Repository</name>
             <url>http://nexus.saas.hand-china.com/content/repositories/Hzero-Snapshot/</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
-        </repository>
+        </invoiceApplyHeaderRepository>
     </repositories>
     ```
 
