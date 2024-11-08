@@ -11,6 +11,7 @@ import com.hand.demo.infra.constant.TaskConstants;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
 import io.choerodon.core.exception.ext.IllegalArgumentException;
+import io.choerodon.core.oauth.DetailsHelper;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import lombok.AllArgsConstructor;
@@ -29,7 +30,9 @@ import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -104,7 +107,10 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                 .peek(header -> valueSetValidation(header.getApplyStatus(), header.getInvoiceType(), header.getInvoiceColor()))
                 .collect(Collectors.toList());
 
-        List<String> batchCode = codeRuleBuilder.generateCode(insertList.size(), TaskConstants.CODE_RULE, null);
+        Map<String, String> variableMap = new HashMap<>();
+        variableMap.put("customSegment", "-");
+
+        List<String> batchCode = codeRuleBuilder.generateCode(insertList.size(), TaskConstants.CODE_RULE, variableMap);
 
         for (int i = 0; i < insertList.size(); i++) {
             InvoiceApplyHeaderDTO headerDTO = insertList.get(i);
@@ -125,13 +131,14 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             if (applyLines != null) {
                 applyLines.forEach(line -> {
                     line.setApplyHeaderId(applyHeaderId);
-
                     invoiceApplyLines.add(line);
                 });
             }
         });
 
-        invoiceApplyLineService.saveData(invoiceApplyLines);
+        if(!invoiceApplyLines.isEmpty()) {
+            invoiceApplyLineService.saveData(invoiceApplyLines);
+        }
 
         List<InvoiceApplyHeader> oriHeaderList = updateList.stream().map(headerDto -> {
             InvoiceApplyHeader iah = new InvoiceApplyHeader();

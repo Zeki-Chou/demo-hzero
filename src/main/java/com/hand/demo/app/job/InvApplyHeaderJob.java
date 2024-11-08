@@ -2,6 +2,7 @@ package com.hand.demo.app.job;
 
 import com.alibaba.fastjson.JSON;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
+import com.hand.demo.domain.entity.InvoiceInfoQueue;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import lombok.AllArgsConstructor;
 import org.checkerframework.checker.units.qual.C;
@@ -38,8 +39,15 @@ public class InvApplyHeaderJob implements IJobHandler {
 
         String headersJson = JSON.toJSONString(headers);
 
+        InvoiceInfoQueue invoiceInfoQueue = new InvoiceInfoQueue();
+        invoiceInfoQueue.setEmployeeId("47355");
+        invoiceInfoQueue.setContent(headersJson);
+        invoiceInfoQueue.setTenantId(0L);
+
+        String queueJson = JSON.toJSONString(invoiceInfoQueue);
+
         String key = "invoiceInfo_47355";
-        redisQueueHelper.push(key, headersJson);
+        redisQueueHelper.push(key, queueJson);
         return ReturnT.SUCCESS;
     }
 }

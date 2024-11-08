@@ -84,7 +84,7 @@ public class InvoiceApplyHeader extends AuditDomain {
     private String applyHeaderNumber;
 
     @NotEmpty
-    @LovValue(lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS)
+    @LovValue(value = InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS, meaningField = "applyStatusMeaning")
     @ApiModelProperty(value = "（need Value Set） D : Draft S : Success F : Fail C : Canceled")
     @ExcelColumn(en = "Apply Status", order = 3)
     private String applyStatus;
@@ -140,13 +140,13 @@ public class InvoiceApplyHeader extends AuditDomain {
     private BigDecimal excludeTaxAmount;
 
     @NotEmpty
-    @LovValue(lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_INV_COLOR)
+    @LovValue(value = InvoiceApplyConstants.INV_APPLY_HEADER_INV_COLOR, meaningField = "invoiceColorMeaning")
     @ApiModelProperty(value = "(need Value Set) R : Red invoice B : Blue invoice")
     @ExcelColumn(en = "Invoice Color", order = 10)
     private String invoiceColor;
 
     @NotEmpty
-    @LovValue(lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE)
+    @LovValue(value = InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE, meaningField = "invoiceTypeMeaning")
     @ApiModelProperty(value = "(need Value Set) P : Paper invoice E : E-invoice")
     @ExcelColumn(en = "Invoice Type", order = 11)
     private String invoiceType;
@@ -164,7 +164,8 @@ public class InvoiceApplyHeader extends AuditDomain {
     @ExcelColumn(en = "Tenant ID", order = 15)
     private Long tenantId;
 
-    @ApiModelProperty(value = "sum(line total_amount)")
+    @ApiModelProperty(value = "sum(line total_a" +
+            "mount)")
     @ExcelColumn(en = "Total Amount", order = 16)
     private BigDecimal totalAmount;
 

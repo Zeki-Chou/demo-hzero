@@ -93,7 +93,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "Export to sheet")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/export")
-    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @ProcessLovValue
     @ExcelExport(InvoiceApplyHeaderDTO.class)
     public ResponseEntity<Page<InvoiceApplyHeaderDTO>> export(
             InvoiceApplyHeader invoiceApplyHeader,

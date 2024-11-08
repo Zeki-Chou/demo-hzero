@@ -19,12 +19,12 @@ import java.util.List;
 public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     private List<InvoiceApplyLine> headerLines;
 
-    @ExcelColumn(en = "Apply Status Meaning", order = 17)
+    @ExcelColumn(en = "Apply Status Meaning", lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS, order = 17)
     private String applyStatusMeaning;
 
-    @ExcelColumn(en = "Invoice Color Meaning", order = 18)
+    @ExcelColumn(en = "Invoice Color Meaning", lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_INV_COLOR, order = 18)
     private String invoiceColorMeaning;
 
-    @ExcelColumn(en = "Invoice Type Meaning", order = 19)
+    @ExcelColumn(en = "Invoice Type Meaning", lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE, order = 19)
     private String invoiceTypeMeaning;
 }
