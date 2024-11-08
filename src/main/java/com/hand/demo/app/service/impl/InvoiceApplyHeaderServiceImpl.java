@@ -61,30 +61,22 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
-    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
+    public Page<InvoiceApplyHeader> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
         Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> {
             if (invoiceApplyHeader.getDelFlag() == null || invoiceApplyHeader.getDelFlag() == 0) {
                 invoiceApplyHeader.setDelFlag(0);
-                return invoiceApplyHeaderRepository.selectList(invoiceApplyHeader);
-            } else {
-                invoiceApplyHeader.setDelFlag(1);
-                return invoiceApplyHeaderRepository.selectList(invoiceApplyHeader);
             }
+            return invoiceApplyHeaderRepository.selectList(invoiceApplyHeader);
         });
 
-        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOList = new ArrayList<>();
+        Page<InvoiceApplyHeader> invoiceApplyHeadersPage = new Page<>();
+        invoiceApplyHeadersPage.setContent(pageResult.getContent());
+        invoiceApplyHeadersPage.setTotalPages(pageResult.getTotalPages());
+        invoiceApplyHeadersPage.setTotalElements(pageResult.getTotalElements());
+        invoiceApplyHeadersPage.setNumber(pageResult.getNumber());
+        invoiceApplyHeadersPage.setSize(pageResult.getSize());
 
-        for (InvoiceApplyHeader data : pageResult.getContent()) {
-            invoiceApplyHeaderDTOList.add(convertToDTO(data));
-        }
-
-        Page<InvoiceApplyHeaderDTO> dtoPage = new Page<>();
-        dtoPage.setContent(invoiceApplyHeaderDTOList);
-        dtoPage.setTotalPages(pageResult.getTotalPages());
-        dtoPage.setTotalElements(pageResult.getTotalElements());
-        dtoPage.setNumber(pageResult.getNumber());
-        dtoPage.setSize(pageResult.getSize());
-        return dtoPage;
+        return invoiceApplyHeadersPage;
     }
 
     @Override
@@ -156,15 +148,15 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             invoiceApplyHeaderRepository.insert(invoiceApplyHeader);
 
 //            count total, tax, exclude on invoiceApplyLine and update it to invoiceApplyHeader
-            if(invoiceApplyLineList.size() > 0) {
+            if(!invoiceApplyLineList.isEmpty()) {
                 Long headerId = invoiceApplyHeader.getApplyHeaderId();
 
-                for(int c = 0; c < invoiceApplyLineList.size(); c++) {
+                for (InvoiceApplyLine applyLine : invoiceApplyLineList) {
                     BigDecimal taxAmount = BigDecimal.ZERO;
                     BigDecimal excludeTaxAmount = BigDecimal.ZERO;
                     BigDecimal totalAmount = BigDecimal.ZERO;
 
-                    InvoiceApplyLine invoiceApplyLine = invoiceApplyLineList.get(c);
+                    InvoiceApplyLine invoiceApplyLine = applyLine;
                     totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
                     taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
                     excludeTaxAmount = totalAmount.subtract(taxAmount);
@@ -292,19 +284,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(headerId);
         invoiceApplyHeader.setDelFlag(1);
         invoiceApplyHeaderRepository.updateByPrimaryKeySelective(invoiceApplyHeader);
-    }
-
-    private InvoiceApplyHeaderDTO convertToDTO(InvoiceApplyHeader invoiceApplyHeader) {
-        InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
-        BeanUtils.copyProperties(invoiceApplyHeader, dto);
-
-        InvoiceApplyLine invoiceApplyLine = new InvoiceApplyLine();
-        invoiceApplyLine.setApplyHeaderId(invoiceApplyHeader.getApplyHeaderId());
-        List<InvoiceApplyLine> invoiceApplyLineList = invoiceApplyLineRepository.select(invoiceApplyLine);
-
-        dto.setInvoiceApplyLines(invoiceApplyLineList);
-
-        return dto;
     }
 
     public List<InvoiceApplyHeaderDTO> exportAll (PageRequest pageRequest) {
