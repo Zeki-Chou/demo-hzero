@@ -20,6 +20,7 @@ import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
 import org.hzero.export.annotation.ExcelColumn;
+import org.hzero.export.annotation.ExcelSheet;
 
 /**
  * (InvoiceApplyLine)实体类
@@ -35,6 +36,7 @@ import org.hzero.export.annotation.ExcelColumn;
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "47357_invoice_apply_line")
+@ExcelSheet(en = "Invoice Apply Line")
 public class InvoiceApplyLine extends AuditDomain {
     private static final long serialVersionUID = -18119670991847171L;
 

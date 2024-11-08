@@ -4,6 +4,8 @@ import com.hand.demo.api.dto.InvoiceApplyHeaderDto;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
+import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
+import org.hzero.core.base.BaseConstants;
 
 import java.util.List;
 
@@ -24,7 +26,7 @@ public interface InvoiceApplyHeaderService {
      */
     Page<InvoiceApplyHeaderDto> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeaders);
 
-    Page<InvoiceApplyHeader> exportList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader);
+    Page<InvoiceApplyHeaderDto> exportHeaderList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader);
 
     /**
      * 保存数据

@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ImportService(templateCode = "EXAM-47357-HEADER", sheetName = "INV_APPLY_LINES")
@@ -85,7 +84,6 @@ public class InvoiceApplyLineImportServiceImpl extends BatchImportHandler {
 
             for (Map.Entry<Long, List<InvoiceApplyLine>> entry : headerLineMap.entrySet()) {
                 Long applyHeaderId = entry.getKey();
-                List<InvoiceApplyLine> linesForHeader = entry.getValue();
 
                 InvoiceApplyHeader header = invoiceApplyHeaderRepository.selectByPrimaryKey(applyHeaderId);
                 if (header == null || header.getDelFlag().equals(1)) {

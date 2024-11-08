@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 /**
  * (InvoiceApplyHeader)应用服务
  *
- * @author
+ * @author muhammad.azzam@hand-global.com
  * @since 2024-11-04 14:47:03
  */
 @Service
@@ -66,7 +66,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         // Iterate through each InvoiceApplyHeader and map it to the DTO
         for (InvoiceApplyHeader data : pageResult) {
             // Fetch InvoiceApplyLine list for each InvoiceApplyHeader (you might need to use a repository or service for this)
-            List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select("applyHeaderId",data.getApplyHeaderId());
+            List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select(InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,data.getApplyHeaderId());
 
             // Map InvoiceApplyHeader to DTO
             InvoiceApplyHeaderDto dto = mapEntityToDto(data);
@@ -89,18 +89,41 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return dtoPage;
     }
 
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     @Override
-    public Page<InvoiceApplyHeader> exportList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
-        return PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
+    public Page<InvoiceApplyHeaderDto> exportHeaderList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
+
+        // Get paginated InvoiceApplyHeader results
+        Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
+        List<InvoiceApplyHeaderDto> invoiceApplyHeaderDTOS = new ArrayList<>();
+
+        for (InvoiceApplyHeader data : pageResult) {
+
+            List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select(InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,data.getApplyHeaderId());
+
+
+            InvoiceApplyHeaderDto dto = mapEntityToDto(data);
+            dto.setInvoiceLineList(invoiceApplyLines);
+
+            // Add the mapped DTO to the list
+            invoiceApplyHeaderDTOS.add(dto);
+        }
+
+        // Create a Page for the DTOs with pagination information
+        Page<InvoiceApplyHeaderDto> dtoPage = new Page<>();
+        dtoPage.setContent(invoiceApplyHeaderDTOS);
+        dtoPage.setTotalPages(pageResult.getTotalPages());
+        dtoPage.setTotalElements(pageResult.getTotalElements());
+        dtoPage.setNumber(pageResult.getNumber());
+        dtoPage.setSize(pageResult.getSize());
+
+        return dtoPage;
     }
-
-
-
 
     @Override
     public List<InvoiceApplyHeaderDto> saveData(List<InvoiceApplyHeaderDto> invoiceApplyHeaderDtos) {
 
-        // Fetch valid values from LOV for validations (same as before)
+        // Fetch valid values from LOV for validations
         List<String> validApplyStatuses = lovAdapter.queryLovValue(InvoiceConstants.LovCode.APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID)
                 .stream().map(LovValueDTO::getValue).collect(Collectors.toList());
         List<String> validInvoiceColors = lovAdapter.queryLovValue(InvoiceConstants.LovCode.INVOICE_COLOR, BaseConstants.DEFAULT_TENANT_ID)
@@ -112,13 +135,13 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         for (int i = 0; i < invoiceApplyHeaderDtos.size(); i++) {
             InvoiceApplyHeaderDto dto = invoiceApplyHeaderDtos.get(i);
             if (!validApplyStatuses.contains(dto.getApplyStatus())) {
-                invalidHeaders.add("Line No " + (i + 1) + " - Apply Status: " + dto.getApplyStatus() + " is invalid.");
+                invalidHeaders.add(InvoiceConstants.LINE + (i + 1) + " - Invalid Apply Status: " + dto.getApplyStatus());
             }
             if (!validInvoiceColors.contains(dto.getInvoiceColor())) {
-                invalidHeaders.add("Line No " + (i + 1) + " - Invoice Color: " + dto.getInvoiceColor() + " is invalid.");
+                invalidHeaders.add(InvoiceConstants.LINE + (i + 1) + " - Invalid Invoice Color: " + dto.getInvoiceColor());
             }
             if (!validInvoiceTypes.contains(dto.getInvoiceType())) {
-                invalidHeaders.add("Line No " + (i + 1) + " - Invoice Type: " + dto.getInvoiceType() + " is invalid.");
+                invalidHeaders.add(InvoiceConstants.LINE + (i + 1) + " - Invalid Invoice Type: " + dto.getInvoiceType());
             }
         }
 
@@ -145,10 +168,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
             InvoiceApplyHeader entity = mapDtoToEntity(dto);
 
-            // Process lines and calculate totals
+            // Calculate totals and insert
             processInvoiceLines(dto.getInvoiceLineList(), entity);
-
-            // Save the new header with calculated totals
             invoiceApplyHeaderRepository.insertSelective(entity);
 
             // Update DTO with calculated totals from the entity
@@ -184,6 +205,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
 
+    //Process the invoice lines for header
     private void processInvoiceLines(List<InvoiceApplyLine> invoiceLines, InvoiceApplyHeader header) {
         BigDecimal headerTotalAmount = BigDecimal.ZERO;
         BigDecimal headerExcludeTaxAmount = BigDecimal.ZERO;
@@ -259,7 +281,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         InvoiceApplyHeaderDto dto = mapEntityToDto(header);
 
         // Fetch associated line items and set in DTO
-        List<InvoiceApplyLine> lineItems = invoiceApplyLineRepository.select("applyHeaderId", applyHeaderId);
+        List<InvoiceApplyLine> lineItems = invoiceApplyLineRepository.select(InvoiceApplyHeader.FIELD_APPLY_HEADER_ID, applyHeaderId);
         dto.setInvoiceLineList(lineItems);
 
         // Serialize and cache the DTO for future requests

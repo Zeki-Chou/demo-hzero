@@ -98,11 +98,11 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "Export")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/export")
-    @ExcelExport(InvoiceApplyHeader.class)
-    public ResponseEntity<Page<InvoiceApplyHeader>> export(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    @ExcelExport(InvoiceApplyHeaderDto.class)
+    public ResponseEntity<Page<InvoiceApplyHeaderDto>> export(InvoiceApplyHeaderDto invoiceApplyHeaderDto, @PathVariable Long organizationId,
                                                             @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                     direction = Sort.Direction.DESC) PageRequest pageRequest, ExportParam exportParam, HttpServletResponse response) {
-        Page<InvoiceApplyHeader> list = invoiceApplyHeaderService.exportList(pageRequest, invoiceApplyHeader);
+        Page<InvoiceApplyHeaderDto> list = invoiceApplyHeaderService.exportHeaderList(pageRequest, invoiceApplyHeaderDto);
         return Results.success(list);
     }
 }

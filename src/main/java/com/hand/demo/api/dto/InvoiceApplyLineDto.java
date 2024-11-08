@@ -13,6 +13,6 @@ import org.hzero.export.annotation.ExcelSheet;
 @ExcelSheet(en = "Invoice Apply Line")
 public class InvoiceApplyLineDto extends InvoiceApplyLine {
 
-    @ExcelColumn(en = "applyHeaderNumber", order=14)
+    @ExcelColumn(en = "applyHeaderNumber")
     private String applyHeaderNumber;
 }

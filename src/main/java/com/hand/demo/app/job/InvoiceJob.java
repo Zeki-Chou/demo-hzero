@@ -1,8 +1,11 @@
 package com.hand.demo.app.job;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
+import com.hand.demo.domain.entity.InvoiceInfoQueue;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import io.choerodon.core.oauth.DetailsHelper;
 import org.hzero.boot.scheduler.infra.annotation.JobHandler;
 import org.hzero.boot.scheduler.infra.enums.ReturnT;
 import org.hzero.boot.scheduler.infra.handler.IJobHandler;
@@ -19,13 +22,12 @@ public class InvoiceJob implements IJobHandler {
     private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
     private final ObjectMapper objectMapper;
 
-    public InvoiceJob(RedisQueueHelper redisQueueHelper,
-                      InvoiceApplyHeaderRepository invoiceApplyHeaderRepository,
-                      ObjectMapper objectMapper) {
+    public InvoiceJob(RedisQueueHelper redisQueueHelper, InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, ObjectMapper objectMapper) {
         this.redisQueueHelper = redisQueueHelper;
         this.invoiceApplyHeaderRepository = invoiceApplyHeaderRepository;
         this.objectMapper = objectMapper;
     }
+
     @Override
     public ReturnT execute(Map<String, String> map, SchedulerTool tool) {
         try {
@@ -42,12 +44,13 @@ public class InvoiceJob implements IJobHandler {
             // Query the database
             List<InvoiceApplyHeader> combinedResults = invoiceApplyHeaderRepository.selectByCondition(condition);
 
-            // Convert to JSON string
-            String json = objectMapper.writeValueAsString(combinedResults);
-
             // Push the JSON string to the Redis queue
-            String redisQueueName = "invoice-info-47357";
-            redisQueueHelper.push(redisQueueName, json);
+            String cacheKey = "invoice-info-47357";
+            InvoiceInfoQueue invoiceInfoQueue = new InvoiceInfoQueue();
+            invoiceInfoQueue.setContent(JSON.toJSONString(combinedResults));
+            invoiceInfoQueue.setEmployeeId("47357");
+            invoiceInfoQueue.setTenantId(0L);
+            redisQueueHelper.push(cacheKey, JSON.toJSONString(invoiceInfoQueue));
 
             return ReturnT.SUCCESS;
         } catch (Exception e) {
@@ -57,5 +60,4 @@ public class InvoiceJob implements IJobHandler {
             return ReturnT.FAILURE;
         }
     }
-
 }

@@ -3,6 +3,7 @@ package com.hand.demo.infra.constant;
 public class InvoiceConstants {
 
     public static final String CODE_RULE = "DEMO-47357.INV_HEADER.INV_NUM";
+    public static final String LINE = "Line No ";
 
     public static class LovCode {
         public static final String APPLY_STATUS = "DEMO-47357.INV_HEADER.APPLY_STATUS";// Code used to retrieve valid task types from LovAdapter

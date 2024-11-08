@@ -85,7 +85,6 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
         for (Map.Entry<Long, List<InvoiceApplyLine>> entry : headerLineMap.entrySet()) {
             Long applyHeaderId = entry.getKey();
-            List<InvoiceApplyLine> linesForHeader = entry.getValue();
 
             InvoiceApplyHeader header = invoiceApplyHeaderRepository.selectByPrimaryKey(applyHeaderId);
             if (header == null || header.getDelFlag().equals(1)) {
