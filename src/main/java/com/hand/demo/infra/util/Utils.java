@@ -89,6 +89,7 @@ public class Utils {
         });
 
         // for update, add old amount and add the difference
+        // between new and old invoice line
         updateLine.forEach(invoiceApplyLine -> {
             InvoiceApplyLine current = updateLineMap.get(invoiceApplyLine.getApplyLineId());
             InvoiceApplyLine currentAmount = calculateAmountLine(current);

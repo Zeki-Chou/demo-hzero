@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * (InvoiceApplyLine)应用服务
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 11:21:14
  */
 public interface InvoiceApplyLineService {
@@ -31,6 +31,10 @@ public interface InvoiceApplyLineService {
      */
     void saveData(List<InvoiceApplyLine> invoiceApplyLines);
 
+    /**
+     * delete apply line object from db
+     * @param invoiceApplyLines invoice line object
+     */
     void deleteApplyLine(List<InvoiceApplyLine> invoiceApplyLines);
 
     /**

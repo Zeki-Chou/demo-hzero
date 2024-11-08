@@ -26,7 +26,7 @@ public interface InvoiceApplyHeaderService {
     Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader, Long organizationId);
 
     /**
-     * 保存数据
+     * save and update data apply header
      *
      * @param invoiceApplyHeaders 数据
      */
