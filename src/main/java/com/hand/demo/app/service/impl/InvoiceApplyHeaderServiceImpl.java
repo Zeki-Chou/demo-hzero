@@ -89,6 +89,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
+//        validate error
         List<LovValueDTO> countInvoiceType = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_TYPE, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countInvoiceColor = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_COLOR, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countApplyStatus = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
@@ -118,6 +119,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             throw new IllegalArgumentException(validationError.toString());
         }
 
+//        insert DTO
         List<InvoiceApplyHeaderDTO> insertListDTO = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
 
         List<String> batchCode = codeRuleBuilder.generateCode(insertListDTO.size(), InvoiceApplyHeaderConstant.INVOICE_HEADER, null);
@@ -135,6 +137,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             for (int p = 0; p < invoiceApplyLineList.size(); p++) {
                 InvoiceApplyLine invoiceApplyLine = invoiceApplyLineList.get(p);
 
+//count tax, total, and exclude amount from request
                 BigDecimal totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
                 BigDecimal taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
                 BigDecimal excludeTaxAmount = totalAmount.subtract(taxAmount);
@@ -144,6 +147,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                 headerTotalAmount = headerTotalAmount.add(totalAmount);
             }
 
+//            set it to invoice ApplyHeader
             invoiceApplyHeader.setTotalAmount(headerTotalAmount);
             invoiceApplyHeader.setTaxAmount(headerTaxAmount);
             invoiceApplyHeader.setExcludeTaxAmount(headerExcludeTaxAmount);
@@ -151,6 +155,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
             invoiceApplyHeaderRepository.insert(invoiceApplyHeader);
 
+//            count total, tax, exclude on invoiceApplyLine and update it to invoiceApplyHeader
             if(invoiceApplyLineList.size() > 0) {
                 Long headerId = invoiceApplyHeader.getApplyHeaderId();
 
@@ -174,6 +179,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             }
         }
 
+//        code for update
         List<InvoiceApplyHeaderDTO> updateListDTO = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
         for(int i = 0; i < updateListDTO.size(); i++) {
             InvoiceApplyHeader invoiceApplyHeader = updateListDTO.get(i);
@@ -191,17 +197,20 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                 invoiceApplyLineNew.setApplyHeaderId(invoiceApplyHeaderDTO.getApplyHeaderId());
                 invoiceApplyLineNew.setApplyLineId(invoiceApplyLine.getApplyLineId());
 
+//                check if invoiceApplyLineList, header and apply line id is on database
                 List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select(invoiceApplyLineNew);
 
                 BigDecimal taxAmount = BigDecimal.ZERO;
                 BigDecimal totalAmount = BigDecimal.ZERO;
                 BigDecimal excludeTaxAmount = BigDecimal.ZERO;
-
+// if exist in database, do update
                 if(invoiceApplyLines.size() > 0) {
                     InvoiceApplyLine invoiceApplyLine1 = invoiceApplyLines.get(0);
                     invoiceApplyLine.setObjectVersionNumber(invoiceApplyLine1.getObjectVersionNumber());
+//  set apply header id based on request
                     invoiceApplyLine.setApplyHeaderId(invoiceApplyHeaderDTO.getApplyHeaderId());
 
+// count total, tax, and exclude
                     totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
                     taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
                     excludeTaxAmount = totalAmount.subtract(taxAmount);
@@ -210,8 +219,10 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                     invoiceApplyLine.setTaxAmount(taxAmount);
                     invoiceApplyLine.setExcludeTaxAmount(excludeTaxAmount);
 
+//              do update
                     invoiceApplyLineRepository.updateByPrimaryKeySelective(invoiceApplyLine);
                 } else {
+//  if not exist in database, insert line
                     totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
                     taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
                     excludeTaxAmount = totalAmount.subtract(taxAmount);
@@ -219,10 +230,12 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                     invoiceApplyLine.setTotalAmount(totalAmount);
                     invoiceApplyLine.setTaxAmount(taxAmount);
                     invoiceApplyLine.setExcludeTaxAmount(excludeTaxAmount);
-
+//  do insert
                     invoiceApplyLineRepository.insertSelective(invoiceApplyLine);
                 }
             }
+
+//  count tax, exlude, total amount all in invoice apply line
 
             InvoiceApplyLine invoiceApplyLineNew = new InvoiceApplyLine();
             invoiceApplyLineNew.setApplyHeaderId(invoiceApplyHeader.getApplyHeaderId());

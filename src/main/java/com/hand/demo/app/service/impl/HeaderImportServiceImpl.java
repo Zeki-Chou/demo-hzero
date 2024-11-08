@@ -42,7 +42,7 @@ public class HeaderImportServiceImpl extends BatchValidatorHandler {
             return Boolean.FALSE;
         }
 
-//        validate first
+//        validate errorfirst
         List<LovValueDTO> countInvoiceType = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_TYPE, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countInvoiceColor = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_COLOR, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countApplyStatus = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
@@ -82,6 +82,7 @@ public class HeaderImportServiceImpl extends BatchValidatorHandler {
             }
         });
 
+//        if validate is true
         if (flag.get()) {
             List<InvoiceApplyHeader> headerListInsert = new ArrayList<>();
             List<InvoiceApplyHeader> headerListUpdate = new ArrayList<>();
