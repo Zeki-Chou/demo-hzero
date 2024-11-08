@@ -85,7 +85,7 @@ public class InvoiceApplyHeader extends AuditDomain {
 
     @ExcelColumn(en = InvoiceApplyHeader.FIELD_APPLY_STATUS, order = 3)
     @ApiModelProperty(value = "（need Value Set） D : Draft S : Success F : Fail C : Canceled")
-    @LovValue(InvHeaderConstant.APPLY_STATUS_CODE)
+    @LovValue(value = InvHeaderConstant.APPLY_STATUS_CODE, meaningField = "applyStatusMeaning")
     private String applyStatus;
 
     private String attribute1;
@@ -136,12 +136,12 @@ public class InvoiceApplyHeader extends AuditDomain {
 
     @ExcelColumn(en = InvoiceApplyHeader.FIELD_INVOICE_COLOR, order = 6)
     @ApiModelProperty(value = "(need Value Set) R : Red invoice B : Blue invoice")
-    @LovValue(InvHeaderConstant.INVOICE_COLOR_CODE)
+    @LovValue(value = InvHeaderConstant.INVOICE_COLOR_CODE, meaningField = "invoiceColorMeaning")
     private String invoiceColor;
 
     @ExcelColumn(en = InvoiceApplyHeader.FIELD_INVOICE_TYPE, order = 7)
     @ApiModelProperty(value = "(need Value Set) P : Paper invoice E : E-invoice")
-    @LovValue(InvHeaderConstant.APPLY_TYPE_CODE)
+    @LovValue(value = InvHeaderConstant.APPLY_TYPE_CODE, meaningField = "invoiceTypeMeaning")
     private String invoiceType;
 
     @ExcelColumn(en = InvoiceApplyHeader.FIELD_REMARK, order = 8)

@@ -8,7 +8,7 @@ import org.hzero.export.annotation.ExcelSheet;
 
 @Getter
 @Setter
-@ExcelSheet(en = "Invoice Line Header")
+//@ExcelSheet(en = "Invoice Line Header")
 public class InvoiceApplyLineDTO extends InvoiceApplyLine {
     @ExcelColumn(en = "Header Number", order = 4)
     private String headerNumber;
