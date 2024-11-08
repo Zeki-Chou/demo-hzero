@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.InvoiceApplyHeaderMapper">
+
+
+    <sql id = "BaseSql">
+        iah.apply_header_id,
+        iah.apply_header_number,
+        iah.apply_status,
+        iah.ATTRIBUTE1,
+        iah.ATTRIBUTE10,
+        iah.ATTRIBUTE11,
+        iah.ATTRIBUTE12,
+        iah.ATTRIBUTE13,
+        iah.ATTRIBUTE14,
+        iah.ATTRIBUTE15,
+        iah.ATTRIBUTE2,
+        iah.ATTRIBUTE3,
+        iah.ATTRIBUTE4,
+        iah.ATTRIBUTE5,
+        iah.ATTRIBUTE6,
+        iah.ATTRIBUTE7,
+        iah.ATTRIBUTE8,
+        iah.ATTRIBUTE9,
+        iah.bill_to_address,
+        iah.bill_to_email,
+        iah.bill_to_person,
+        iah.bill_to_phone,
+        iah.del_flag,
+        iah.exclude_tax_amount,
+        iah.invoice_color,
+        iah.invoice_type,
+        iah.remark,
+        iah.submit_time,
+        iah.tax_amount,
+        iah.tenant_id,
+        iah.total_amount,
+        iah.creation_date, 
+        iah.created_by, 
+        iah.last_updated_by, 
+        iah.last_update_date, 
+        iah.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.InvoiceApplyHeader">
+        select
+        <include refid = "BaseSql"/>
+        from T47356_invoice_apply_header iah
+        <where>
+            <if test="applyHeaderId !=null">
+                and iah.apply_header_id = #{applyHeaderId,jdbcType = INTEGER}
+            </if>
+            <if test="applyHeaderNumber !=null">
+                and iah.apply_header_number = #{applyHeaderNumber,jdbcType = VARCHAR}
+            </if>
+            <if test="applyStatus !=null">
+                and iah.apply_status = #{applyStatus,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute1 !=null">
+                and iah.ATTRIBUTE1 = #{attribute1,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute10 !=null">
+                and iah.ATTRIBUTE10 = #{attribute10,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute11 !=null">
+                and iah.ATTRIBUTE11 = #{attribute11,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute12 !=null">
+                and iah.ATTRIBUTE12 = #{attribute12,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute13 !=null">
+                and iah.ATTRIBUTE13 = #{attribute13,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute14 !=null">
+                and iah.ATTRIBUTE14 = #{attribute14,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute15 !=null">
+                and iah.ATTRIBUTE15 = #{attribute15,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute2 !=null">
+                and iah.ATTRIBUTE2 = #{attribute2,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute3 !=null">
+                and iah.ATTRIBUTE3 = #{attribute3,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute4 !=null">
+                and iah.ATTRIBUTE4 = #{attribute4,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute5 !=null">
+                and iah.ATTRIBUTE5 = #{attribute5,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute6 !=null">
+                and iah.ATTRIBUTE6 = #{attribute6,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute7 !=null">
+                and iah.ATTRIBUTE7 = #{attribute7,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute8 !=null">
+                and iah.ATTRIBUTE8 = #{attribute8,jdbcType = VARCHAR}
+            </if>
+            <if test="attribute9 !=null">
+                and iah.ATTRIBUTE9 = #{attribute9,jdbcType = VARCHAR}
+            </if>
+            <if test="billToAddress !=null">
+                and iah.bill_to_address = #{billToAddress,jdbcType = VARCHAR}
+            </if>
+            <if test="billToEmail !=null">
+                and iah.bill_to_email = #{billToEmail,jdbcType = VARCHAR}
+            </if>
+            <if test="billToPerson !=null">
+                and iah.bill_to_person = #{billToPerson,jdbcType = VARCHAR}
+            </if>
+            <if test="billToPhone !=null">
+                and iah.bill_to_phone = #{billToPhone,jdbcType = VARCHAR}
+            </if>
+            <if test="delFlag !=null">
+                and iah.del_flag = #{delFlag,jdbcType = INTEGER}
+            </if>
+            <if test="excludeTaxAmount !=null">
+                and iah.exclude_tax_amount = #{excludeTaxAmount,jdbcType = OTHER}
+            </if>
+            <if test="invoiceColor !=null">
+                and iah.invoice_color = #{invoiceColor,jdbcType = VARCHAR}
+            </if>
+            <if test="invoiceType !=null">
+                and iah.invoice_type = #{invoiceType,jdbcType = VARCHAR}
+            </if>
+            <if test="remark !=null">
+                and iah.remark = #{remark,jdbcType = VARCHAR}
+            </if>
+            <if test="submitTime !=null">
+                and iah.submit_time = #{submitTime,jdbcType = TIMESTAMP}
+            </if>
+            <if test="taxAmount !=null">
+                and iah.tax_amount = #{taxAmount,jdbcType = OTHER}
+            </if>
+            <if test="tenantId !=null">
+                and iah.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+            <if test="totalAmount !=null">
+                and iah.total_amount = #{totalAmount,jdbcType = OTHER}
+            </if>
+        </where>
+    </select>
+</mapper>
+

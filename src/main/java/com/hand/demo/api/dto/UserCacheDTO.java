@@ -35,14 +35,6 @@ public class UserCacheDTO extends OrderHeader47356 implements Cacheable {
     )
     private String supplier_name;
 
-//    @CacheValue(
-//            key = HZeroCacheKey.USER,
-//            primaryKey = "buyerIds",
-//            searchKey = "realName",
-//            structure = CacheValue.DataStructure.MAP_OBJECT
-//    )
-//    private String buyer_name;
-
     @CacheValue(
             key = HZeroCacheKey.USER,
             primaryKey = "createdBy",

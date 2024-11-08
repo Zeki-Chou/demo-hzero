@@ -1,0 +1,37 @@
+package com.hand.demo.app.service;
+
+import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyLineDTO;
+import io.choerodon.core.domain.Page;
+import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import com.hand.demo.domain.entity.InvoiceApplyLine;
+
+import java.util.List;
+
+/**
+ * (InvoiceApplyLine)应用服务
+ *
+ * @author
+ * @since 2024-11-05 10:21:26
+ */
+public interface InvoiceApplyLineService {
+
+    /**
+     * 查询数据
+     *
+     * @param pageRequest       分页参数
+     * @param invoiceApplyLines 查询条件
+     * @return 返回值
+     */
+    Page<InvoiceApplyLine> selectList(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLines);
+
+    /**
+     * 保存数据
+     *
+     * @param invoiceApplyLines 数据
+     */
+    void saveData(List<InvoiceApplyLine> invoiceApplyLines);
+    public void deleteData(Long lineId);
+    public List<InvoiceApplyLineDTO> exportAll(InvoiceApplyLineDTO invoiceApplyLineDTO);
+}
+

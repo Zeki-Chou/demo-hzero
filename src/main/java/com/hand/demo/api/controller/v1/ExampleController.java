@@ -1,4 +1,4 @@
-package com.hand.demo.api.dto;
+package com.hand.demo.api.controller.v1;
 
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
