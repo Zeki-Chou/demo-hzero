@@ -10,7 +10,6 @@ import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
-import lombok.AllArgsConstructor;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
@@ -18,6 +17,7 @@ import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.redis.RedisHelper;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
@@ -33,12 +33,16 @@ import java.util.stream.Collectors;
  * @since 2024-11-04 10:11:56
  */
 @Service
-@AllArgsConstructor
 public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService {
+    @Autowired
     private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+    @Autowired
     private InvoiceApplyLineService lineService;
+    @Autowired
     private LovAdapter lovAdapter;
+    @Autowired
     private CodeRuleBuilder codeRuleBuilder;
+    @Autowired
     private RedisHelper redisHelper;
 
     @Override

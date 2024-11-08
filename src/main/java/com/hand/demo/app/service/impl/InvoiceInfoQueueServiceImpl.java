@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class InvoiceInfoQueueServiceImpl implements InvoiceInfoQueueService {
-    private final InvoiceInfoQueueRepository invoiceInfoQueueRepository;
+    private InvoiceInfoQueueRepository invoiceInfoQueueRepository;
 
     @Override
     public Page<InvoiceInfoQueue> selectList(PageRequest pageRequest, InvoiceInfoQueue invoiceInfoQueue) {

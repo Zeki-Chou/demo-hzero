@@ -17,9 +17,9 @@ import java.util.List;
 @ImportService(templateCode = "EXAM-47361-HEADER", sheetName = "Invoice_Apply_Header")
 @AllArgsConstructor
 public class InvoiceApplyHeaderImportServiceImpl extends BatchImportHandler {
-    private final ObjectMapper objectMapper;
-    private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
-    private final CodeRuleBuilder codeRuleBuilder;
+    private ObjectMapper objectMapper;
+    private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+    private CodeRuleBuilder codeRuleBuilder;
 
     @Override
     public Boolean doImport(List<String> data) {

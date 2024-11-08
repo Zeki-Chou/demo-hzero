@@ -42,10 +42,10 @@
         4iah.object_version_number
     </sql>
 
-    <select id = "selectList" resultType = "com.hand.demo.domain.entity.InvoiceApplyHeader">
+    <select id="selectList" resultType="com.hand.demo.domain.entity.InvoiceApplyHeader">
         select
-        <include refid = "BaseSql"/>
-        from 47361_invoice_apply_header 4iah
+        <include refid="BaseSql"/>
+        from 47357_invoice_apply_header 4iah
         <where>
             <if test="applyHeaderId !=null">
                 and 4iah.apply_header_id = #{applyHeaderId,jdbcType = INTEGER}
@@ -55,6 +55,13 @@
             </if>
             <if test="applyStatus !=null">
                 and 4iah.apply_status = #{applyStatus,jdbcType = VARCHAR}
+            </if>
+            <!--            DelFlag Bool-->
+            <if test="delFlag == null">
+                and 4iah.del_flag = 0
+            </if>
+            <if test="delFlag == 1">
+                and 4iah.del_flag = 1
             </if>
             <if test="attribute1 !=null">
                 and 4iah.ATTRIBUTE1 = #{attribute1,jdbcType = VARCHAR}
@@ -102,16 +109,16 @@
                 and 4iah.ATTRIBUTE9 = #{attribute9,jdbcType = VARCHAR}
             </if>
             <if test="billToAddress !=null">
-                and 4iah.bill_to_address = #{billToAddress,jdbcType = VARCHAR}
+                and 4iah.bill_to_address like concat('%', #{billToAddress, jdbcType = VARCHAR}, '%')
             </if>
             <if test="billToEmail !=null">
-                and 4iah.bill_to_email = #{billToEmail,jdbcType = VARCHAR}
+                and 4iah.bill_to_email like concat('%', #{billToEmail, jdbcType = VARCHAR}, '%')
             </if>
             <if test="billToPerson !=null">
-                and 4iah.bill_to_person = #{billToPerson,jdbcType = VARCHAR}
+                and 4iah.bill_to_person like concat('%', #{billToPerson, jdbcType = VARCHAR}, '%')
             </if>
             <if test="billToPhone !=null">
-                and 4iah.bill_to_phone = #{billToPhone,jdbcType = VARCHAR}
+                and 4iah.bill_to_phone like concat('%', #{billToPhone, jdbcType = VARCHAR}, '%')
             </if>
             <if test="delFlag !=null">
                 and 4iah.del_flag = #{delFlag,jdbcType = INTEGER}
@@ -120,13 +127,13 @@
                 and 4iah.exclude_tax_amount = #{excludeTaxAmount,jdbcType = OTHER}
             </if>
             <if test="invoiceColor !=null">
-                and 4iah.invoice_color = #{invoiceColor,jdbcType = VARCHAR}
+                and 4iah.invoice_color like concat('%', #{invoiceColor, jdbcType = VARCHAR}, '%')
             </if>
             <if test="invoiceType !=null">
-                and 4iah.invoice_type = #{invoiceType,jdbcType = VARCHAR}
+                and 4iah.invoice_type like concat('%', #{invoiceType, jdbcType = VARCHAR}, '%')
             </if>
             <if test="remark !=null">
-                and 4iah.remark = #{remark,jdbcType = OTHER}
+                and 4iah.remark like concat('%', #{remark, jdbcType = VARCHAR}, '%')
             </if>
             <if test="submitTime !=null">
                 and 4iah.submit_time = #{submitTime,jdbcType = TIMESTAMP}

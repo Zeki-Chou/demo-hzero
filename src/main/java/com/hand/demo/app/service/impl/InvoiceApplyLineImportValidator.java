@@ -19,10 +19,10 @@ import java.util.List;
 })
 @AllArgsConstructor
 public class InvoiceApplyLineImportValidator extends BatchValidatorHandler {
-    private final ObjectMapper objectMapper;
-    private final InvoiceApplyLineRepository invoiceApplyLineRepository;
-    private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
-    private final LovAdapter lovAdapter;
+    private ObjectMapper objectMapper;
+    private InvoiceApplyLineRepository invoiceApplyLineRepository;
+    private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+    private LovAdapter lovAdapter;
 
     @Override
     public boolean validate(List<String> data) {

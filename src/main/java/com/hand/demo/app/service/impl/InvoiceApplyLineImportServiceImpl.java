@@ -16,9 +16,9 @@ import java.util.List;
 @ImportService(templateCode = "EXAM-47361-HEADER", sheetName = "Invoice_Apply_Line")
 @AllArgsConstructor
 public class InvoiceApplyLineImportServiceImpl extends BatchImportHandler {
-    private final ObjectMapper objectMapper;
-    private final InvoiceApplyLineRepository invoiceApplyLineRepository;
-    private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+    private ObjectMapper objectMapper;
+    private InvoiceApplyLineRepository invoiceApplyLineRepository;
+    private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
 
 
     @Override

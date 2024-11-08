@@ -23,9 +23,9 @@ import java.util.stream.Collectors;
 })
 @AllArgsConstructor
 public class InvoiceApplyHeaderImportValidator extends BatchValidatorHandler {
-    private final ObjectMapper objectMapper;
-    private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
-    private final LovAdapter lovAdapter;
+    private ObjectMapper objectMapper;
+    private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+    private LovAdapter lovAdapter;
 
     @Override
     public boolean validate(List<String> data) {
