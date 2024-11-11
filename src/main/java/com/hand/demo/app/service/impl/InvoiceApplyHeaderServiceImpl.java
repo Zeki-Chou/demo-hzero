@@ -27,6 +27,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -58,16 +59,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private RedisHelper redisHelper;
 
     @Override
-//    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
         Page<InvoiceApplyHeader> headers;
 
         if (invoiceApplyHeader.getDelFlag() == null) {
             invoiceApplyHeader.setDelFlag(0);
-        }
-
-        if (invoiceApplyHeader.getDelFlag() > 1) {
-            throw new IllegalArgumentException("Del flag value must be 0 for not deleted invoice or 1 for deleted invoice");
         }
 
         if (invoiceApplyHeader.getDelFlag() == 1) {
@@ -94,27 +90,32 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return headerDTOsPage;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOs) {
+        valueSetValidation(invoiceApplyHeaderDTOs);
 
         List<InvoiceApplyHeaderDTO> insertList = invoiceApplyHeaderDTOs.stream()
                 .filter(header -> header.getApplyHeaderId() == null)
-                .peek(header -> valueSetValidation(header.getApplyStatus(), header.getInvoiceType(), header.getInvoiceColor()))
                 .collect(Collectors.toList());
 
         List<InvoiceApplyHeaderDTO> updateList = invoiceApplyHeaderDTOs.stream()
                 .filter(header -> header.getApplyHeaderId() != null)
-                .peek(header -> valueSetValidation(header.getApplyStatus(), header.getInvoiceType(), header.getInvoiceColor()))
+                .peek(header -> {
+                    header.setTotalAmount(null);
+                    header.setTaxAmount(null);
+                    header.setExcludeTaxAmount(null);
+                })
                 .collect(Collectors.toList());
 
         Map<String, String> variableMap = new HashMap<>();
         variableMap.put("customSegment", "-");
 
-        List<String> batchCode = codeRuleBuilder.generateCode(insertList.size(), TaskConstants.CODE_RULE, variableMap);
+        List<String> applyHeaderNumbers = codeRuleBuilder.generateCode(insertList.size(), TaskConstants.CODE_RULE, variableMap);
 
         for (int i = 0; i < insertList.size(); i++) {
             InvoiceApplyHeaderDTO headerDTO = insertList.get(i);
-            headerDTO.setApplyHeaderNumber(batchCode.get(i));
+            headerDTO.setApplyHeaderNumber(applyHeaderNumbers.get(i));
         }
 
         List<InvoiceApplyHeaderDTO> insertUpdateList = Stream.concat(insertList.stream(), updateList.stream())
@@ -136,17 +137,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             }
         });
 
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(updateList));
+
         if(!invoiceApplyLines.isEmpty()) {
             invoiceApplyLineService.saveData(invoiceApplyLines);
         }
-
-        List<InvoiceApplyHeader> oriHeaderList = updateList.stream().map(headerDto -> {
-            InvoiceApplyHeader iah = new InvoiceApplyHeader();
-            BeanUtils.copyProperties(headerDto, iah);
-            return iah;
-        }).collect(Collectors.toList());
-
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(oriHeaderList);
     }
 
     @Override
@@ -179,32 +174,43 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return invoiceApplyHeaderDTO;
     }
 
-    private void valueSetValidation(String applyStatus, String invoiceType, String invoiceColor) {
-        List<String> allowedApplyStatuses = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+    private void valueSetValidation(List<InvoiceApplyHeaderDTO> dtos) {
+        List<String> errors = new ArrayList<>();
+        dtos.forEach(dto -> {
+            String applyStatus = dto.getApplyStatus();
+            String invoiceType = dto.getInvoiceType();
+            String invoiceColor = dto.getInvoiceColor();
 
-        List<String> allowedInvoiceColor = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_INV_COLOR, BaseConstants.DEFAULT_TENANT_ID)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+            List<String> allowedApplyStatuses = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID)
+                    .stream()
+                    .map(LovValueDTO::getValue)
+                    .collect(Collectors.toList());
 
-        List<String> allowedInvoiceType = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE, BaseConstants.DEFAULT_TENANT_ID)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+            List<String> allowedInvoiceColor = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_INV_COLOR, BaseConstants.DEFAULT_TENANT_ID)
+                    .stream()
+                    .map(LovValueDTO::getValue)
+                    .collect(Collectors.toList());
 
-        if (!allowedApplyStatuses.contains(applyStatus)) {
-            throw new CommonException("Apply status not valid");
-        }
+            List<String> allowedInvoiceType = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE, BaseConstants.DEFAULT_TENANT_ID)
+                    .stream()
+                    .map(LovValueDTO::getValue)
+                    .collect(Collectors.toList());
 
-        if (!allowedInvoiceType.contains(invoiceType)) {
-            throw new CommonException("Invoice type not valid");
-        }
+            if (!allowedApplyStatuses.contains(applyStatus)) {
+                errors.add(applyStatus + "is not a valid apply status");
+            }
 
-        if(!allowedInvoiceColor.contains(invoiceColor)) {
-            throw new CommonException("Invoice color not valid");
+            if (!allowedInvoiceType.contains(invoiceType)) {
+                errors.add(invoiceType + " is not a valid invoice type");
+            }
+
+            if(!allowedInvoiceColor.contains(invoiceColor)) {
+                errors.add(invoiceColor + "is not a valid invoice color");
+            }
+        });
+
+        if (!errors.isEmpty()) {
+            throw new CommonException(errors.toString());
         }
     }
 }

@@ -45,33 +45,11 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
     @Override
     public void saveData(List<InvoiceApplyLine> invoiceApplyLines) {
-        Set<Long> currHeaderIds = invoiceApplyLines.stream()
-                .map(InvoiceApplyLine::getApplyHeaderId)
-                .collect(Collectors.toSet());
+        Set<Long> currHeaderIds = getCurrentHeaderIds(invoiceApplyLines);
 
-        Condition condition = new Condition(InvoiceApplyHeader.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        criteria.andEqualTo("delFlag", 0).andIn("applyHeaderId", currHeaderIds);
+        validateHeaderIds(currHeaderIds);
 
-        List<Long> existingHeaderIds = invoiceApplyHeaderRepository
-                .selectByCondition(condition)
-                .stream()
-                .map(InvoiceApplyHeader::getApplyHeaderId)
-                .collect(Collectors.toList());
-
-        currHeaderIds.removeAll(existingHeaderIds);
-
-        if(!currHeaderIds.isEmpty()) {
-            throw new IllegalArgumentException("The following header IDs are missing in the InvoiceApplyHeader table or has been deleted: " + currHeaderIds);
-        }
-
-        List<InvoiceApplyLine> saveApplyLines = invoiceApplyLines.stream()
-                .peek(line -> {
-                    line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
-                    line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
-                    line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
-                })
-                .collect(Collectors.toList());
+        List<InvoiceApplyLine> saveApplyLines = calculateAmounts(invoiceApplyLines);
 
         List<InvoiceApplyLine> insertList = saveApplyLines.stream()
                 .filter(line -> line.getApplyLineId() == null)
@@ -81,42 +59,93 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
                 .filter(line -> line.getApplyLineId() != null)
                 .collect(Collectors.toList());
 
+        performInsert(insertList);
+        performUpdate(updateList);
+
+        Set<Long> headerIds = collectHeaderIds(insertList, updateList);
+
+        Map<Long, List<InvoiceApplyLine>> linesGroupedByHeaderId = getLinesGroupedByHeaderId(headerIds);
+        Map<Long, InvoiceApplyHeader> headerMap = getHeaderMap(headerIds);
+
+        List<InvoiceApplyHeader> headersToUpdate = calculateHeaderAmounts(headerIds, linesGroupedByHeaderId, headerMap);
+
+        updateHeaders(headersToUpdate);
+    }
+
+    private Set<Long> getCurrentHeaderIds(List<InvoiceApplyLine> invoiceApplyLines) {
+        return invoiceApplyLines.stream()
+                .map(InvoiceApplyLine::getApplyHeaderId)
+                .collect(Collectors.toSet());
+    }
+
+    private void validateHeaderIds(Set<Long> currHeaderIds) {
+        Condition condition = new Condition(InvoiceApplyHeader.class);
+        condition.createCriteria().andEqualTo("delFlag", 0).andIn("applyHeaderId", currHeaderIds);
+
+        List<Long> existingHeaderIds = invoiceApplyHeaderRepository.selectByCondition(condition)
+                .stream()
+                .map(InvoiceApplyHeader::getApplyHeaderId)
+                .collect(Collectors.toList());
+
+        currHeaderIds.removeAll(existingHeaderIds);
+
+        if (!currHeaderIds.isEmpty()) {
+            throw new IllegalArgumentException("The following header IDs are missing in the InvoiceApplyHeader table or have been deleted: " + currHeaderIds);
+        }
+    }
+
+    private List<InvoiceApplyLine> calculateAmounts(List<InvoiceApplyLine> invoiceApplyLines) {
+        return invoiceApplyLines.stream()
+                .peek(line -> {
+                    line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
+                    line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
+                    line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
+                })
+                .collect(Collectors.toList());
+    }
+
+    private void performInsert(List<InvoiceApplyLine> insertList) {
         if (!insertList.isEmpty()) {
             invoiceApplyLineRepository.batchInsertSelective(insertList);
         }
+    }
 
+    private void performUpdate(List<InvoiceApplyLine> updateList) {
         if (!updateList.isEmpty()) {
             invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateList);
         }
+    }
 
-        Set<Long> headerIds = Stream.concat(insertList.stream(), updateList.stream())
+    private Set<Long> collectHeaderIds(List<InvoiceApplyLine> insertList, List<InvoiceApplyLine> updateList) {
+        return Stream.concat(insertList.stream(), updateList.stream())
                 .map(InvoiceApplyLine::getApplyHeaderId)
                 .collect(Collectors.toSet());
+    }
 
-        Condition applyLineByHeaderIdCondition = new Condition(InvoiceApplyLine.class);
-        Condition.Criteria applyLineByHeaderIdCriteria = applyLineByHeaderIdCondition.createCriteria();
+    private Map<Long, List<InvoiceApplyLine>> getLinesGroupedByHeaderId(Set<Long> headerIds) {
+        Condition condition = new Condition(InvoiceApplyLine.class);
+        Condition.Criteria criteria = condition.createCriteria();
         if (!headerIds.isEmpty()) {
-            applyLineByHeaderIdCriteria.andIn("applyHeaderId", headerIds);
+            criteria.andIn("applyHeaderId", headerIds);
         } else {
-            applyLineByHeaderIdCriteria.andEqualTo("applyHeaderId", -1);
+            criteria.andEqualTo("applyHeaderId", -1);
         }
-        List<InvoiceApplyLine> allLinesForHeaders = invoiceApplyLineRepository.selectByCondition(applyLineByHeaderIdCondition);
+        List<InvoiceApplyLine> allLinesForHeaders = invoiceApplyLineRepository.selectByCondition(condition);
 
-        Map<Long, List<InvoiceApplyLine>> linesGroupedByHeaderId = allLinesForHeaders.stream()
+        return allLinesForHeaders.stream()
                 .collect(Collectors.groupingBy(InvoiceApplyLine::getApplyHeaderId));
+    }
 
-        Condition existingHeadersCondition = new Condition(InvoiceApplyLine.class);
-        Condition.Criteria existingHeaderCriteria = existingHeadersCondition.createCriteria();
-        if (!headerIds.isEmpty()) {
-            existingHeaderCriteria.andIn("applyHeaderId", headerIds);
-        } else {
-            existingHeaderCriteria.andEqualTo("applyHeaderId", -1);
-        }
-        List<InvoiceApplyHeader> existingHeaders = invoiceApplyHeaderRepository.selectByCondition(existingHeadersCondition);
+    private Map<Long, InvoiceApplyHeader> getHeaderMap(Set<Long> headerIds) {
+        Condition condition = new Condition(InvoiceApplyHeader.class);
+        condition.createCriteria().andIn("applyHeaderId", headerIds);
 
-        Map<Long, InvoiceApplyHeader> headerMap = existingHeaders.stream()
+        List<InvoiceApplyHeader> existingHeaders = invoiceApplyHeaderRepository.selectByCondition(condition);
+        return existingHeaders.stream()
                 .collect(Collectors.toMap(InvoiceApplyHeader::getApplyHeaderId, Function.identity()));
+    }
 
+    private List<InvoiceApplyHeader> calculateHeaderAmounts(Set<Long> headerIds, Map<Long, List<InvoiceApplyLine>> linesGroupedByHeaderId, Map<Long, InvoiceApplyHeader> headerMap) {
         List<InvoiceApplyHeader> headersToUpdate = new ArrayList<>();
 
         for (Long headerId : headerIds) {
@@ -145,9 +174,13 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
                 }
             }
         }
+        return headersToUpdate;
+    }
 
+    private void updateHeaders(List<InvoiceApplyHeader> headersToUpdate) {
         invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(headersToUpdate);
     }
+
 
     @Override
     public void remove(List<InvoiceApplyLine> invoiceApplyLines) {
@@ -182,8 +215,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Override
     public Page<InvoiceApplyLineDTO> exportLine(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLine) {
         String applyHeaderNumber = invoiceApplyHeaderRepository
-                .select("applyHeaderId", invoiceApplyLine.getApplyHeaderId())
-                .get(0)
+                .selectByPrimary( invoiceApplyLine.getApplyHeaderId())
                 .getApplyHeaderNumber();
 
         Page<InvoiceApplyLine> applyLines = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyLineRepository.selectList(invoiceApplyLine));
