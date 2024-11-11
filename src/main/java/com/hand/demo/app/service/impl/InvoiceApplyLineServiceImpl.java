@@ -55,6 +55,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         List<InvoiceApplyLineDTO> invoiceApplyLineDTOS = new ArrayList<>();
 
 
+        // Change to DTO and get the header number based on header id
         for (int i = 0; i < pageResult.size(); i++) {
             InvoiceApplyLineDTO dataDto = new InvoiceApplyLineDTO();
             BeanUtils.copyProperties(pageResult.get(i), dataDto);
@@ -113,6 +114,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         }
     }
 
+    // Get the ids header that affected and then update the amount
     private void updateAffectedHeaders(List<InvoiceApplyLine> invoiceApplyLines) {
         Set<Long> affectedHeaderIds = invoiceApplyLines.stream()
                 .map(InvoiceApplyLine::getApplyHeaderId)
@@ -123,6 +125,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         }
     }
 
+    // logic to calculate the header amount
     private void updateHeaderAmounts(Long headerId) {
         InvoiceApplyHeader headerData = invoiceApplyHeaderRepository.selectByPrimaryKey(headerId);
         if (headerData != null) {
@@ -143,6 +146,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         }
     }
 
+    // Get the line based on header id
     private List<InvoiceApplyLine> getAssociatedLines(Long applyHeaderId) {
         Condition condition = new Condition(InvoiceApplyHeader.class);
         Condition.Criteria criteria = condition.createCriteria();
@@ -150,90 +154,58 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         return invoiceApplyLineRepository.selectByCondition(condition);
     }
 
+    // calculate the total amount
     private BigDecimal calculateTotalAmount(List<InvoiceApplyLine> lines, Function<InvoiceApplyLine, BigDecimal> mapper) {
         return lines.stream()
                 .map(mapper)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-
-//    @Override
-//    public List<InvoiceApplyHeaderDTO> delete(List<InvoiceApplyLine> invoiceApplyLines) {
-//        InvoiceApplyHeaderDTO headerDTO;
-//        InvoiceApplyHeader headerData;
-//
-//        for(InvoiceApplyLine listData : invoiceApplyLines) {
-//            Long headerId = listData.getApplyHeaderId();
-//            invoiceApplyLineRepository.delete(listData);
-//            headerData = invoiceApplyHeaderRepository.selectByPrimaryKey(headerId);
-//            headerDTO = changeToDTO(headerData);
-//
-//            List<InvoiceApplyLine> associatedLines = invoiceApplyLineRepository.select("applyHeaderId", listData);
-//            headerDTO.setInvoiceApplyLines(associatedLines);
-//
-//            BigDecimal totalAmount = associatedLines.stream()
-//                    .map(InvoiceApplyLine::getTotalAmount)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            BigDecimal excludeTaxAmount = associatedLines.stream()
-//                    .map(InvoiceApplyLine::getExcludeTaxAmount)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            BigDecimal taxAmount = associatedLines.stream()
-//                    .map(InvoiceApplyLine::getTaxAmount)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-//
-//            if (headerData != null) {
-//                headerData.setTotalAmount(totalAmount);
-//                headerData.setExcludeTaxAmount(excludeTaxAmount);
-//                headerData.setTaxAmount(taxAmount);
-//                invoiceApplyHeaderRepository.updateByPrimaryKey(headerData);
-//            }
-//
-//        }
-//
-//        headerDTO = changeToDTO(headerData);
-//        return headerDTO;
-//    }
-
+    // delete the lines and also update the header that related
     @Override
     public List<InvoiceApplyHeaderDTO> delete(List<InvoiceApplyLine> invoiceApplyLines) {
         List<InvoiceApplyHeaderDTO> headerDTOList = new ArrayList<>();
-        InvoiceApplyHeader headerData;
 
-        for (InvoiceApplyLine listData : invoiceApplyLines) {
-            Long headerId = listData.getApplyHeaderId();
-            headerData = invoiceApplyHeaderRepository.selectByPrimaryKey(headerId);
+        for (InvoiceApplyLine line : invoiceApplyLines) {
+            Long headerId = line.getApplyHeaderId();
+            InvoiceApplyHeader headerData = invoiceApplyHeaderRepository.selectByPrimaryKey(headerId);
 
             if (headerData != null) {
-                InvoiceApplyHeaderDTO headerDTO = changeToDTO(headerData);
-                invoiceApplyLineRepository.delete(listData);
-                List<InvoiceApplyLine> associatedLines = invoiceApplyLineRepository.select("applyHeaderId", headerData.getApplyHeaderId());
-                headerDTO.setInvoiceApplyLines(associatedLines);
-
-                BigDecimal totalAmount = headerDTO.getInvoiceApplyLines().stream()
-                        .map(InvoiceApplyLine::getTotalAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                BigDecimal excludeTaxAmount = headerDTO.getInvoiceApplyLines().stream()
-                        .map(InvoiceApplyLine::getExcludeTaxAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                BigDecimal taxAmount = headerDTO.getInvoiceApplyLines().stream()
-                        .map(InvoiceApplyLine::getTaxAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                headerData.setTotalAmount(totalAmount);
-                headerData.setExcludeTaxAmount(excludeTaxAmount);
-                headerData.setTaxAmount(taxAmount);
-                invoiceApplyHeaderRepository.updateByPrimaryKey(headerData);
-
-                headerDTO = changeToDTO(headerData);
-                headerDTOList.add(headerDTO);
+                processLineDeletion(line, headerData, headerDTOList);
             }
         }
 
         return headerDTOList;
+    }
+
+    // process line to delete the line
+    private void processLineDeletion(InvoiceApplyLine line, InvoiceApplyHeader headerData, List<InvoiceApplyHeaderDTO> headerDTOList) {
+        InvoiceApplyHeaderDTO headerDTO = changeToDTO(headerData);
+
+        invoiceApplyLineRepository.delete(line);
+        List<InvoiceApplyLine> associatedLines = fetchAssociatedLines(headerData.getApplyHeaderId());
+
+        headerDTO.setInvoiceApplyLines(associatedLines);
+
+        updateHeaderAmounts(headerData, associatedLines);
+
+        invoiceApplyHeaderRepository.updateByPrimaryKey(headerData);
+        headerDTOList.add(changeToDTO(headerData));
+    }
+
+    private List<InvoiceApplyLine> fetchAssociatedLines(Long headerId) {
+        return invoiceApplyLineRepository.select("applyHeaderId", headerId);
+    }
+
+    // update the amount of header
+    private void updateHeaderAmounts(InvoiceApplyHeader headerData, List<InvoiceApplyLine> associatedLines) {
+        BigDecimal totalAmount = calculateTotalAmount(associatedLines, InvoiceApplyLine::getTotalAmount);
+        BigDecimal excludeTaxAmount = calculateTotalAmount(associatedLines, InvoiceApplyLine::getExcludeTaxAmount);
+        BigDecimal taxAmount = calculateTotalAmount(associatedLines, InvoiceApplyLine::getTaxAmount);
+
+        headerData.setTotalAmount(totalAmount);
+        headerData.setExcludeTaxAmount(excludeTaxAmount);
+        headerData.setTaxAmount(taxAmount);
     }
 
 

@@ -51,10 +51,12 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Autowired
     private RedisHelper redisHelper;
 
+    // Get list of header and lines
     @Override
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
-        Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
+        Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () ->
+                invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
         List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = new ArrayList<>();
         for (InvoiceApplyHeader data : pageResult) {
             invoiceApplyHeaderDTOS.add(changeToDTO(data));
@@ -75,6 +77,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return dtoPage;
     }
 
+    // Save the header that may accept line as param also update
     @Override
     @Transactional(rollbackFor = Exception.class)
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
@@ -126,7 +129,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
     }
 
-    // function to init variabel map
+    // function to init variable map
     private Map<String, String> initializeVariableMap() {
         Map<String, String> variableMap = new HashMap<>();
         variableMap.put("customSegment", "-");
@@ -246,6 +249,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
 
 
+    // soft delete header
     @Override
     public InvoiceApplyHeaderDTO delete(Long id) {
         InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
@@ -262,22 +266,22 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public InvoiceApplyHeaderDTO detail(Long id) {
+        // check on redis if there's no value on redis it will set and return if the key is exist
+        if (redisHelper.hasKey(String.valueOf(id))) {
+            String result = redisHelper.strGet(String.valueOf(id));
+            if (result != null || !result.isEmpty()) {
+                return JSON.parseObject(result, InvoiceApplyHeaderDTO.class);
+            }
+        }
+
         InvoiceApplyHeader getHeader = invoiceApplyHeaderRepository.selectByPrimaryKey(id);
         List<InvoiceApplyLine> listLines= invoiceApplyLineRepository.select("applyHeaderId", getHeader.getApplyHeaderId());
         InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
         BeanUtils.copyProperties(getHeader, dto);
         dto.setInvoiceApplyLines(listLines);
 
-        // check on redis if theres no value on redis it will set and return if the key is exist
-        if (redisHelper.hasKey(dto.getApplyHeaderNumber())) {
-            String result = redisHelper.strGet(dto.getApplyHeaderNumber());
-            if (result != null || !result.isEmpty()) {
-                return JSON.parseObject(result, InvoiceApplyHeaderDTO.class);
-            }
-        }
-
         String serializeDTO = JSON.toJSONString(dto);
-        redisHelper.strSet(dto.getApplyHeaderNumber(), serializeDTO);
+        redisHelper.strSet(String.valueOf(id), serializeDTO);
 
         return dto;
     }
