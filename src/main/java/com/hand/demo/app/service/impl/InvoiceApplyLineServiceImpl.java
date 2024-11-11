@@ -2,6 +2,7 @@ package com.hand.demo.app.service.impl;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.dto.InvoiceApplyLineDTO;
+import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import io.choerodon.core.domain.Page;
@@ -38,6 +39,9 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Autowired
     private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
 
+    @Autowired
+    private InvoiceApplyHeaderService invoiceApplyHeaderService;
+
     @Override
     public Page<InvoiceApplyLine> selectList(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLine) {
         return PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyLineRepository.selectList(invoiceApplyLine));
@@ -68,34 +72,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         Long headerId = invoiceApplyLine.getApplyHeaderId();
 
         invoiceApplyLineRepository.deleteByPrimaryKey(lineId);
-
-        InvoiceApplyLine invoiceApplyLine3 = new InvoiceApplyLine();
-        invoiceApplyLine3.setApplyHeaderId(headerId);
-
-        List<InvoiceApplyLine> invoiceApplyLineList = invoiceApplyLineRepository.select(invoiceApplyLine3);
-
-        BigDecimal headerTaxAmount = BigDecimal.ZERO;
-        BigDecimal headerExcludeTaxAmount = BigDecimal.ZERO;
-        BigDecimal headerTotalAmount = BigDecimal.ZERO;
-
-        for(int i = 0; i < invoiceApplyLineList.size(); i++) {
-            InvoiceApplyLine invoiceApplyLine1 = invoiceApplyLineList.get(i);
-            BigDecimal taxAmount = invoiceApplyLine1.getTaxAmount() != null ? invoiceApplyLine1.getTaxAmount() : BigDecimal.ZERO;
-            BigDecimal excludeTaxAmount = invoiceApplyLine1.getExcludeTaxAmount() != null ? invoiceApplyLine1.getExcludeTaxAmount() : BigDecimal.ZERO;
-            BigDecimal totalAmount = invoiceApplyLine1.getTotalAmount() != null ? invoiceApplyLine1.getTotalAmount() : BigDecimal.ZERO;
-
-            headerTaxAmount = headerTaxAmount.add(taxAmount);
-            headerExcludeTaxAmount = headerExcludeTaxAmount.add(excludeTaxAmount);
-            headerTotalAmount = headerTotalAmount.add(totalAmount);
-        }
-
-        InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(headerId);
-        invoiceApplyHeader.setApplyHeaderId(headerId);
-        invoiceApplyHeader.setTaxAmount(headerTaxAmount);
-        invoiceApplyHeader.setExcludeTaxAmount(headerExcludeTaxAmount);
-        invoiceApplyHeader.setTotalAmount(headerTotalAmount);
-
-        invoiceApplyHeaderRepository.updateByPrimaryKeySelective(invoiceApplyHeader);
+        invoiceApplyHeaderService.countApplyLineUpdateHeader(headerId);
     }
 
     @Override
@@ -139,6 +116,10 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             invoiceApplyLine.setTaxAmount(taxAmount);
             invoiceApplyLine.setExcludeTaxAmount(excludeTaxAmount);
 
+            if(invoiceApplyLine.getApplyHeaderId() != invoiceApplyLine1.getApplyHeaderId()) {
+                headerIdSet.add(invoiceApplyLine1.getApplyHeaderId());
+            }
+
             headerIdSet.add(invoiceApplyLine.getApplyHeaderId());
         }
 
@@ -148,33 +129,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         List<Long> headerIdList = new ArrayList<>(headerIdSet);
 
         for(int i = 0; i < headerIdList.size(); i++) {
-            BigDecimal headerTaxAmount = BigDecimal.ZERO;
-            BigDecimal headerExcludeTaxAmount = BigDecimal.ZERO;
-            BigDecimal headerTotalAmount = BigDecimal.ZERO;
-
-            InvoiceApplyLine invoiceApplyLine = new InvoiceApplyLine();
-            invoiceApplyLine.setApplyHeaderId(headerIdList.get(i));
-
-            List<InvoiceApplyLine> invoiceApplyLineList = invoiceApplyLineRepository.select(invoiceApplyLine);
-            for(int p = 0; p < invoiceApplyLineList.size(); p++) {
-                InvoiceApplyLine invoiceApplyLine1 = invoiceApplyLineList.get(p);
-
-                BigDecimal taxAmount = invoiceApplyLine1.getTaxAmount() != null ? invoiceApplyLine1.getTaxAmount() : BigDecimal.ZERO;
-                BigDecimal excludeTaxAmount = invoiceApplyLine1.getExcludeTaxAmount() != null ? invoiceApplyLine1.getExcludeTaxAmount() : BigDecimal.ZERO;
-                BigDecimal totalAmount = invoiceApplyLine1.getTotalAmount() != null ? invoiceApplyLine1.getTotalAmount() : BigDecimal.ZERO;
-
-                headerTaxAmount = headerTaxAmount.add(taxAmount);
-                headerExcludeTaxAmount = headerExcludeTaxAmount.add(excludeTaxAmount);
-                headerTotalAmount = headerTotalAmount.add(totalAmount);
-            }
-
-            InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(headerIdList.get(i));
-            invoiceApplyHeader.setApplyHeaderId(headerIdList.get(i));
-            invoiceApplyHeader.setTaxAmount(headerTaxAmount);
-            invoiceApplyHeader.setExcludeTaxAmount(headerExcludeTaxAmount);
-            invoiceApplyHeader.setTotalAmount(headerTotalAmount);
-
-            invoiceApplyHeaderRepository.updateByPrimaryKeySelective(invoiceApplyHeader);
+            invoiceApplyHeaderService.countApplyLineUpdateHeader(headerIdList.get(i));
         }
     }
 }

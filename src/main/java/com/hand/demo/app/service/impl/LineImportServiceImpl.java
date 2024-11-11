@@ -2,6 +2,7 @@ package com.hand.demo.app.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
@@ -34,6 +35,9 @@ public class LineImportServiceImpl extends BatchValidatorHandler {
 
     @Autowired
     InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+
+    @Autowired
+    InvoiceApplyHeaderService invoiceApplyHeaderService;
 
     public boolean validate(List<String> data) {
         AtomicBoolean flag = new AtomicBoolean(true);
@@ -78,6 +82,10 @@ public class LineImportServiceImpl extends BatchValidatorHandler {
 
                     invoiceApplyLineObj.setObjectVersionNumber(invoiceApplyLine1.getObjectVersionNumber());
 
+                    if(invoiceApplyLine1.getApplyHeaderId() != invoiceApplyLineObj.getApplyHeaderId()) {
+                        lineIdSet.add(invoiceApplyLine1.getApplyHeaderId());
+                    }
+
                     lineListUpdate.add(invoiceApplyLineObj);
                 } else {
                     invoiceApplyLineObj.setTotalAmount(totalAmount);
@@ -99,32 +107,7 @@ public class LineImportServiceImpl extends BatchValidatorHandler {
 
             List<Long> listLineId = new ArrayList<>(lineIdSet);
             for(int i = 0; i < listLineId.size(); i++) {
-                InvoiceApplyLine invoiceApplyLine = new InvoiceApplyLine();
-                invoiceApplyLine.setApplyHeaderId(listLineId.get(i));
-
-                BigDecimal headerTaxAmount = BigDecimal.ZERO;
-                BigDecimal headerExcludeTaxAmount = BigDecimal.ZERO;
-                BigDecimal headerTotalAmount = BigDecimal.ZERO;
-
-                List<InvoiceApplyLine> invoiceApplyLineList = invoiceApplyLineRepository.select(invoiceApplyLine);
-                for(int p = 0; p < invoiceApplyLineList.size(); p++) {
-                    InvoiceApplyLine invoiceApplyLine1 = invoiceApplyLineList.get(p);
-
-                    BigDecimal taxAmount = invoiceApplyLine1.getTaxAmount() != null ? invoiceApplyLine1.getTaxAmount() : BigDecimal.ZERO;
-                    BigDecimal excludeTaxAmount = invoiceApplyLine1.getExcludeTaxAmount() != null ? invoiceApplyLine1.getExcludeTaxAmount() : BigDecimal.ZERO;
-                    BigDecimal totalAmount = invoiceApplyLine1.getTotalAmount() != null ? invoiceApplyLine1.getTotalAmount() : BigDecimal.ZERO;
-
-                    headerTaxAmount = headerTaxAmount.add(taxAmount);
-                    headerExcludeTaxAmount = headerExcludeTaxAmount.add(excludeTaxAmount);
-                    headerTotalAmount = headerTotalAmount.add(totalAmount);
-                }
-
-                InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(listLineId.get(i));
-                invoiceApplyHeader.setTaxAmount(headerTaxAmount);
-                invoiceApplyHeader.setExcludeTaxAmount(headerExcludeTaxAmount);
-                invoiceApplyHeader.setTotalAmount(headerTotalAmount);
-
-                invoiceApplyHeaderRepository.updateByPrimaryKeySelective(invoiceApplyHeader);
+                invoiceApplyHeaderService.countApplyLineUpdateHeader(listLineId.get(i));
             }
         }
 

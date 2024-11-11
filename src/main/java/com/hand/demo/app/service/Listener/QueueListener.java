@@ -25,6 +25,5 @@ public class QueueListener implements IQueueHandler {
         } catch (JsonProcessingException e) {
             throw new CommonException(e);
         }
-
     }
 }

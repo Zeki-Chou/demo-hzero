@@ -34,4 +34,5 @@ public interface InvoiceApplyHeaderService {
     public void deleteData(Long headerId);
     public InvoiceApplyHeaderDTO detail(Long headerId);
     public List<InvoiceApplyHeaderDTO> exportAll (PageRequest pageRequest);
+    public void countApplyLineUpdateHeader (Long header_id);
 }
