@@ -39,13 +39,9 @@ import java.util.stream.Collectors;
 public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService {
 
     private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
-
     private final InvoiceApplyLineRepository invoiceApplyLineRepository;
-
     private final CodeRuleBuilder codeRuleBuilder;
-
     private final LovAdapter lovAdapter;
-
     private final RedisHelper redisHelper;
 
     public InvoiceApplyHeaderServiceImpl(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, InvoiceApplyLineRepository invoiceApplyLineRepository, CodeRuleBuilder codeRuleBuilder, LovAdapter lovAdapter, RedisHelper redisHelper) {
@@ -58,52 +54,16 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public Page<InvoiceApplyHeaderDto> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
+    public Page<InvoiceApplyHeaderDto> selectList(PageRequest pageRequest, InvoiceApplyHeaderDto invoiceApplyHeaderDto) {
         // Get paginated InvoiceApplyHeader results
-        Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
+        Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeaderDto));
         List<InvoiceApplyHeaderDto> invoiceApplyHeaderDTOS = new ArrayList<>();
 
         // Iterate through each InvoiceApplyHeader and map it to the DTO
         for (InvoiceApplyHeader data : pageResult) {
-            // Fetch InvoiceApplyLine list for each InvoiceApplyHeader (you might need to use a repository or service for this)
-            List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select(InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,data.getApplyHeaderId());
 
             // Map InvoiceApplyHeader to DTO
             InvoiceApplyHeaderDto dto = mapEntityToDto(data);
-
-            // Set the invoiceLineList in the DTO
-            dto.setInvoiceLineList(invoiceApplyLines);
-
-            // Add the mapped DTO to the list
-            invoiceApplyHeaderDTOS.add(dto);
-        }
-
-        // Create a Page for the DTOs with pagination information
-        Page<InvoiceApplyHeaderDto> dtoPage = new Page<>();
-        dtoPage.setContent(invoiceApplyHeaderDTOS);
-        dtoPage.setTotalPages(pageResult.getTotalPages());
-        dtoPage.setTotalElements(pageResult.getTotalElements());
-        dtoPage.setNumber(pageResult.getNumber());
-        dtoPage.setSize(pageResult.getSize());
-
-        return dtoPage;
-    }
-
-    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    @Override
-    public Page<InvoiceApplyHeaderDto> exportHeaderList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
-
-        // Get paginated InvoiceApplyHeader results
-        Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
-        List<InvoiceApplyHeaderDto> invoiceApplyHeaderDTOS = new ArrayList<>();
-
-        for (InvoiceApplyHeader data : pageResult) {
-
-            List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select(InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,data.getApplyHeaderId());
-
-
-            InvoiceApplyHeaderDto dto = mapEntityToDto(data);
-            dto.setInvoiceLineList(invoiceApplyLines);
 
             // Add the mapped DTO to the list
             invoiceApplyHeaderDTOS.add(dto);
@@ -163,14 +123,14 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         insertList.forEach(dto -> {
             Map<String, String> variableMap = new HashMap<>();
             variableMap.put("customSegment", "-");
-            String uniqueBatchCode = codeRuleBuilder.generateCode(InvoiceConstants.CODE_RULE, variableMap);
-            dto.setApplyHeaderNumber(uniqueBatchCode);
+            String uniqueCode = codeRuleBuilder.generateCode(InvoiceConstants.CODE_RULE, variableMap);
+            dto.setApplyHeaderNumber(uniqueCode);
 
             InvoiceApplyHeader entity = mapDtoToEntity(dto);
 
             // Calculate totals and insert
-            processInvoiceLines(dto.getInvoiceLineList(), entity);
             invoiceApplyHeaderRepository.insertSelective(entity);
+            processInvoiceLines(dto.getInvoiceLineList(), entity);
 
             // Update DTO with calculated totals from the entity
             dto.setApplyHeaderId(entity.getApplyHeaderId());
@@ -325,4 +285,3 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
 }
-

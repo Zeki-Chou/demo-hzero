@@ -21,12 +21,10 @@ public interface InvoiceApplyHeaderService {
      * 查询数据
      *
      * @param pageRequest         分页参数
-     * @param invoiceApplyHeaders 查询条件
+     * @param invoiceApplyHeadersDto 查询条件
      * @return 返回值
      */
-    Page<InvoiceApplyHeaderDto> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeaders);
-
-    Page<InvoiceApplyHeaderDto> exportHeaderList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader);
+    Page<InvoiceApplyHeaderDto> selectList(PageRequest pageRequest, InvoiceApplyHeaderDto invoiceApplyHeadersDto);
 
     /**
      * 保存数据

@@ -51,10 +51,10 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<Page<InvoiceApplyHeaderDto>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    public ResponseEntity<Page<InvoiceApplyHeaderDto>> list(InvoiceApplyHeaderDto invoiceApplyHeaderDto, @PathVariable Long organizationId,
                                                             @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                     direction = Sort.Direction.DESC) PageRequest pageRequest) {
-        Page<InvoiceApplyHeaderDto> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        Page<InvoiceApplyHeaderDto> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeaderDto);
         return Results.success(list);
     }
 
@@ -82,7 +82,6 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> remove(@RequestBody List<InvoiceApplyHeader> invoiceApplyHeaders) {
-        SecurityTokenHelper.validToken(invoiceApplyHeaders);
         invoiceApplyHeaderRepository.batchDeleteByPrimaryKey(invoiceApplyHeaders);
         return Results.success();
     }
@@ -102,7 +101,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     public ResponseEntity<Page<InvoiceApplyHeaderDto>> export(InvoiceApplyHeaderDto invoiceApplyHeaderDto, @PathVariable Long organizationId,
                                                             @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                     direction = Sort.Direction.DESC) PageRequest pageRequest, ExportParam exportParam, HttpServletResponse response) {
-        Page<InvoiceApplyHeaderDto> list = invoiceApplyHeaderService.exportHeaderList(pageRequest, invoiceApplyHeaderDto);
+        Page<InvoiceApplyHeaderDto> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeaderDto);
         return Results.success(list);
     }
 }

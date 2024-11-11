@@ -74,8 +74,8 @@ public class TaskServiceImpl implements TaskService {
         insertList.forEach(task -> {
             Map<String, String> variableMap = new HashMap<>();
             variableMap.put("customSegment", ("-" + DetailsHelper.getUserDetails().getRealName()) + "-");
-            String uniqueBatchCode = codeRuleBuilder.generateCode(TaskConstants.CODE_RULE, variableMap);
-            task.setTaskNumber(uniqueBatchCode);
+            String uniqueCode = codeRuleBuilder.generateCode(TaskConstants.CODE_RULE, variableMap);
+            task.setTaskNumber(uniqueCode);
         });
 
         taskRepository.batchInsertSelective(insertList);
