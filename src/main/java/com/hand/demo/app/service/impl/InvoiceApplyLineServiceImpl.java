@@ -16,7 +16,9 @@ import com.hand.demo.app.service.InvoiceApplyLineService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.rmi.CORBA.Util;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,24 +58,31 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         return invoiceApplyLineDTOPage;
     }
 
-
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void saveData(List<InvoiceApplyLineDTO> invoiceApplyLineDTOS) {
         Map<String, InvoiceApplyHeader> invoiceApplyHeaderMap = getHeaderMap(invoiceApplyLineDTOS);
-        validate(invoiceApplyHeaderMap,invoiceApplyLineDTOS);
-        Utils.calcInvoiceLineAmounts(new ArrayList<>(invoiceApplyLineDTOS));
+        Utils.InvoiceApplyLineUtil.validate(new ArrayList<>(invoiceApplyLineDTOS),invoiceApplyLineRepository,invoiceApplyHeaderRepository);
+
+        Utils.InvoiceApplyLineUtil.calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
 
         List<InvoiceApplyLineDTO> insertLineDTOS = invoiceApplyLineDTOS.stream().filter(line -> line.getApplyLineId() == null).collect(Collectors.toList());
         List<InvoiceApplyLineDTO> updateLineDTOS = invoiceApplyLineDTOS.stream().filter(line -> line.getApplyLineId() != null).collect(Collectors.toList());
 
-        insertLines(invoiceApplyHeaderMap, insertLineDTOS);
-        updateLines(invoiceApplyHeaderMap, updateLineDTOS);
+        if(!insertLineDTOS.isEmpty()) {
+            insertLines(invoiceApplyHeaderMap, insertLineDTOS);
+        }
+        if(!updateLineDTOS.isEmpty()) {
+            updateLines(invoiceApplyHeaderMap, updateLineDTOS);
+        }
         updateHeaders(invoiceApplyHeaderMap);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public  void delete(List<InvoiceApplyLineDTO> invoiceApplyLines){
         Map<String, InvoiceApplyHeader> invoiceApplyHeaderMap = getHeaderMap(invoiceApplyLines);
+        Utils.InvoiceApplyLineUtil.validate(new ArrayList<>(invoiceApplyLines),invoiceApplyLineRepository,invoiceApplyHeaderRepository);
         deleteLines(invoiceApplyHeaderMap,invoiceApplyLines);
         updateHeaders(invoiceApplyHeaderMap);
     }
@@ -88,17 +97,20 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         return invoiceApplyHeaderMap;
     }
 
+
     private void deleteLines(Map<String, InvoiceApplyHeader> invoiceApplyHeaderMap,List<InvoiceApplyLineDTO> invoiceApplyLineDTOS){
+        String lineIds = invoiceApplyLineDTOS.stream().map(line->line.getApplyLineId().toString()).collect(Collectors.joining(","));
+        List<InvoiceApplyLine> oldInvoiceApplyLines = invoiceApplyLineRepository.selectByIds(lineIds);
         invoiceApplyLineRepository.batchDeleteByPrimaryKey(new ArrayList<>(invoiceApplyLineDTOS));
-        Utils.calcDelInvoiceHeaderAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS));
+        Utils.InvoiceApplyHeaderUtil.subAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),oldInvoiceApplyLines);
     }
 
     private  void insertLines(Map<String, InvoiceApplyHeader> invoiceApplyHeaderMap,List<InvoiceApplyLineDTO> invoiceApplyLineDTOS){
         if(invoiceApplyLineDTOS.isEmpty()){
             return;
         }
-        Utils.calcInvoiceLineAmounts(new ArrayList<>(invoiceApplyLineDTOS));
-        Utils.calcAddInvoiceHeaderAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS));
+        Utils.InvoiceApplyLineUtil.calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
+        Utils.InvoiceApplyHeaderUtil.addAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS));
         invoiceApplyLineRepository.batchInsertSelective(new ArrayList<>(invoiceApplyLineDTOS));
     }
 
@@ -108,8 +120,8 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         }
         String oldLineIds = invoiceApplyLineDTOS.stream().map(line -> line.getApplyLineId().toString()).collect(Collectors.joining(","));
         List<InvoiceApplyLine> oldLines = invoiceApplyLineRepository.selectByIds(oldLineIds);
-        Utils.calcInvoiceLineAmounts(new ArrayList<>(invoiceApplyLineDTOS));
-        Utils.calcDiffInvoiceHeaderAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS),oldLines);
+        Utils.InvoiceApplyLineUtil.calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
+        Utils.InvoiceApplyHeaderUtil.updateAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS),oldLines);
         invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(invoiceApplyLineDTOS));
     }
 
@@ -119,6 +131,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         List<String> redisKeys = invoiceApplyHeaderMap.keySet().stream().map(headerId -> Constants.INVOICE_HEADER_CACHE_PREFIX + headerId).collect(Collectors.toList());
         redisHelper.delKeys(redisKeys);
     }
+
     private void populateHeaderNumber(List<InvoiceApplyLineDTO> invoiceApplyLineDTOS){
         String headerIds = invoiceApplyLineDTOS.stream().map(line->line.getApplyHeaderId().toString()).collect(Collectors.joining(","));
         List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderRepository.selectByIds(headerIds);
@@ -131,25 +144,5 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             invoiceApplyLineDTO.setInvoiceApplyHeaderNumber(invoiceApplyHeaderNumber);
         }
     }
-    private void validate(Map<String,InvoiceApplyHeader> invoiceApplyHeaderMap,List<InvoiceApplyLineDTO> invoiceApplyLineDTOS){
-        int expectedHeaderSize = invoiceApplyLineDTOS.stream().map(line->line.getApplyHeaderId().toString()).collect(Collectors.toSet()).size();
-        if(invoiceApplyHeaderMap.keySet().size()!=expectedHeaderSize){
-            throw  new CommonException(Constants.MULTILINGUAL_INV_APPLY_LINE_SAVE_ERROR, "Header Ids not found or deleted");
-        }
-
-        List<Integer> badInvoiceApplyHeaderIndex = new ArrayList<>();
-        for (int i=0;i< invoiceApplyLineDTOS.size();i++){
-            if(invoiceApplyLineDTOS.get(i).getTotalAmount() != null
-                || invoiceApplyLineDTOS.get(i).getTaxAmount() != null
-                || invoiceApplyLineDTOS.get(i).getExcludeTaxAmount() != null){
-                badInvoiceApplyHeaderIndex.add(i);
-            }
-        }
-        if(!badInvoiceApplyHeaderIndex.isEmpty()){
-            throw  new CommonException(Constants.MULTILINGUAL_INV_APPLY_LINE_SAVE_ERROR, "Lines should have no total amount, tax amount, and exclude tax amount values. Bad lines index: "+badInvoiceApplyHeaderIndex);
-        }
-    }
-
-
 }
 

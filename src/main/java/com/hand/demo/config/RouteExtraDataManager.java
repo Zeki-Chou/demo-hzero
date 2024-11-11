@@ -1,5 +1,6 @@
 package com.hand.demo.config;
 
+import io.choerodon.mybatis.helper.LanguageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import io.choerodon.core.swagger.ChoerodonRouteData;
 import io.choerodon.swagger.annotation.ChoerodonExtraData;

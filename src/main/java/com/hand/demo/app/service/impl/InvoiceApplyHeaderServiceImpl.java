@@ -15,6 +15,8 @@ import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
+import org.hzero.core.message.Message;
+import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
 import org.hzero.mybatis.domian.Condition;
 import org.springframework.beans.BeanUtils;
@@ -23,6 +25,7 @@ import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.rmi.CORBA.Util;
 import java.math.BigDecimal;
@@ -45,7 +48,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private CodeRuleBuilder codeRuleBuilder;
     @Autowired
     private LovAdapter lovAdapter;
-
     @Autowired
     private RedisHelper redisHelper;
 
@@ -83,13 +85,16 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS) {
-        validate(invoiceApplyHeaderDTOS);
+        Utils.InvoiceApplyHeaderUtil.validate(new ArrayList<>(invoiceApplyHeaderDTOS),lovAdapter,invoiceApplyHeaderRepository);
+        List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyHeaderDTOS.stream().flatMap(header -> header.getInvoiceApplyLineList().stream()).collect(Collectors.toList());
+        Utils.InvoiceApplyLineUtil.validate(invoiceApplyLines,invoiceApplyLineRepository,invoiceApplyHeaderRepository);
+
         List<InvoiceApplyHeaderDTO> insertHeaderDTOS = invoiceApplyHeaderDTOS.stream().filter(header -> header.getApplyHeaderId() == null).collect(Collectors.toList());
         List<InvoiceApplyHeaderDTO> updateHeaderDTOS = invoiceApplyHeaderDTOS.stream().filter(header -> header.getApplyHeaderId() != null).collect(Collectors.toList());
-        List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyHeaderDTOS.stream().flatMap(header -> header.getInvoiceApplyLineList().stream()).collect(Collectors.toList());
-        Utils.calcInvoiceLineAmounts(invoiceApplyLines);
-        Utils.calcAddInvoiceHeaderAmounts(invoiceApplyHeaderDTOS);
+        Utils.InvoiceApplyLineUtil.calcAmounts(invoiceApplyLines);
+        Utils.InvoiceApplyHeaderUtil.addAmounts(invoiceApplyHeaderDTOS);
         if(!insertHeaderDTOS.isEmpty()) {
             insertHeaders(insertHeaderDTOS);
         }
@@ -101,47 +106,10 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void delete(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS) {
         deleteHeaders(invoiceApplyHeaderDTOS);
         delHeaderCache(invoiceApplyHeaderDTOS);
-    }
-
-    private void validate(List<InvoiceApplyHeaderDTO>invoiceApplyHeaderDTOS){
-        List<LovValueDTO> applyStatusLov = lovAdapter.queryLovValue(Constants.LOV_INV_APPLY_HEADER_APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
-        List<LovValueDTO> invTypeLov = lovAdapter.queryLovValue(Constants.LOV_INV_APPLY_HEADER_INV_TYPE, BaseConstants.DEFAULT_TENANT_ID);
-        List<LovValueDTO> invColorLov = lovAdapter.queryLovValue(Constants.LOV_INV_APPLY_HEADER_INV_COLOR, BaseConstants.DEFAULT_TENANT_ID);
-
-        List<String> applyStatuses = applyStatusLov.stream().map(LovValueDTO::getValue).collect(Collectors.toList());
-        List<String> invTypes = invTypeLov.stream().map(LovValueDTO::getValue).collect(Collectors.toList());
-        List<String> invColors = invColorLov.stream().map(LovValueDTO::getValue).collect(Collectors.toList());
-
-        List<Integer> badHeaderIndex = new ArrayList<>();
-        for (int i = 0; i<invoiceApplyHeaderDTOS.size(); i++){
-            InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = invoiceApplyHeaderDTOS.get(i);
-            if(!applyStatuses.contains(invoiceApplyHeaderDTO.getApplyStatus())
-                || !invTypes.contains(invoiceApplyHeaderDTO.getInvoiceType())
-                || !invColors.contains(invoiceApplyHeaderDTO.getInvoiceColor())){
-                badHeaderIndex.add(i);
-            }else if(invoiceApplyHeaderDTO.getTotalAmount()!=null
-                || invoiceApplyHeaderDTO.getTaxAmount()!=null
-                || invoiceApplyHeaderDTO.getExcludeTaxAmount()!=null){
-                badHeaderIndex.add(i);
-            } else if (invoiceApplyHeaderDTO.getDelFlag()!=null) {
-                badHeaderIndex.add(i);
-            }
-        }
-
-        if(!badHeaderIndex.isEmpty()){
-            throw new CommonException(Constants.MULTILINGUAL_INV_APPLY_HEADER_SAVE_ERROR,"Bad request in the following item index: "+ badHeaderIndex);
-        }
-
-        List<InvoiceApplyHeaderDTO> updateHeaderDTOS = invoiceApplyHeaderDTOS.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
-        if(!updateHeaderDTOS.isEmpty()){
-            List<InvoiceApplyHeader> foundUpdateHeaders = invoiceApplyHeaderRepository.selectByIds(invoiceApplyHeaderDTOS.stream().map(header->header.getApplyHeaderId().toString()).collect(Collectors.joining(",")));
-            if(updateHeaderDTOS.size() != foundUpdateHeaders.size()){
-                throw new CommonException(Constants.MULTILINGUAL_INV_APPLY_HEADER_SAVE_ERROR,"provided Ids and found ids is diff");
-            }
-        }
     }
 
     private  void insertHeaders(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS){

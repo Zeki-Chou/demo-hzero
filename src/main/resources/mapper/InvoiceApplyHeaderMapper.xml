@@ -116,6 +116,9 @@
             <if test="delFlag !=null">
                 and 4iah.del_flag = #{delFlag,jdbcType = INTEGER}
             </if>
+            <if test="delFlag == null">
+                and 4iah.del_flag = 0
+            </if>
             <if test="excludeTaxAmount !=null">
                 and 4iah.exclude_tax_amount = #{excludeTaxAmount,jdbcType = OTHER}
             </if>
