@@ -21,6 +21,7 @@ import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
+import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
 import org.hzero.core.redis.RedisQueueHelper;
 import org.springframework.beans.BeanUtils;
@@ -30,10 +31,7 @@ import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -142,16 +140,21 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         if(!invoiceApplyLines.isEmpty()) {
             invoiceApplyLineService.saveData(invoiceApplyLines);
         }
+
+        redisHelper.delKey(InvoiceApplyConstants.REDIS_KEY);
     }
 
     @Override
     public void softDeleteById(Long applyHeaderId) {
-        invoiceApplyHeaderRepository.softDeleteById(applyHeaderId);
+        InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(applyHeaderId);
+        invoiceApplyHeader.setDelFlag(1);
+        invoiceApplyHeaderRepository.updateOptional(invoiceApplyHeader, InvoiceApplyHeader.FIELD_DEL_FLAG);
+        redisHelper.delKey(InvoiceApplyConstants.REDIS_KEY);
     }
 
     @Override
     public InvoiceApplyHeaderDTO detail(Long applyHeaderId) {
-        String key = "invoiceDetail_47355";
+        String key = InvoiceApplyConstants.REDIS_KEY + applyHeaderId;
 
         if(redisHelper.hasKey(key)) {
            if(redisHelper.strGet(key) != null && !redisHelper.strGet(key).isEmpty()) {
@@ -176,6 +179,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     private void valueSetValidation(List<InvoiceApplyHeaderDTO> dtos) {
         List<String> errors = new ArrayList<>();
+
         dtos.forEach(dto -> {
             String applyStatus = dto.getApplyStatus();
             String invoiceType = dto.getInvoiceType();
@@ -197,20 +201,26 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                     .collect(Collectors.toList());
 
             if (!allowedApplyStatuses.contains(applyStatus)) {
-                errors.add(applyStatus + "is not a valid apply status");
+                if(applyStatus != null) {
+                    errors.add(applyStatus + " is not a valid apply status");
+                }
             }
 
             if (!allowedInvoiceType.contains(invoiceType)) {
-                errors.add(invoiceType + " is not a valid invoice type");
+                if(invoiceType != null) {
+                    errors.add(invoiceType + " is not a valid invoice type");
+                    }
             }
 
             if(!allowedInvoiceColor.contains(invoiceColor)) {
-                errors.add(invoiceColor + "is not a valid invoice color");
+                if(invoiceColor != null) {
+                    errors.add(invoiceColor + " is not a valid invoice color");
+                }
             }
         });
 
         if (!errors.isEmpty()) {
-            throw new CommonException(errors.toString());
+            throw new CommonException(InvoiceApplyConstants.INV_APPLY_HEADER_ERROR, errors.toString());
         }
     }
 }

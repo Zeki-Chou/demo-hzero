@@ -4,23 +4,24 @@ import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.dto.InvoiceApplyLineDTO;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import com.hand.demo.infra.constant.InvoiceApplyConstants;
 import io.choerodon.core.domain.Page;
+import io.choerodon.core.exception.CommonException;
 import io.choerodon.core.exception.ext.IllegalArgumentException;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import lombok.AllArgsConstructor;
+import org.hzero.core.message.MessageAccessor;
 import org.hzero.mybatis.domian.Condition;
 import com.hand.demo.app.service.InvoiceApplyLineService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,6 +44,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         return PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyLineRepository.selectList(invoiceApplyLine));
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void saveData(List<InvoiceApplyLine> invoiceApplyLines) {
         Set<Long> currHeaderIds = getCurrentHeaderIds(invoiceApplyLines);
@@ -63,7 +65,6 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         performUpdate(updateList);
 
         Set<Long> headerIds = collectHeaderIds(insertList, updateList);
-
         Map<Long, List<InvoiceApplyLine>> linesGroupedByHeaderId = getLinesGroupedByHeaderId(headerIds);
         Map<Long, InvoiceApplyHeader> headerMap = getHeaderMap(headerIds);
 
@@ -90,7 +91,8 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         currHeaderIds.removeAll(existingHeaderIds);
 
         if (!currHeaderIds.isEmpty()) {
-            throw new IllegalArgumentException("The following header IDs are missing in the InvoiceApplyHeader table or have been deleted: " + currHeaderIds);
+            String error = "The following header IDs are missing in the InvoiceApplyHeader table or have been deleted: " + currHeaderIds;
+            throw new CommonException(InvoiceApplyConstants.INV_APPLY_LINE_ERROR, error);
         }
     }
 
@@ -186,30 +188,13 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     public void remove(List<InvoiceApplyLine> invoiceApplyLines) {
         invoiceApplyLineRepository.batchDeleteByPrimaryKey(invoiceApplyLines);
 
-        List<Long> headersIDsInApplyLines = invoiceApplyLines.stream().map(InvoiceApplyLine::getApplyHeaderId).collect(Collectors.toList());
-        Map<Long, List<InvoiceApplyLine>> applyLinesByHeaderId = invoiceApplyLines.stream()
-                .collect(Collectors.groupingBy(InvoiceApplyLine::getApplyHeaderId));
+        Set<Long> headersIDsInApplyLines = invoiceApplyLines.stream().map(InvoiceApplyLine::getApplyHeaderId).collect(Collectors.toSet());
 
-        Condition condition = new Condition(InvoiceApplyHeader.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        criteria.andIn("applyHeaderId", headersIDsInApplyLines);
-        List<InvoiceApplyHeader> headers = invoiceApplyHeaderRepository.selectByCondition(condition);
+        Map<Long, List<InvoiceApplyLine>> linesByHeaderId = getLinesGroupedByHeaderId(headersIDsInApplyLines);
 
-        headers.forEach(header -> {
-            List<InvoiceApplyLine> headerLines = applyLinesByHeaderId.get(header.getApplyHeaderId());
-            BigDecimal headerTotalAmount = header.getTotalAmount();
-            BigDecimal headerTaxAmount = header.getTaxAmount();
-            BigDecimal headerExcludeTaxAmount = header.getExcludeTaxAmount();
-
-            headerLines.forEach(headerLine -> {
-                header.setTotalAmount(headerTotalAmount.subtract(headerLine.getTotalAmount()));
-                header.setTaxAmount(headerTaxAmount.subtract(headerLine.getTaxAmount()));
-                header.setExcludeTaxAmount(headerExcludeTaxAmount.subtract(headerLine.getExcludeTaxAmount()));
-            });
-        });
-
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(headers);
-
+        Map<Long, InvoiceApplyHeader> headerMap = getHeaderMap(headersIDsInApplyLines);
+        List<InvoiceApplyHeader> headersToUpdate = calculateHeaderAmounts(headersIDsInApplyLines, linesByHeaderId, headerMap);
+        updateHeaders(headersToUpdate);
     }
 
     @Override

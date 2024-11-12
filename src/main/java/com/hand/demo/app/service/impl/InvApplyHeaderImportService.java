@@ -10,10 +10,14 @@ import lombok.AllArgsConstructor;
 import org.hzero.boot.imported.app.service.BatchImportHandler;
 import org.hzero.boot.imported.infra.validator.annotation.ImportService;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
+import org.hzero.mybatis.domian.Condition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -54,8 +58,30 @@ public class InvApplyHeaderImportService extends BatchImportHandler {
         List<InvoiceApplyHeader> updateList = headers.stream()
                 .filter(header -> header.getApplyHeaderNumber() != null)
                 .collect(Collectors.toList());
+
         invoiceApplyHeaderRepository.batchInsertSelective(insertList);
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+
+        Set<String> headerNumbers = updateList.stream().map(InvoiceApplyHeader::getApplyHeaderNumber).collect(Collectors.toSet());
+        Condition condition = new Condition(InvoiceApplyHeader.class);
+        Condition.Criteria criteria = condition.createCriteria();
+        criteria.andIn(InvoiceApplyHeader.FIELD_APPLY_HEADER_NUMBER, headerNumbers);
+
+        List<InvoiceApplyHeader> headerFromDbToUpdate = invoiceApplyHeaderRepository.selectByCondition(condition);
+
+//        {headerNumber1: {HeaderObject2}, headerNumber2: {HeaderObject2}}
+        Map<String, InvoiceApplyHeader> headerByApplyHeaderNumber = headerFromDbToUpdate.stream()
+                .collect(Collectors.toMap(InvoiceApplyHeader::getApplyHeaderNumber, Function.identity()));
+
+        List<InvoiceApplyHeader> updateListWithPrimaryKey = updateList.stream()
+                .peek(header -> {
+                    InvoiceApplyHeader headerFromDB = headerByApplyHeaderNumber.get(header.getApplyHeaderNumber());
+                    header.setApplyHeaderId(headerFromDB.getApplyHeaderId());
+                    header.setObjectVersionNumber(headerFromDB.getObjectVersionNumber());
+                })
+                .collect(Collectors.toList());
+
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateListWithPrimaryKey);
+
         return flag.get();
     }
 }
