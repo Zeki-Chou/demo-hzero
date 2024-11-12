@@ -65,9 +65,9 @@ public class InvoiceApplyLineController extends BaseController {
     @PostMapping
     public ResponseEntity<List<InvoiceApplyLine>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyLine> invoiceApplyLines) {
         validObject(invoiceApplyLines);
-//        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyLines);
+        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyLines);
         invoiceApplyLines.forEach(item -> item.setTenantId(organizationId));
-        invoiceApplyLineService.saveData(invoiceApplyLines);
+        invoiceApplyLineService.saveDataTest(invoiceApplyLines);
         return Results.success(invoiceApplyLines);
     }
 
@@ -75,7 +75,7 @@ public class InvoiceApplyLineController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> remove(@RequestBody List<InvoiceApplyLine> invoiceApplyLines) {
-        // SecurityTokenHelper.validToken(invoiceApplyLines);
+         SecurityTokenHelper.validToken(invoiceApplyLines);
         invoiceApplyLineService.deleteApplyLine(invoiceApplyLines);
         return Results.success();
     }

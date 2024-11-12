@@ -44,5 +44,7 @@ public interface InvoiceApplyLineService {
      */
     List<InvoiceApplyLineDTO> exportAll(InvoiceApplyLineDTO dto);
 
+    void saveDataTest(List<InvoiceApplyLine> invoiceApplyLines);
+
 }
 

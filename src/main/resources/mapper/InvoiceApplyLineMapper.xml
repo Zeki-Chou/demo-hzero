@@ -130,5 +130,15 @@
             </if>
         </where>
     </select>
+
+    <select id="selectByHeaderId" resultType = "com.hand.demo.domain.entity.InvoiceApplyLine">
+        select
+        <include refid = "BaseSql"/>
+        from 47359_invoice_apply_line 4ial
+        where 4ial.apply_header_id in
+        <foreach collection="list" index="index" item="item" open= "(" separator= "," close= ")">
+            #{item}
+        </foreach>
+    </select>
 </mapper>
 

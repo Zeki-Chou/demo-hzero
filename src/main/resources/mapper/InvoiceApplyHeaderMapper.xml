@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hand.demo.infra.mapper.InvoiceApplyHeaderMapper">
-
-
     <sql id = "BaseSql">
         iah.apply_header_id,
         iah.apply_header_number,
@@ -42,7 +40,7 @@
         iah.object_version_number
     </sql>
 
-    <select id = "selectList" resultType = "com.hand.demo.domain.entity.InvoiceApplyHeader">
+    <select id = "selectList" resultType = "com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO">
         select
         <include refid = "BaseSql"/>
         from t47359_invoice_apply_header iah

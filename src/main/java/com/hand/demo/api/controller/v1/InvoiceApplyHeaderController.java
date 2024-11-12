@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * (InvoiceApplyHeader)表控制层
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 14:40:36
  */
 
@@ -63,9 +63,9 @@ public class InvoiceApplyHeaderController extends BaseController {
     @PostMapping
     public ResponseEntity<List<InvoiceApplyHeaderDTO>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
         validObject(invoiceApplyHeaders);
-        //SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
+        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
-        invoiceApplyHeaderService.saveData(invoiceApplyHeaders, organizationId);
+        invoiceApplyHeaderService.saveDataTest(invoiceApplyHeaders, organizationId);
         return Results.success(invoiceApplyHeaders);
     }
 

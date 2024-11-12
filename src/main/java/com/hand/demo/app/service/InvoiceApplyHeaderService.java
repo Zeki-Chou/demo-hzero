@@ -51,5 +51,12 @@ public interface InvoiceApplyHeaderService {
      * @return list of header dtos
      */
     List<InvoiceApplyHeaderDTO> exportAll(Long organizationId);
+
+    /**
+     * save and update data apply header
+     *
+     * @param invoiceApplyHeaders 数据
+     */
+    void saveDataTest(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders, Long organizationId);
 }
 

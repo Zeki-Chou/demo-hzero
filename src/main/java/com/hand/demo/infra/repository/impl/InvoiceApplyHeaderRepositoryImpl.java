@@ -1,5 +1,6 @@
 package com.hand.demo.infra.repository.impl;
 
+import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.stereotype.Component;
@@ -13,7 +14,7 @@ import java.util.List;
 /**
  * (InvoiceApplyHeader)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 14:40:36
  */
 @Component
@@ -22,15 +23,15 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     private InvoiceApplyHeaderMapper invoiceApplyHeaderMapper;
 
     @Override
-    public List<InvoiceApplyHeader> selectList(InvoiceApplyHeader invoiceApplyHeader) {
+    public List<InvoiceApplyHeaderDTO> selectList(InvoiceApplyHeader invoiceApplyHeader) {
         return invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
     }
 
     @Override
-    public InvoiceApplyHeader selectByPrimary(Long applyHeaderId) {
+    public InvoiceApplyHeaderDTO selectByPrimary(Long applyHeaderId) {
         InvoiceApplyHeader invoiceApplyHeader = new InvoiceApplyHeader();
         invoiceApplyHeader.setApplyHeaderId(applyHeaderId);
-        List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
         if (invoiceApplyHeaders.size() == 0) {
             return null;
         }
@@ -41,7 +42,5 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     public void updateByHeaderNumber(InvoiceApplyHeader invoiceApplyHeader) {
         invoiceApplyHeaderMapper.updateByHeaderNumber(invoiceApplyHeader);
     }
-
-
 }
 

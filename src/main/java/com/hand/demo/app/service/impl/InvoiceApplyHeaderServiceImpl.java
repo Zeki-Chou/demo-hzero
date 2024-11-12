@@ -3,6 +3,7 @@ package com.hand.demo.app.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import com.hand.demo.infra.constant.InvApplyHeaderConstant;
@@ -16,6 +17,7 @@ import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
+import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
 import org.hzero.mybatis.common.Criteria;
 import org.hzero.mybatis.common.query.Comparison;
@@ -27,7 +29,9 @@ import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,9 +62,12 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     private final InvoiceApplyLineRepository invoiceApplyLineRepository;
 
-    public InvoiceApplyHeaderServiceImpl(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, InvoiceApplyLineRepository invoiceApplyLineRepository) {
+    private final InvoiceApplyLineService invoiceApplyLineService;
+
+    public InvoiceApplyHeaderServiceImpl(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, InvoiceApplyLineRepository invoiceApplyLineRepository, InvoiceApplyLineService invoiceApplyLineService) {
         this.invoiceApplyHeaderRepository = invoiceApplyHeaderRepository;
         this.invoiceApplyLineRepository = invoiceApplyLineRepository;
+        this.invoiceApplyLineService = invoiceApplyLineService;
     }
 
     @Override
@@ -87,102 +94,123 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders, Long organizationId) {
+//        saveDataTest(invoiceApplyHeaders, organizationId);
+//        validateHeader(invoiceApplyHeaders, organizationId);
+//
+//        // key is the template header number
+//        Map<String, List<InvoiceApplyLine>> applyLineMap = new HashMap<>();
+//
+//        for (InvoiceApplyHeaderDTO header: invoiceApplyHeaders) {
+//            List<InvoiceApplyLine> invoiceApplyData = new ArrayList<>();
+//            List<InvoiceApplyLine> lineFromRequest = header.getDataList();
+//
+//            if (lineFromRequest != null) {
+//                invoiceApplyData.addAll(lineFromRequest);
+//            }
+//
+//            if (header.getApplyHeaderId() == null) {
+//                header.setApplyHeaderNumber(InvoiceApplyHeaderUtils.generateTemplateCode(codeRuleBuilder));
+//            }
+//
+//            List<InvoiceApplyLine> applyDataDB = new ArrayList<>();
+//
+//            if (header.getApplyHeaderId() != null) {
+//                InvoiceApplyLine applyLineRecord = new InvoiceApplyLine();
+//                applyLineRecord.setApplyHeaderId(header.getApplyHeaderId());
+//                applyDataDB.addAll(invoiceApplyLineRepository.selectList(applyLineRecord));
+//            }
+//
+//            Utils.addAmountFromLineList(invoiceApplyData, header, applyDataDB);
+//            applyLineMap.put(header.getApplyHeaderNumber(), invoiceApplyData);
+//        }
+//
+//        List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
+//        List<InvoiceApplyHeader> updateList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
+//
+//        List<InvoiceApplyHeader> insertRes = invoiceApplyHeaderRepository.batchInsertSelective(insertList);
+//        List<InvoiceApplyHeader> updateRes = invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+//
+//        // if updated, then remove the cache
+//        // since data can be changed
+//        updateRes.forEach(header -> {
+//            redis.setCurrentDatabase(13);
+//            String cacheName = header.getApplyHeaderId() + "-applyheader-47359";
+//            redis.delKey(cacheName);
+//        });
+//
+//        List<InvoiceApplyLine> insertApplyLines = new ArrayList<>();
+//        List<InvoiceApplyLine> updateApplyLines = new ArrayList<>();
+//
+//        // insert need to get the header id and add it to their lines
+//        insertRes.forEach(header -> {
+//            Long headerId = header.getApplyHeaderId();
+//            List<InvoiceApplyLine> lineList = applyLineMap.get(header.getApplyHeaderNumber());
+//            lineList.forEach(line -> line.setApplyHeaderId(headerId));
+//            insertApplyLines.addAll(lineList);
+//        });
+//
+//        updateRes.forEach(header -> {
+//            List<InvoiceApplyLine> lineList = applyLineMap.get(header.getApplyHeaderNumber());
+//            updateApplyLines.addAll(lineList);
+//        });
+//
+//        invoiceApplyLineRepository.batchInsertSelective(insertApplyLines);
+//        invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateApplyLines);
+    }
 
-        List<String> applyStatusList = lovAdapter
-                .queryLovValue(InvApplyHeaderConstant.APPLY_STATUS, organizationId)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+    @Override
+    @Transactional
+    public void saveDataTest(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders, Long organizationId) {
+        // validate
+        validateHeader(invoiceApplyHeaders, organizationId);
+        Map<String, List<InvoiceApplyLine>> lineListMap = new HashMap<>();
+        List<InvoiceApplyLine> lineWithHeaderIdList = new ArrayList<>();
 
-        List<String> invoiceColorList = lovAdapter
-                .queryLovValue(InvApplyHeaderConstant.INVOICE_COLOR, organizationId)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+        // put list of invoice lines into map
+        invoiceApplyHeaders.forEach(header -> {
+            String templateCode = InvoiceApplyHeaderUtils.generateTemplateCode(codeRuleBuilder);
+            header.setApplyHeaderNumber(templateCode);
 
-        List<String> invoiceTypeList = lovAdapter
-                .queryLovValue(InvApplyHeaderConstant.INVOICE_TYPE, organizationId)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+            header.setTotalAmount(BigDecimal.ZERO);
+            header.setTaxAmount(BigDecimal.ZERO);
+            header.setExcludeTaxAmount(BigDecimal.ZERO);
 
-        // key is the template header number
-        Map<String, List<InvoiceApplyLine>> applyLineList = new HashMap<>();
+            lineListMap.put(templateCode, header.getDataList());
+        });
 
-        for (InvoiceApplyHeaderDTO header: invoiceApplyHeaders) {
-            if (!invoiceTypeList.contains(header.getInvoiceType())) {
-                throw new CommonException("invalid invoice type");
-            }
-
-            if (!invoiceColorList.contains(header.getInvoiceColor())) {
-                throw new CommonException("invalid invoice color");
-            }
-
-            if (!applyStatusList.contains(header.getApplyStatus())) {
-                throw new CommonException("invalid apply status");
-            }
-
-            List<InvoiceApplyLine> invoiceApplyData = new ArrayList<>();
-            List<InvoiceApplyLine> lineFromRequest = header.getDataList();
-
-            if (lineFromRequest != null) {
-                invoiceApplyData.addAll(lineFromRequest);
-            }
-
-            if (header.getApplyHeaderId() == null) {
-                header.setApplyHeaderNumber(InvoiceApplyHeaderUtils.generateTemplateCode(codeRuleBuilder));
-            }
-
-            List<InvoiceApplyLine> applyDataDB = new ArrayList<>();
-
-            if (header.getApplyHeaderId() != null) {
-                InvoiceApplyLine applyLineRecord = new InvoiceApplyLine();
-                applyLineRecord.setApplyHeaderId(header.getApplyHeaderId());
-                applyDataDB.addAll(invoiceApplyLineRepository.selectList(applyLineRecord));
-            }
-
-            Utils.addAmountFromLineList(invoiceApplyData, header, applyDataDB);
-            applyLineList.put(header.getApplyHeaderNumber(), invoiceApplyData);
-        }
-
+        //update and insert new headers
         List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
         List<InvoiceApplyHeader> updateList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
 
         List<InvoiceApplyHeader> insertRes = invoiceApplyHeaderRepository.batchInsertSelective(insertList);
         List<InvoiceApplyHeader> updateRes = invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
 
-        // if updated, then remove the cache
-        // since data can be changed
-        updateRes.forEach(header -> {
+        // set the new apply header id into invoice line if invoice header is new
+        for (InvoiceApplyHeader header: insertRes) {
+            List<InvoiceApplyLine> invoiceApplyLineList = lineListMap.getOrDefault(header.getApplyHeaderNumber(), new ArrayList<>());
+            invoiceApplyLineList.forEach(line -> line.setApplyHeaderId(header.getApplyHeaderId()));
+            lineWithHeaderIdList.addAll(invoiceApplyLineList);
+        }
+
+        for (InvoiceApplyHeader header: updateRes) {
+            List<InvoiceApplyLine> invoiceApplyLineList = lineListMap.get(header.getApplyHeaderNumber());
+            lineWithHeaderIdList.addAll(invoiceApplyLineList);
+
             redis.setCurrentDatabase(13);
             String cacheName = header.getApplyHeaderId() + "-applyheader-47359";
             redis.delKey(cacheName);
-        });
+        }
 
-        List<InvoiceApplyLine> insertApplyLines = new ArrayList<>();
-        List<InvoiceApplyLine> updateApplyLines = new ArrayList<>();
+        if (!lineWithHeaderIdList.isEmpty()) {
+            invoiceApplyLineService.saveDataTest(lineWithHeaderIdList);
+        }
 
-        // insert need to get the header id and add it to their lines
-        insertRes.forEach(header -> {
-            Long headerId = header.getApplyHeaderId();
-            List<InvoiceApplyLine> lineList = applyLineList.get(header.getApplyHeaderNumber());
-            lineList.forEach(line -> line.setApplyHeaderId(headerId));
-            insertApplyLines.addAll(lineList);
-        });
-
-        updateRes.forEach(header -> {
-            List<InvoiceApplyLine> lineList = applyLineList.get(header.getApplyHeaderNumber());
-            updateApplyLines.addAll(lineList);
-        });
-
-        invoiceApplyLineRepository.batchInsertSelective(insertApplyLines);
-        invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateApplyLines);
     }
 
     @Override
     public void deleteData(InvoiceApplyHeader invoiceApplyHeader) {
         if (invoiceApplyHeaderRepository.selectByPrimary(invoiceApplyHeader.getApplyHeaderId()) == null) {
-            throw new CommonException("header not found");
+            throw new CommonException("demo-47359.warn.invoice_apply_line.not_found", invoiceApplyHeader.getApplyHeaderId());
         }
         mapper.updateDelFlag(invoiceApplyHeader);
     }
@@ -196,7 +224,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             return redis.strGet(cacheName, InvoiceApplyHeaderDTO.class);
         }
 
-        InvoiceApplyHeader header = invoiceApplyHeaderRepository.selectByPrimary(applyHeaderId);
+        InvoiceApplyHeaderDTO header = invoiceApplyHeaderRepository.selectByPrimary(applyHeaderId);
+        if (header == null) {
+            throw new CommonException("demo-47359.warn.invoice_apply_line.not_found", applyHeaderId);
+        }
+
         InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
         BeanUtils.copyProperties(header, dto);
         InvoiceApplyLine invoiceApplyLine = new InvoiceApplyLine();
@@ -208,7 +240,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             String jsonStringDto = objectMapper.writeValueAsString(dto);
             redis.strSet(cacheName, jsonStringDto);
         } catch (JsonProcessingException e) {
-            throw new CommonException("error converting to json string");
+            throw new CommonException("demo-47359.error.object_mapper.json_context");
         }
 
         return dto;
@@ -240,19 +272,68 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         String lang = "zh_CN";
 
         // get value set for apply status
-        String applyStatus = lovAdapter.queryLovMeaning("DEMO-47359.INV_APPLY_HEADER.APPLY_STATUS", organizationId, invoiceApplyHeader.getApplyStatus(), lang);
+        String applyStatus = lovAdapter.queryLovMeaning(InvApplyHeaderConstant.APPLY_STATUS, organizationId, invoiceApplyHeader.getApplyStatus(), lang);
 
         // get value set for invoice color
-        String invoiceColor = lovAdapter.queryLovMeaning("DEMO-47359.INV_APPLY_HEADER.INV_COLOR", organizationId, invoiceApplyHeader.getInvoiceColor(), lang);
+        String invoiceColor = lovAdapter.queryLovMeaning(InvApplyHeaderConstant.INVOICE_COLOR, organizationId, invoiceApplyHeader.getInvoiceColor(), lang);
 
         // get value set for invoice type
-        String invoiceType = lovAdapter.queryLovMeaning("DEMO-47359.INV_APPLY_HEADER.INV_TYPE", organizationId, invoiceApplyHeader.getInvoiceType(), lang);
+        String invoiceType = lovAdapter.queryLovMeaning(InvApplyHeaderConstant.INVOICE_TYPE, organizationId, invoiceApplyHeader.getInvoiceType(), lang);
 
         dto.setApplyStatusMeaning(applyStatus);
         dto.setInvoiceTypeMeaning(invoiceType);
         dto.setInvoiceColorMeaning(invoiceColor);
 
         return dto;
+    }
+    /**
+     * transform invoiceApplyHeader to appropriate DTO object
+     * @param dto invoice apply header dto object
+     * @return invoiceApplyHeaderDTO
+     */
+    private InvoiceApplyHeader mapToEntity(InvoiceApplyHeaderDTO dto) {
+        InvoiceApplyHeader header = new InvoiceApplyHeader();
+        BeanUtils.copyProperties(dto, header);
+        return header;
+    }
+
+    /**
+     * check valid apply status, invoice color and invoice type
+     * @param dtoList list of apply header dto
+     * @param organizationId tenant id
+     */
+    private void validateHeader(List<InvoiceApplyHeaderDTO> dtoList, Long organizationId) {
+        List<String> applyStatusList = lovAdapter
+                .queryLovValue(InvApplyHeaderConstant.APPLY_STATUS, organizationId)
+                .stream()
+                .map(LovValueDTO::getValue)
+                .collect(Collectors.toList());
+
+        List<String> invoiceColorList = lovAdapter
+                .queryLovValue(InvApplyHeaderConstant.INVOICE_COLOR, organizationId)
+                .stream()
+                .map(LovValueDTO::getValue)
+                .collect(Collectors.toList());
+
+        List<String> invoiceTypeList = lovAdapter
+                .queryLovValue(InvApplyHeaderConstant.INVOICE_TYPE, organizationId)
+                .stream()
+                .map(LovValueDTO::getValue)
+                .collect(Collectors.toList());
+
+        for (InvoiceApplyHeaderDTO header: dtoList) {
+            if (!invoiceTypeList.contains(header.getInvoiceType())) {
+                throw new CommonException("demo-47359.warn.invoice_apply_header.invoice_type", header.getInvoiceType());
+            }
+
+            if (!invoiceColorList.contains(header.getInvoiceColor())) {
+                throw new CommonException("demo-47359.warn.invoice_apply_header.invoice_color", header.getInvoiceType());
+            }
+
+            if (!applyStatusList.contains(header.getApplyStatus())) {
+                throw new CommonException("demo-47359.warn.invoice_apply_header.apply_status", header.getApplyStatus());
+            }
+        }
     }
 }
 

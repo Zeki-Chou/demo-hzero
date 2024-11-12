@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * (InvoiceApplyLine)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 11:21:14
  */
 public interface InvoiceApplyLineRepository extends BaseRepository<InvoiceApplyLine> {
@@ -27,4 +27,6 @@ public interface InvoiceApplyLineRepository extends BaseRepository<InvoiceApplyL
      * @return 返回值
      */
     InvoiceApplyLine selectByPrimary(Long applyLineId);
+
+    List<InvoiceApplyLine> selectByHeaderIds(List<Long> invoiceApplyHeaderIds);
 }

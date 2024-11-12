@@ -71,7 +71,7 @@ public class Utils {
             }
         }
 
-        // for insert
+        // for insert, just add the amount to the header
         insertLine.stream().map(Utils::calculateAmountLine).forEach(amountInvoiceLine -> {
             BigDecimal sumTotalAmount = header
                     .getTotalAmount()
