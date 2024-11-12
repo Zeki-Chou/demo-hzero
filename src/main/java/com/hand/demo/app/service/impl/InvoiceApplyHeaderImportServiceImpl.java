@@ -88,18 +88,17 @@ public class InvoiceApplyHeaderImportServiceImpl extends BatchImportHandler {
 
                         if (!existingHeaders.isEmpty()) {
                             InvoiceApplyHeader existingHeader = existingHeaders.get(0);
-                            header.setObjectVersionNumber(existingHeader.getObjectVersionNumber());
                             header.setApplyHeaderId(existingHeader.getApplyHeaderId());
                             headersToUpdate.add(header);
                         } else {
-                            throw new CommonException("Header not found for Apply Header Number: " + header.getApplyHeaderNumber());
+                            throw new CommonException(InvoiceConstants.Exception.INVALID_APPLY_HEADER, header.getApplyHeaderNumber());
                         }
                     }
                 }
             }
 
             if (!invalidHeaders.isEmpty()) {
-                throw new CommonException("Invalid invoice apply headers found: " + String.join(", ", invalidHeaders));
+                throw new CommonException(InvoiceConstants.Exception.INVALID_APPLY_HEADER, String.join(", ", invalidHeaders));
             }
 
             // Batch insert new headers

@@ -21,12 +21,9 @@ import com.hand.demo.app.service.InvoiceApplyHeaderService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -43,13 +40,15 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private final CodeRuleBuilder codeRuleBuilder;
     private final LovAdapter lovAdapter;
     private final RedisHelper redisHelper;
+    private final InvoiceApplyLineServiceImpl invoiceApplyLineService;
 
-    public InvoiceApplyHeaderServiceImpl(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, InvoiceApplyLineRepository invoiceApplyLineRepository, CodeRuleBuilder codeRuleBuilder, LovAdapter lovAdapter, RedisHelper redisHelper) {
+    public InvoiceApplyHeaderServiceImpl(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, InvoiceApplyLineRepository invoiceApplyLineRepository, CodeRuleBuilder codeRuleBuilder, LovAdapter lovAdapter, RedisHelper redisHelper, InvoiceApplyLineServiceImpl invoiceApplyLineService) {
         this.invoiceApplyHeaderRepository = invoiceApplyHeaderRepository;
         this.invoiceApplyLineRepository = invoiceApplyLineRepository;
         this.codeRuleBuilder = codeRuleBuilder;
         this.lovAdapter = lovAdapter;
         this.redisHelper = redisHelper;
+        this.invoiceApplyLineService = invoiceApplyLineService;
     }
 
     @Override
@@ -59,7 +58,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeaderDto));
         List<InvoiceApplyHeaderDto> invoiceApplyHeaderDTOS = new ArrayList<>();
 
-        // Iterate through each InvoiceApplyHeader and map it to the DTO
+        // Iterate InvoiceApplyHeader
         for (InvoiceApplyHeader data : pageResult) {
 
             // Map InvoiceApplyHeader to DTO
@@ -69,7 +68,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             invoiceApplyHeaderDTOS.add(dto);
         }
 
-        // Create a Page for the DTOs with pagination information
+        // DTOs Pagination
         Page<InvoiceApplyHeaderDto> dtoPage = new Page<>();
         dtoPage.setContent(invoiceApplyHeaderDTOS);
         dtoPage.setTotalPages(pageResult.getTotalPages());
@@ -82,8 +81,19 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public List<InvoiceApplyHeaderDto> saveData(List<InvoiceApplyHeaderDto> invoiceApplyHeaderDtos) {
+        validateInvoiceHeaders(invoiceApplyHeaderDtos);
 
-        // Fetch valid values from LOV for validations
+        List<InvoiceApplyHeaderDto> responseList = new ArrayList<>();
+
+        for (InvoiceApplyHeaderDto dto : invoiceApplyHeaderDtos) {
+            handleSave(dto);
+            responseList.add(dto);
+        }
+
+        return responseList;
+    }
+
+    private void validateInvoiceHeaders(List<InvoiceApplyHeaderDto> invoiceApplyHeaderDtos) {
         List<String> validApplyStatuses = lovAdapter.queryLovValue(InvoiceConstants.LovCode.APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID)
                 .stream().map(LovValueDTO::getValue).collect(Collectors.toList());
         List<String> validInvoiceColors = lovAdapter.queryLovValue(InvoiceConstants.LovCode.INVOICE_COLOR, BaseConstants.DEFAULT_TENANT_ID)
@@ -106,118 +116,81 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
 
         if (!invalidHeaders.isEmpty()) {
-            throw new CommonException("Invalid invoice apply headers found: " + String.join(", ", invalidHeaders));
+            throw new CommonException(InvoiceConstants.Exception.INVALID_APPLY_HEADER, String.join(", ", invalidHeaders));
         }
+    }
 
-        List<InvoiceApplyHeaderDto> responseList = new ArrayList<>();
+    @Transactional(rollbackFor = Exception.class)
+    private void handleSave(InvoiceApplyHeaderDto dto) {
 
-        // Separate the insert list and update list
-        List<InvoiceApplyHeaderDto> insertList = invoiceApplyHeaderDtos.stream()
-                .filter(dto -> dto.getApplyHeaderId() == null)
-                .collect(Collectors.toList());
-        List<InvoiceApplyHeaderDto> updateList = invoiceApplyHeaderDtos.stream()
-                .filter(dto -> dto.getApplyHeaderId() != null)
-                .collect(Collectors.toList());
+        InvoiceApplyHeader entity;
 
-        // Process inserts
-        insertList.forEach(dto -> {
+        if (dto.getApplyHeaderId() == null) {
+
+            // Generate code rule
             Map<String, String> variableMap = new HashMap<>();
             variableMap.put("customSegment", "-");
             String uniqueCode = codeRuleBuilder.generateCode(InvoiceConstants.CODE_RULE, variableMap);
             dto.setApplyHeaderNumber(uniqueCode);
 
-            InvoiceApplyHeader entity = mapDtoToEntity(dto);
-
-            // Calculate totals and insert
+            entity = mapDtoToEntity(dto);
             invoiceApplyHeaderRepository.insertSelective(entity);
-            processInvoiceLines(dto.getInvoiceLineList(), entity);
-
-            // Update DTO with calculated totals from the entity
-            dto.setApplyHeaderId(entity.getApplyHeaderId());
-            dto.setTotalAmount(entity.getTotalAmount());
-            dto.setExcludeTaxAmount(entity.getExcludeTaxAmount());
-            dto.setTaxAmount(entity.getTaxAmount());
-
-            redisHelper.delKey(InvoiceConstants.CACHE_KEY + entity.getApplyHeaderId());
-
-            responseList.add(dto);
-        });
-
-        // Process updates
-        updateList.forEach(dto -> {
-            InvoiceApplyHeader entity = mapDtoToEntity(dto);
-
-            // Process lines and calculate totals
-            processInvoiceLines(dto.getInvoiceLineList(), entity);
-
-            // Update the existing header with new totals
+        } else {
+            entity = mapDtoToEntity(dto);
             invoiceApplyHeaderRepository.updateByPrimaryKeySelective(entity);
-
-            // Update DTO with calculated totals from the entity
-            dto.setTotalAmount(entity.getTotalAmount());
-            dto.setExcludeTaxAmount(entity.getExcludeTaxAmount());
-            dto.setTaxAmount(entity.getTaxAmount());
-
-            responseList.add(dto); // `dto` now includes updated totals and `invoiceLineList`
-        });
-
-        return responseList;
-    }
-
-
-    //Process the invoice lines for header
-    private void processInvoiceLines(List<InvoiceApplyLine> invoiceLines, InvoiceApplyHeader header) {
-        BigDecimal headerTotalAmount = BigDecimal.ZERO;
-        BigDecimal headerExcludeTaxAmount = BigDecimal.ZERO;
-        BigDecimal headerTaxAmount = BigDecimal.ZERO;
-
-        if (invoiceLines != null && !invoiceLines.isEmpty()) {
-            for (InvoiceApplyLine line : invoiceLines) {
-                // Set the applyHeaderId from the parent header
-                line.setApplyHeaderId(header.getApplyHeaderId());
-
-                // Calculate line-level fields
-                BigDecimal lineTotalAmount = line.getUnitPrice().multiply(line.getQuantity());
-                line.setTotalAmount(lineTotalAmount);
-
-                BigDecimal lineTaxAmount = lineTotalAmount.multiply(line.getTaxRate());
-                line.setTaxAmount(lineTaxAmount);
-
-                BigDecimal lineExcludeTaxAmount = lineTotalAmount.subtract(lineTaxAmount);
-                line.setExcludeTaxAmount(lineExcludeTaxAmount);
-
-                // Accumulate to header-level totals
-                headerTotalAmount = headerTotalAmount.add(lineTotalAmount);
-                headerExcludeTaxAmount = headerExcludeTaxAmount.add(lineExcludeTaxAmount);
-                headerTaxAmount = headerTaxAmount.add(lineTaxAmount);
-            }
-
-            // Save lines to the database
-            invoiceApplyLineRepository.batchInsert(invoiceLines);
         }
 
-        // Set header-level totals after processing all lines
-        header.setTotalAmount(headerTotalAmount);
-        header.setExcludeTaxAmount(headerExcludeTaxAmount);
-        header.setTaxAmount(headerTaxAmount);
+        // Process and save associated lines
+        dto.getInvoiceLineList().forEach(line -> line.setApplyHeaderId(entity.getApplyHeaderId()));
+        invoiceApplyLineService.saveData(dto.getInvoiceLineList());
+
+        // Update totals in DTO based on the saved entity
+        updateHeaderDtoTotals(dto, entity);
+    }
+
+    private void updateHeaderDtoTotals(InvoiceApplyHeaderDto dto, InvoiceApplyHeader entity) {
+        dto.setTotalAmount(entity.getTotalAmount());
+        dto.setExcludeTaxAmount(entity.getExcludeTaxAmount());
+        dto.setTaxAmount(entity.getTaxAmount());
     }
 
     @Override
     public void deleteInvoiceHeaders(List<InvoiceApplyHeader> invoiceApplyHeaders) {
-        for (InvoiceApplyHeader header : invoiceApplyHeaders) {
-            // Fetch the invoice header entity by ID
-            InvoiceApplyHeader entity = invoiceApplyHeaderRepository.selectByPrimaryKey(header.getApplyHeaderId());
+        // Collect applyHeaderIds
+        List<Long> applyHeaderIds = invoiceApplyHeaders.stream()
+                .map(InvoiceApplyHeader::getApplyHeaderId)
+                .collect(Collectors.toList());
 
-            redisHelper.delKey(InvoiceConstants.CACHE_KEY + header.getApplyHeaderId());
-            if (entity != null) {
-                // Set the del_flag to 1 to mark it as deleted
-                entity.setDelFlag(1);
-                // Update the invoice header in the database
-                invoiceApplyHeaderRepository.updateByPrimaryKeySelective(entity);
-            } else {
-                throw new CommonException("Invoice header not found with ID: " + header.getApplyHeaderId());
-            }
+        // Convert to comma-separated String
+        String applyHeaderIdsStr = applyHeaderIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+
+        // Query all headers by IDs in one go
+        List<InvoiceApplyHeader> headersToUpdate = invoiceApplyHeaderRepository.selectByIds(applyHeaderIdsStr);
+
+        // Delete cache keys for each ID
+        applyHeaderIds.forEach(id -> redisHelper.delKey(InvoiceConstants.CACHE_KEY + id));
+
+        // Check for any missing IDs
+        List<Long> foundIds = headersToUpdate.stream()
+                .map(InvoiceApplyHeader::getApplyHeaderId)
+                .collect(Collectors.toList());
+
+        List<Long> missingIds = applyHeaderIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .collect(Collectors.toList());
+
+        if (!missingIds.isEmpty()) {
+            String msg = "ID(s) - " + missingIds.toString();
+            throw new CommonException(InvoiceConstants.Exception.INVALID_APPLY_HEADER, msg);
         }
+
+        // Set del_flag to 1 for each valid header
+        headersToUpdate.forEach(header -> header.setDelFlag(1));
+
+        // Perform batch update
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(headersToUpdate);
     }
 
     @Override
@@ -225,32 +198,31 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     public InvoiceApplyHeaderDto getInvoiceDetailById(Long applyHeaderId) {
         String cacheKey = InvoiceConstants.CACHE_KEY + applyHeaderId;
 
-        // Check if data is available in Redis cache
+        // Check data in Redis cache
         if (Boolean.TRUE.equals(redisHelper.hasKey(cacheKey))) {
             String serializedHeader = redisHelper.strGet(cacheKey);
             return deserialize(serializedHeader);
         }
 
-        // Fetch the header by ID if not cached
+        // Not cached then query data
         InvoiceApplyHeader header = invoiceApplyHeaderRepository.selectByPrimaryKey(applyHeaderId);
         if (header == null) {
-            throw new CommonException("InvoiceApplyHeader not found for ID: " + applyHeaderId);
+            String msg = "ID(s) - " + applyHeaderId;
+            throw new CommonException(InvoiceConstants.Exception.INVALID_APPLY_HEADER, msg);
         }
 
-        // Map the header entity to DTO
         InvoiceApplyHeaderDto dto = mapEntityToDto(header);
 
-        // Fetch associated line items and set in DTO
+        // query lines and set in DTO
         List<InvoiceApplyLine> lineItems = invoiceApplyLineRepository.select(InvoiceApplyHeader.FIELD_APPLY_HEADER_ID, applyHeaderId);
         dto.setInvoiceLineList(lineItems);
 
-        // Serialize and cache the DTO for future requests
+        // cache data
         String serializedDto = serialize(dto);
         redisHelper.strSet(cacheKey, serializedDto);
 
         return dto;
     }
-
 
     //Maps DTO to InvoiceApplyHeader
     private InvoiceApplyHeader mapDtoToEntity(InvoiceApplyHeaderDto dto) {
@@ -283,5 +255,4 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             throw new CommonException("Error deserializing object", e);
         }
     }
-
 }

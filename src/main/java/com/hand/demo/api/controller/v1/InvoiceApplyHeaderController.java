@@ -72,7 +72,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @PostMapping
     public ResponseEntity<List<InvoiceApplyHeaderDto>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDto> invoiceApplyHeaderDtos) {
         validObject(invoiceApplyHeaderDtos);
-        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaderDtos);
+//        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaderDtos);
         invoiceApplyHeaderDtos.forEach(item -> item.setTenantId(organizationId));
         List<InvoiceApplyHeaderDto> savedDtos = invoiceApplyHeaderService.saveData(invoiceApplyHeaderDtos);
         return Results.success(savedDtos);

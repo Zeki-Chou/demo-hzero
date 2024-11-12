@@ -3,6 +3,7 @@ package com.hand.demo.app.service.impl;
 import com.hand.demo.api.dto.InvoiceApplyLineDto;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import com.hand.demo.infra.constant.InvoiceConstants;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
 import io.choerodon.mybatis.pagehelper.PageHelper;
@@ -40,7 +41,8 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
     @Override
     public void saveData(List<InvoiceApplyLine> invoiceApplyLines) {
-        // Separate lists for insert and update operations based on applyLineId
+
+        // Make update/insert lists
         List<InvoiceApplyLine> insertList = invoiceApplyLines.stream()
                 .filter(line -> line.getApplyLineId() == null)
                 .collect(Collectors.toList());
@@ -49,77 +51,75 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
                 .filter(line -> line.getApplyLineId() != null)
                 .collect(Collectors.toList());
 
-        // Process insert list: calculate amounts and set tenantId
+        // Process insert list
         for (InvoiceApplyLine line : insertList) {
-            line.setTenantId(0L);
+            line.setTenantId(0L); // Set tenantId (consider passing tenantId from controller if needed)
             line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
             line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
             line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
         }
 
-        // Batch insert if the insert list is not empty
         if (!insertList.isEmpty()) {
             invoiceApplyLineRepository.batchInsertSelective(insertList);
         }
 
-        // Process update list: fetch current version, calculate amounts, and set version number
+        // Process update list
         for (InvoiceApplyLine line : updateList) {
             InvoiceApplyLine dataLine = invoiceApplyLineRepository.selectByPrimary(line.getApplyLineId());
             if (dataLine == null) {
-                throw new CommonException("Invalid apply_line_id: " + line.getApplyLineId());
+                throw new CommonException(InvoiceConstants.Exception.INVALID_LINE_HEADER, line.getApplyLineId());
             }
-            line.setObjectVersionNumber(dataLine.getObjectVersionNumber());
+
+            // Re-Calc
             line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
             line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
             line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
         }
 
-        // Batch update if the update list is not empty
         if (!updateList.isEmpty()) {
             invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateList);
         }
 
-        // Group lines by applyHeaderId and update header totals
-        Map<Long, List<InvoiceApplyLine>> headerLineMap = invoiceApplyLines.stream()
-                .collect(Collectors.groupingBy(InvoiceApplyLine::getApplyHeaderId));
-
-        for (Map.Entry<Long, List<InvoiceApplyLine>> entry : headerLineMap.entrySet()) {
-            Long applyHeaderId = entry.getKey();
-
-            InvoiceApplyHeader header = invoiceApplyHeaderRepository.selectByPrimaryKey(applyHeaderId);
-            if (header == null || header.getDelFlag().equals(1)) {
-                throw new CommonException("Invalid or deleted apply_header_id: " + applyHeaderId);
-            }
-
-            // Re-fetch all lines with the same applyHeaderId
-            List<InvoiceApplyLine> allLinesForHeader = invoiceApplyLineRepository.select("applyHeaderId", applyHeaderId);
-
-            // Recalculate totals using the re-fetched lines
-            BigDecimal totalAmountSum = allLinesForHeader.stream()
-                    .map(InvoiceApplyLine::getTotalAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            BigDecimal taxAmountSum = allLinesForHeader.stream()
-                    .map(InvoiceApplyLine::getTaxAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            BigDecimal excludeTaxAmountSum = allLinesForHeader.stream()
-                    .map(InvoiceApplyLine::getExcludeTaxAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            // Update header with recalculated sums
-            header.setTotalAmount(totalAmountSum);
-            header.setTaxAmount(taxAmountSum);
-            header.setExcludeTaxAmount(excludeTaxAmountSum);
-
-            // Save updated header
-            invoiceApplyHeaderRepository.updateByPrimaryKeySelective(header);
+        // Recalculate header totals
+        for (InvoiceApplyLine line : invoiceApplyLines) {
+            recalculateHeaderTotals(line.getApplyHeaderId());
         }
+    }
+
+    // method to recalculate header totals
+    private void recalculateHeaderTotals(Long applyHeaderId) {
+        InvoiceApplyHeader header = invoiceApplyHeaderRepository.selectByPrimaryKey(applyHeaderId);
+        if (header == null || header.getDelFlag().equals(1)) {
+            throw new CommonException(InvoiceConstants.Exception.INVALID_APPLY_HEADER, applyHeaderId);
+        }
+
+        // Fetch lines per header and calculate totals
+        List<InvoiceApplyLine> allLinesForHeader = invoiceApplyLineRepository.select("applyHeaderId", applyHeaderId);
+
+        BigDecimal totalAmountSum = allLinesForHeader.stream()
+                .map(InvoiceApplyLine::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal taxAmountSum = allLinesForHeader.stream()
+                .map(InvoiceApplyLine::getTaxAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal excludeTaxAmountSum = allLinesForHeader.stream()
+                .map(InvoiceApplyLine::getExcludeTaxAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Update header with recalculated sums
+        header.setTotalAmount(totalAmountSum);
+        header.setTaxAmount(taxAmountSum);
+        header.setExcludeTaxAmount(excludeTaxAmountSum);
+
+        // Save updated header
+        invoiceApplyHeaderRepository.updateByPrimaryKeySelective(header);
     }
 
     public void remove(List<InvoiceApplyLine> invoiceApplyLines) {
         if (invoiceApplyLines.isEmpty()) {
-            throw new CommonException("No lines provided for deletion.");
+            throw new CommonException(InvoiceConstants.Exception.NO_DATA_PROVIDED);
         }
 
         // Group lines by applyHeaderId
@@ -152,7 +152,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             // Fetch the header and update totals
             InvoiceApplyHeader header = invoiceApplyHeaderRepository.selectByPrimaryKey(applyHeaderId);
             if (header == null || header.getDelFlag().equals(1)) {
-                throw new CommonException("Invalid or deleted Apply Header: " + applyHeaderId);
+                throw new CommonException(InvoiceConstants.Exception.INVALID_APPLY_HEADER, applyHeaderId);
             }
             header.setTotalAmount(totalAmount);
             header.setTaxAmount(taxAmount);
@@ -162,7 +162,6 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             invoiceApplyHeaderRepository.updateByPrimaryKeySelective(header);
         }
     }
-
 
     @Override
     public Page<InvoiceApplyLineDto> exportList(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLine) {

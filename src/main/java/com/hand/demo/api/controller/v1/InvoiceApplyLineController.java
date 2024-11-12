@@ -1,7 +1,6 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.dto.InvoiceApplyLineDto;
-import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -9,8 +8,6 @@ import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
-import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
-import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
 import org.hzero.core.util.Results;
 import org.hzero.export.annotation.ExcelExport;
@@ -38,11 +35,13 @@ import java.util.List;
 @RequestMapping("/v1/{organizationId}/invoice-apply-lines")
 public class InvoiceApplyLineController extends BaseController {
 
-    @Autowired
-    private InvoiceApplyLineRepository invoiceApplyLineRepository;
+    private final InvoiceApplyLineRepository invoiceApplyLineRepository;
+    private final InvoiceApplyLineService invoiceApplyLineService;
 
-    @Autowired
-    private InvoiceApplyLineService invoiceApplyLineService;
+    public InvoiceApplyLineController(InvoiceApplyLineRepository invoiceApplyLineRepository, InvoiceApplyLineService invoiceApplyLineService) {
+        this.invoiceApplyLineRepository = invoiceApplyLineRepository;
+        this.invoiceApplyLineService = invoiceApplyLineService;
+    }
 
     @ApiOperation(value = "List")
     @Permission(level = ResourceLevel.ORGANIZATION)
@@ -66,11 +65,16 @@ public class InvoiceApplyLineController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<InvoiceApplyLine>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyLine> invoiceApplyLines) {
+
         validObject(invoiceApplyLines);
-        invoiceApplyLines.forEach(item -> item.setTenantId(organizationId));
+        invoiceApplyLines.forEach(line -> line.setTenantId(organizationId));
+
         invoiceApplyLineService.saveData(invoiceApplyLines);
+
         return Results.success(invoiceApplyLines);
     }
+
+
 
     @ApiOperation(value = "Remove")
     @Permission(level = ResourceLevel.ORGANIZATION)

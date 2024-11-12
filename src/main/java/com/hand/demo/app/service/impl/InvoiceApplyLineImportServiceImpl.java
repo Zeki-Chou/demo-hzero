@@ -67,7 +67,6 @@ public class InvoiceApplyLineImportServiceImpl extends BatchImportHandler {
                 if (dataLine == null) {
                     throw new CommonException("Invalid apply_line_id: " + line.getApplyLineId());
                 }
-                line.setObjectVersionNumber(dataLine.getObjectVersionNumber());
                 line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
                 line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
                 line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
@@ -90,7 +89,7 @@ public class InvoiceApplyLineImportServiceImpl extends BatchImportHandler {
                     throw new CommonException("Invalid or deleted apply_header_id: " + applyHeaderId);
                 }
 
-                // Re-fetch all lines for the current applyHeaderId from the database
+                // Re-fetch all lines
                 List<InvoiceApplyLine> allLinesForHeader = invoiceApplyLineRepository.select("applyHeaderId", applyHeaderId);
 
                 // Recalculate totals using the re-fetched lines
@@ -120,5 +119,4 @@ public class InvoiceApplyLineImportServiceImpl extends BatchImportHandler {
             return false;
         }
     }
-
 }
