@@ -66,29 +66,6 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     }
 
     @Override
-    @Transactional
-    public void saveDataTest(List<InvoiceApplyLine> invoiceApplyLines) {
-        // validate invoice line
-        validateData(invoiceApplyLines);
-        // calculate the 3 amount from list of line
-        List<InvoiceApplyLine> updatedLineAmounts = invoiceApplyLines.stream().map(Utils::calculateAmountLine).collect(Collectors.toList());
-
-        // insert and update invoice line
-        List<InvoiceApplyLine> insertList = updatedLineAmounts.stream().filter(line -> line.getApplyLineId() == null).collect(Collectors.toList());
-        List<InvoiceApplyLine> updateList = updatedLineAmounts.stream().filter(line -> line.getApplyLineId() != null).collect(Collectors.toList());
-
-        invoiceApplyLineRepository.batchInsertSelective(insertList);
-        invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateList);
-
-        // recalculate header amount
-        List<InvoiceApplyHeader> headersToUpdate = recalculateAmount(invoiceApplyLines);
-        List<InvoiceApplyHeader> updatedHeaderAmount = updateHeaderAmount(headersToUpdate);
-
-        // update the header
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updatedHeaderAmount);
-    }
-
-    @Override
     public void deleteApplyLine(List<InvoiceApplyLine> invoiceApplyLines) {
         invoiceApplyLineRepository.batchDeleteByPrimaryKey(invoiceApplyLines);
         List<InvoiceApplyHeader> headersToUpdate = recalculateAmount(invoiceApplyLines);

@@ -67,7 +67,7 @@ public class InvoiceApplyLineController extends BaseController {
         validObject(invoiceApplyLines);
         SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyLines);
         invoiceApplyLines.forEach(item -> item.setTenantId(organizationId));
-        invoiceApplyLineService.saveDataTest(invoiceApplyLines);
+        invoiceApplyLineService.saveData(invoiceApplyLines);
         return Results.success(invoiceApplyLines);
     }
 

@@ -10,25 +10,25 @@ import java.util.List;
 /**
  * (InvoiceApplyHeader)应用服务
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 14:40:36
  */
 public interface InvoiceApplyHeaderService {
 
     /**
-     * 查询数据
+     * find list of invoice header object based on criteria of invoiceApplyHeader object
      *
-     * @param pageRequest        分页参数
-     * @param invoiceApplyHeader 查询条件
+     * @param pageRequest        page request
+     * @param invoiceApplyHeader invoice header object criteria
      * @param organizationId     tenant id
-     * @return 返回值
+     * @return page of invoice header dto object
      */
     Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader, Long organizationId);
 
     /**
      * save and update data apply header
      *
-     * @param invoiceApplyHeaders 数据
+     * @param invoiceApplyHeaders list of invoice header dto
      */
     void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders, Long organizationId);
 
@@ -41,22 +41,15 @@ public interface InvoiceApplyHeaderService {
     /**
      * get apply header detail with their apply lines
      * @param applyHeaderId id
-     * @return dto
+     * @return header dto object with list of invoice lines corresponding to that header
      */
     InvoiceApplyHeaderDTO detail(Long applyHeaderId);
 
     /**
-     * get a list of all dtos in db to be exported for excel
+     * get a list of all invoice header dto in db to be exported for Excel
      * @param organizationId tenant id
-     * @return list of header dtos
+     * @return list of header dto
      */
     List<InvoiceApplyHeaderDTO> exportAll(Long organizationId);
-
-    /**
-     * save and update data apply header
-     *
-     * @param invoiceApplyHeaders 数据
-     */
-    void saveDataTest(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders, Long organizationId);
 }
 
