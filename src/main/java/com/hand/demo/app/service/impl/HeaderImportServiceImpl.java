@@ -100,6 +100,7 @@ public class HeaderImportServiceImpl extends BatchValidatorHandler {
 //                check database
                     List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderRepository.select(invoiceApplyHeaderNew);
 
+//                    this is to determine the updated and insert list
                     if(invoiceApplyHeaders.size() > 0) {
                         InvoiceApplyHeader invoiceApplyHeader1 = invoiceApplyHeaders.get(0);
 

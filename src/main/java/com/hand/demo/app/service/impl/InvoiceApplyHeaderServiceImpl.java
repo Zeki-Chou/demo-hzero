@@ -81,7 +81,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
-//        validate error
+//      validate error first
         List<LovValueDTO> countInvoiceType = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_TYPE, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countInvoiceColor = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_COLOR, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countApplyStatus = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
@@ -91,25 +91,20 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         List<String> applyStatus = countApplyStatus.stream().map(LovValueDTO::getValue).collect(Collectors.toList());
 
         List<String> validationError = new ArrayList<>();
-
         for(int i = 0; i < invoiceApplyHeaders.size(); i++) {
             InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaders.get(i);
-
             if(invoiceApplyHeader.getApplyHeaderId() != null) {
                 InvoiceApplyHeader invoiceApplyHeaderNew = invoiceApplyHeaderRepository.selectByPrimary(invoiceApplyHeader.getApplyHeaderId());
                 if(invoiceApplyHeaderNew == null) {
                     validationError.add("header_id does not exist" + "{" + i + "}");
                 }
             }
-
             if(!invoiceType.contains(invoiceApplyHeader.getInvoiceType())) {
                 validationError.add("Error Invoice Type"+"{"+ i +"}"+" : " + invoiceApplyHeader.getInvoiceType());
             }
-
             if(!invoiceColor.contains(invoiceApplyHeader.getInvoiceColor())) {
                 validationError.add("Error Invoice Color"+"{"+ i +"}"+" : " + invoiceApplyHeader.getInvoiceColor());
             }
-
             if(!applyStatus.contains(invoiceApplyHeader.getApplyStatus())) {
                 validationError.add("Error Apply Status :"+"{"+ i +"}"+" " + invoiceApplyHeader.getApplyStatus());
             }
@@ -122,7 +117,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             throw new CommonException("exam-47356.apply-header.error", validationError.toString());
         }
 
-//        insert DTO
+//      code for insert DTO
         List<InvoiceApplyHeaderDTO> insertListDTO = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
 
         List<String> batchCode = codeRuleBuilder.generateCode(insertListDTO.size(), InvoiceApplyHeaderConstant.INVOICE_HEADER, null);
@@ -137,6 +132,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = insertListDTO.get(i);
             List<InvoiceApplyLine> invoiceApplyLineList = invoiceApplyHeaderDTO.getInvoiceApplyLines();
 
+//            code to count all amount on apply line list
             for (int p = 0; p < invoiceApplyLineList.size(); p++) {
                 InvoiceApplyLine invoiceApplyLine = invoiceApplyLineList.get(p);
 
@@ -154,8 +150,10 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             invoiceApplyHeader.setExcludeTaxAmount(headerExcludeTaxAmount);
             invoiceApplyHeader.setDelFlag(0);
 
+//            insert apply header that already counted
             invoiceApplyHeaderRepository.insert(invoiceApplyHeader);
 
+//            code for insert apply line
             if(!invoiceApplyLineList.isEmpty()) {
                 Long headerId = invoiceApplyHeader.getApplyHeaderId();
 
@@ -195,23 +193,22 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             List<InvoiceApplyLine> invoiceApplyLineList = invoiceApplyHeaderDTO.getInvoiceApplyLines();
             for(int k = 0; k < invoiceApplyLineList.size(); k++) {
                 InvoiceApplyLine invoiceApplyLine = invoiceApplyLineList.get(k);
-
 //                validate first
                 InvoiceApplyLine invoiceApplyLineNew = new InvoiceApplyLine();
                 invoiceApplyLineNew.setApplyHeaderId(invoiceApplyHeaderDTO.getApplyHeaderId());
-
+//                code to set if apply line is null then set apply line to 0
+//                the purpose to set it to 0 rather than null is so it can do query when i do select
                 if(invoiceApplyLine.getApplyLineId() == null) {
                     invoiceApplyLineNew.setApplyLineId(0L);
                 } else {
                     invoiceApplyLineNew.setApplyLineId(invoiceApplyLine.getApplyLineId());
                 }
-
+//                this is the selected query so when is 0 it will be setted as an insert because the size is 0
                 List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select(invoiceApplyLineNew);
-
                 BigDecimal taxAmount = BigDecimal.ZERO;
                 BigDecimal totalAmount = BigDecimal.ZERO;
                 BigDecimal excludeTaxAmount = BigDecimal.ZERO;
-
+//                if size > 0, it will do update, else is insert
                 if(invoiceApplyLines.size() > 0) {
                     InvoiceApplyLine invoiceApplyLine1 = invoiceApplyLines.get(0);
                     invoiceApplyLine.setObjectVersionNumber(invoiceApplyLine1.getObjectVersionNumber());
@@ -250,7 +247,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     public InvoiceApplyHeaderDTO detail(Long headerId) {
-        String result = redisHelper.strGet("Andrew_" + headerId.toString());
+        String result = redisHelper.strGet("hpfm:demo:invoice" + headerId.toString());
         if (result != null && !result.isEmpty()) {
             return JSON.parseObject(result, InvoiceApplyHeaderDTO.class);
         }
@@ -267,7 +264,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         BeanUtils.copyProperties(invoiceApplyHeader, invoiceApplyHeaderDTO);
 
         String serializeDTO = JSON.toJSONString(invoiceApplyHeaderDTO);
-        redisHelper.strSet("Andrew_" + headerId.toString(), serializeDTO);
+        redisHelper.strSet("hpfm:demo:invoice" + headerId.toString(), serializeDTO);
 
         return invoiceApplyHeaderDTO;
     }
@@ -282,6 +279,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return PageHelper.doPage(pageRequest, ()->invoiceApplyHeaderRepository.selectAll());
     }
 
+//    this function count apply line and update the header using the parameter invoiceApplyHeader with header_id
     public void countApplyLineUpdateWithHeader (InvoiceApplyHeader invoiceApplyHeader) {
         InvoiceApplyLine invoiceApplyLineNew = new InvoiceApplyLine();
         invoiceApplyLineNew.setApplyHeaderId(invoiceApplyHeader.getApplyHeaderId());
@@ -310,6 +308,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         invoiceApplyHeaderRepository.updateByPrimaryKeySelective(invoiceApplyHeader);
     }
 
+//    this function only to update header based on counted applyline using header_id only
     public void countApplyLineUpdateHeader (Long header_id) {
         InvoiceApplyLine invoiceApplyLineNew = new InvoiceApplyLine();
         invoiceApplyLineNew.setApplyHeaderId(header_id);

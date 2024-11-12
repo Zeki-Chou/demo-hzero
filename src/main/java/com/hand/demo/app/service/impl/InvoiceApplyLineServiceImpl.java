@@ -87,6 +87,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             }
         }
 
+//        Hashset it used to get all header_id that have update or insert
         Set<Long> headerIdSet = new HashSet<>();
         List<InvoiceApplyLine> insertList = invoiceApplyLines.stream().filter(line -> line.getApplyLineId() == null).collect(Collectors.toList());
         for(int i = 0; i < insertList.size(); i++) {
@@ -116,6 +117,8 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             invoiceApplyLine.setTaxAmount(taxAmount);
             invoiceApplyLine.setExcludeTaxAmount(excludeTaxAmount);
 
+//            this code is to get header id if the header id is updated which it will get the old header_id and add it to hashset
+//            so there is 2 header_id that need to be updated and calculated
             if(invoiceApplyLine.getApplyHeaderId() != invoiceApplyLine1.getApplyHeaderId()) {
                 headerIdSet.add(invoiceApplyLine1.getApplyHeaderId());
             }
