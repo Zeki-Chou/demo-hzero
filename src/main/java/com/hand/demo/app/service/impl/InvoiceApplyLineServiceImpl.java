@@ -16,6 +16,7 @@ import com.hand.demo.app.service.InvoiceApplyLineService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -42,79 +43,30 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     }
 
     @Override
+    @Transactional
     public void saveData(List<InvoiceApplyLine> invoiceApplyLines) {
+        // validate invoice line
+        validateData(invoiceApplyLines);
+        // calculate the 3 amount from list of line
+        List<InvoiceApplyLine> updatedLineAmounts = invoiceApplyLines.stream().map(Utils::calculateAmountLine).collect(Collectors.toList());
 
-        Map<Long, InvoiceApplyHeader> invoiceApplyHeaderMap = new HashMap<>();
+        // insert and update invoice line
+        List<InvoiceApplyLine> insertList = updatedLineAmounts.stream().filter(line -> line.getApplyLineId() == null).collect(Collectors.toList());
+        List<InvoiceApplyLine> updateList = updatedLineAmounts.stream().filter(line -> line.getApplyLineId() != null).collect(Collectors.toList());
 
-        for (InvoiceApplyLine invoiceApplyLine: invoiceApplyLines) {
-
-            InvoiceApplyHeader findHeader;
-
-            if (invoiceApplyHeaderMap.containsKey(invoiceApplyLine.getApplyHeaderId())) {
-                findHeader = invoiceApplyHeaderMap.get(invoiceApplyLine.getApplyHeaderId());
-            } else {
-                findHeader = invoiceApplyHeaderRepository.selectByPrimary(
-                        invoiceApplyLine.getApplyHeaderId()
-                );
-            }
-
-            if (findHeader == null) {
-                throw new CommonException("demo-47359.warn.invoice_apply_line.header_not_found", invoiceApplyLine.getApplyHeaderId());
-            } else if (findHeader.getDelFlag() == 1) {
-                throw new CommonException("demo-47359.warn.invoice_apply_line.header_deleted", invoiceApplyLine.getApplyHeaderId());
-            }
-
-            // calculate invoice apply line amounts
-            BigDecimal lineTotalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
-            BigDecimal lineTaxAmount = lineTotalAmount.multiply(invoiceApplyLine.getTaxRate());
-            BigDecimal lineExcludeTaxAmount = lineTotalAmount.subtract(lineTaxAmount);
-
-            invoiceApplyLine.setExcludeTaxAmount(lineExcludeTaxAmount);
-            invoiceApplyLine.setTaxAmount(lineTaxAmount);
-            invoiceApplyLine.setTotalAmount(lineTotalAmount);
-
-            BigDecimal headerTotalAmount = findHeader.getTotalAmount();
-            BigDecimal headerTaxAmount = findHeader.getTaxAmount();
-            BigDecimal headerExcludeTaxAmount = findHeader.getExcludeTaxAmount();
-
-            // update header amount
-            if (invoiceApplyLine.getApplyLineId() == null) {
-                // if line is new, it should only add the number into the header
-                BigDecimal sumHeaderTotalAmount = headerTotalAmount.add(lineTotalAmount);
-                BigDecimal sumHeaderTaxAmount = headerTaxAmount.add(lineTaxAmount);
-                BigDecimal sumHeaderExcludeTaxAmount = headerExcludeTaxAmount.add(lineExcludeTaxAmount);
-
-                findHeader.setTotalAmount(sumHeaderTotalAmount);
-                findHeader.setExcludeTaxAmount(sumHeaderExcludeTaxAmount);
-                findHeader.setTaxAmount(sumHeaderTaxAmount);
-            } else {
-                InvoiceApplyLine prev = invoiceApplyLineRepository.selectByPrimary(invoiceApplyLine.getApplyLineId());
-
-                // if update line, get amount difference between the previous
-                // and add it to amount in header
-                InvoiceApplyLine applyLineDiff = Utils.invoiceApplyLineDiff(invoiceApplyLine, prev);
-
-                BigDecimal sumHeaderTotalAmount = headerTotalAmount.add(applyLineDiff.getTotalAmount());
-                BigDecimal sumHeaderTaxAmount = headerTaxAmount.add(applyLineDiff.getTaxAmount());
-                BigDecimal sumHeaderExcludeTaxAmount = headerExcludeTaxAmount.add(applyLineDiff.getExcludeTaxAmount());
-
-                findHeader.setTotalAmount(sumHeaderTotalAmount);
-                findHeader.setExcludeTaxAmount(sumHeaderTaxAmount);
-                findHeader.setTaxAmount(sumHeaderExcludeTaxAmount);
-            }
-
-            // cache into hash map
-            invoiceApplyHeaderMap.put(findHeader.getApplyHeaderId(), findHeader);
-            invoiceApplyHeaderRepository.updateByPrimaryKeySelective(findHeader);
-        }
-
-        List<InvoiceApplyLine> insertList = invoiceApplyLines.stream().filter(line -> line.getApplyLineId() == null).collect(Collectors.toList());
-        List<InvoiceApplyLine> updateList = invoiceApplyLines.stream().filter(line -> line.getApplyLineId() != null).collect(Collectors.toList());
         invoiceApplyLineRepository.batchInsertSelective(insertList);
         invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateList);
+
+        // recalculate header amount
+        List<InvoiceApplyHeader> headersToUpdate = recalculateAmount(invoiceApplyLines);
+        List<InvoiceApplyHeader> updatedHeaderAmount = updateHeaderAmount(headersToUpdate);
+
+        // update the header
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updatedHeaderAmount);
     }
 
     @Override
+    @Transactional
     public void saveDataTest(List<InvoiceApplyLine> invoiceApplyLines) {
         // validate invoice line
         validateData(invoiceApplyLines);
@@ -138,52 +90,10 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
     @Override
     public void deleteApplyLine(List<InvoiceApplyLine> invoiceApplyLines) {
-
-        Map<Long, InvoiceApplyHeader> headerMap = new HashMap<>();
-        List<InvoiceApplyLine> linesToDelete = new ArrayList<>();
-
-        invoiceApplyLines.forEach(line -> {
-
-            // assume that only apply line id is required
-            // then we need to find the object to check if it exists in db
-            InvoiceApplyLine invoiceApplyLine = invoiceApplyLineRepository.selectOne(line);
-
-            if (invoiceApplyLine == null) {
-                throw new CommonException("invoice apply line with id " + line.getApplyLineId() + " not exist");
-            }
-
-            InvoiceApplyHeader header;
-
-            if (headerMap.containsKey(invoiceApplyLine.getApplyHeaderId())) {
-                header = headerMap.get(invoiceApplyLine.getApplyHeaderId());
-            } else {
-                header = invoiceApplyHeaderRepository.selectByPrimary(invoiceApplyLine.getApplyHeaderId());
-                if (header == null) {
-                    throw new CommonException("header not found");
-                }
-            }
-
-            InvoiceApplyLine headerAmount = new InvoiceApplyLine();
-            headerAmount.setTaxAmount(header.getTaxAmount());
-            headerAmount.setTotalAmount(header.getTotalAmount());
-            headerAmount.setExcludeTaxAmount(header.getExcludeTaxAmount());
-
-            InvoiceApplyLine headerAmountDiff = Utils.invoiceApplyLineDiff(headerAmount, invoiceApplyLine);
-            header.setTotalAmount(headerAmountDiff.getTotalAmount());
-            header.setTaxAmount(headerAmountDiff.getTaxAmount());
-            header.setExcludeTaxAmount(headerAmountDiff.getExcludeTaxAmount());
-
-            // cache into hash map
-            headerMap.put(header.getApplyHeaderId(), header);
-            linesToDelete.add(invoiceApplyLine);
-        });
-
-        // update header
-        List<InvoiceApplyHeader> headersToUpdate = new ArrayList<>(headerMap.values());
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(headersToUpdate);
-
-        // delete lines
-        invoiceApplyLineRepository.batchDeleteByPrimaryKey(linesToDelete);
+        invoiceApplyLineRepository.batchDeleteByPrimaryKey(invoiceApplyLines);
+        List<InvoiceApplyHeader> headersToUpdate = recalculateAmount(invoiceApplyLines);
+        List<InvoiceApplyHeader> updatedHeaderAmount = updateHeaderAmount(headersToUpdate);
+        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updatedHeaderAmount);
     }
 
     @Override

@@ -65,7 +65,7 @@ public class InvoiceApplyHeaderController extends BaseController {
         validObject(invoiceApplyHeaders);
         SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
-        invoiceApplyHeaderService.saveDataTest(invoiceApplyHeaders, organizationId);
+        invoiceApplyHeaderService.saveData(invoiceApplyHeaders, organizationId);
         return Results.success(invoiceApplyHeaders);
     }
 

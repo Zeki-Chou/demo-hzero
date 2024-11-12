@@ -93,69 +93,53 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
+    @Transactional
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders, Long organizationId) {
-//        saveDataTest(invoiceApplyHeaders, organizationId);
-//        validateHeader(invoiceApplyHeaders, organizationId);
-//
-//        // key is the template header number
-//        Map<String, List<InvoiceApplyLine>> applyLineMap = new HashMap<>();
-//
-//        for (InvoiceApplyHeaderDTO header: invoiceApplyHeaders) {
-//            List<InvoiceApplyLine> invoiceApplyData = new ArrayList<>();
-//            List<InvoiceApplyLine> lineFromRequest = header.getDataList();
-//
-//            if (lineFromRequest != null) {
-//                invoiceApplyData.addAll(lineFromRequest);
-//            }
-//
-//            if (header.getApplyHeaderId() == null) {
-//                header.setApplyHeaderNumber(InvoiceApplyHeaderUtils.generateTemplateCode(codeRuleBuilder));
-//            }
-//
-//            List<InvoiceApplyLine> applyDataDB = new ArrayList<>();
-//
-//            if (header.getApplyHeaderId() != null) {
-//                InvoiceApplyLine applyLineRecord = new InvoiceApplyLine();
-//                applyLineRecord.setApplyHeaderId(header.getApplyHeaderId());
-//                applyDataDB.addAll(invoiceApplyLineRepository.selectList(applyLineRecord));
-//            }
-//
-//            Utils.addAmountFromLineList(invoiceApplyData, header, applyDataDB);
-//            applyLineMap.put(header.getApplyHeaderNumber(), invoiceApplyData);
-//        }
-//
-//        List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
-//        List<InvoiceApplyHeader> updateList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
-//
-//        List<InvoiceApplyHeader> insertRes = invoiceApplyHeaderRepository.batchInsertSelective(insertList);
-//        List<InvoiceApplyHeader> updateRes = invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
-//
-//        // if updated, then remove the cache
-//        // since data can be changed
-//        updateRes.forEach(header -> {
-//            redis.setCurrentDatabase(13);
-//            String cacheName = header.getApplyHeaderId() + "-applyheader-47359";
-//            redis.delKey(cacheName);
-//        });
-//
-//        List<InvoiceApplyLine> insertApplyLines = new ArrayList<>();
-//        List<InvoiceApplyLine> updateApplyLines = new ArrayList<>();
-//
-//        // insert need to get the header id and add it to their lines
-//        insertRes.forEach(header -> {
-//            Long headerId = header.getApplyHeaderId();
-//            List<InvoiceApplyLine> lineList = applyLineMap.get(header.getApplyHeaderNumber());
-//            lineList.forEach(line -> line.setApplyHeaderId(headerId));
-//            insertApplyLines.addAll(lineList);
-//        });
-//
-//        updateRes.forEach(header -> {
-//            List<InvoiceApplyLine> lineList = applyLineMap.get(header.getApplyHeaderNumber());
-//            updateApplyLines.addAll(lineList);
-//        });
-//
-//        invoiceApplyLineRepository.batchInsertSelective(insertApplyLines);
-//        invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateApplyLines);
+        // validate
+        validateHeader(invoiceApplyHeaders, organizationId);
+        Map<String, List<InvoiceApplyLine>> lineListMap = new HashMap<>();
+        List<InvoiceApplyLine> lineWithHeaderIdList = new ArrayList<>();
+
+        // put list of invoice lines into map
+        invoiceApplyHeaders.forEach(header -> {
+            String templateCode = InvoiceApplyHeaderUtils.generateTemplateCode(codeRuleBuilder);
+            header.setApplyHeaderNumber(templateCode);
+
+            header.setTotalAmount(BigDecimal.ZERO);
+            header.setTaxAmount(BigDecimal.ZERO);
+            header.setExcludeTaxAmount(BigDecimal.ZERO);
+
+            lineListMap.put(templateCode, header.getDataList());
+        });
+
+        //update and insert new headers
+        List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
+        List<InvoiceApplyHeader> updateList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
+
+        List<InvoiceApplyHeader> insertRes = invoiceApplyHeaderRepository.batchInsertSelective(insertList);
+        List<InvoiceApplyHeader> updateRes = invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+
+        // set the new apply header id into invoice line if invoice header is new
+        for (InvoiceApplyHeader header: insertRes) {
+            List<InvoiceApplyLine> invoiceApplyLineList = lineListMap.getOrDefault(header.getApplyHeaderNumber(), new ArrayList<>());
+            invoiceApplyLineList.forEach(line -> line.setApplyHeaderId(header.getApplyHeaderId()));
+            lineWithHeaderIdList.addAll(invoiceApplyLineList);
+        }
+
+        for (InvoiceApplyHeader header: updateRes) {
+            List<InvoiceApplyLine> invoiceApplyLineList = lineListMap.get(header.getApplyHeaderNumber());
+            lineWithHeaderIdList.addAll(invoiceApplyLineList);
+
+            // delete cache since header data may change
+            redis.setCurrentDatabase(13);
+            String cacheName = header.getApplyHeaderId() + "-applyheader-47359";
+            redis.delKey(cacheName);
+        }
+
+        if (!lineWithHeaderIdList.isEmpty()) {
+            invoiceApplyLineService.saveData(lineWithHeaderIdList);
+        }
+
     }
 
     @Override
@@ -196,6 +180,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             List<InvoiceApplyLine> invoiceApplyLineList = lineListMap.get(header.getApplyHeaderNumber());
             lineWithHeaderIdList.addAll(invoiceApplyLineList);
 
+            // delete cache since header data may change
             redis.setCurrentDatabase(13);
             String cacheName = header.getApplyHeaderId() + "-applyheader-47359";
             redis.delKey(cacheName);
@@ -285,16 +270,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         dto.setInvoiceColorMeaning(invoiceColor);
 
         return dto;
-    }
-    /**
-     * transform invoiceApplyHeader to appropriate DTO object
-     * @param dto invoice apply header dto object
-     * @return invoiceApplyHeaderDTO
-     */
-    private InvoiceApplyHeader mapToEntity(InvoiceApplyHeaderDTO dto) {
-        InvoiceApplyHeader header = new InvoiceApplyHeader();
-        BeanUtils.copyProperties(dto, header);
-        return header;
     }
 
     /**
