@@ -35,4 +35,5 @@ public interface InvoiceApplyHeaderService {
     public InvoiceApplyHeaderDTO detail(Long headerId);
     public List<InvoiceApplyHeaderDTO> exportAll (PageRequest pageRequest);
     public void countApplyLineUpdateHeader (Long header_id);
+    public void countApplyLineUpdateWithHeader (InvoiceApplyHeader invoiceApplyHeader);
 }
