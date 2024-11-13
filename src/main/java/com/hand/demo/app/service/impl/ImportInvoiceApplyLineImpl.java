@@ -1,6 +1,7 @@
 package com.hand.demo.app.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
@@ -27,6 +28,10 @@ public class ImportInvoiceApplyLineImpl extends BatchImportHandler {
     private InvoiceApplyLineRepository invoiceApplyLineRepository;
     @Autowired
     private RedisHelper redisHelper;
+    @Autowired
+    private InvoiceApplyLineServiceImpl invoiceApplyLineServiceImpl;
+    @Autowired
+    private InvoiceApplyHeaderServiceImpl invoiceApplyHeaderServiceImpl;
 
     @Override
     public Boolean doImport(List<String> data) {
@@ -40,7 +45,7 @@ public class ImportInvoiceApplyLineImpl extends BatchImportHandler {
             }
         }
 
-        Utils.InvoiceApplyLineUtil.calcAmounts(invoiceApplyLines);
+        invoiceApplyLineServiceImpl.calcAmounts(invoiceApplyLines);
         insertLine(invoiceApplyLines.stream().filter(line -> line.getApplyLineId()==null).collect(Collectors.toList()));
         updateLine(invoiceApplyLines.stream().filter(line -> line.getApplyLineId()!=null).collect(Collectors.toList()));
         invalidateHeaderCache(invoiceApplyLines);
@@ -55,7 +60,7 @@ public class ImportInvoiceApplyLineImpl extends BatchImportHandler {
 
         String headerIds = invoiceApplyLines.stream().map(line->line.getApplyHeaderId().toString()).collect(Collectors.joining(","));
         List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderRepository.selectByIds(headerIds);
-        Utils.InvoiceApplyHeaderUtil.addAmounts(invoiceApplyHeaders,invoiceApplyLines);
+        invoiceApplyHeaderServiceImpl.addAmounts(invoiceApplyHeaders,invoiceApplyLines);
         invoiceApplyLineRepository.batchInsertSelective(invoiceApplyLines);
         invoiceApplyHeaderRepository.batchUpdateOptional(invoiceApplyHeaders,InvoiceApplyHeader.FIELD_TOTAL_AMOUNT,InvoiceApplyHeader.FIELD_EXCLUDE_TAX_AMOUNT,InvoiceApplyHeader.FIELD_TAX_AMOUNT);
     }
@@ -69,7 +74,7 @@ public class ImportInvoiceApplyLineImpl extends BatchImportHandler {
         String lineIds = invoiceApplyLines.stream().map(line->line.getApplyLineId().toString()).collect(Collectors.joining(","));
         List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderRepository.selectByIds(headerIds);
         List<InvoiceApplyLine> oldInvoiceApplyLines = invoiceApplyLineRepository.selectByIds(lineIds);
-        Utils.InvoiceApplyHeaderUtil.updateAmounts(invoiceApplyHeaders,invoiceApplyLines,oldInvoiceApplyLines);
+        invoiceApplyHeaderServiceImpl.updateAmounts(invoiceApplyHeaders,invoiceApplyLines,oldInvoiceApplyLines);
         for(int i=0;i<invoiceApplyLines.size();i++){
             invoiceApplyLines.get(i).setObjectVersionNumber(oldInvoiceApplyLines.get(i).getObjectVersionNumber());
         }

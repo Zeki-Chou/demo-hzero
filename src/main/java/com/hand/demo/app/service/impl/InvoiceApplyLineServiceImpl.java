@@ -9,6 +9,7 @@ import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,8 @@ import java.util.stream.Collectors;
 public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Autowired
     private InvoiceApplyLineRepository invoiceApplyLineRepository;
-
+    @Autowired
+    private InvoiceApplyHeaderServiceImpl invoiceApplyHeaderServiceImpl;
     @Autowired
     private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
 
@@ -62,9 +64,9 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Transactional(rollbackFor = Exception.class)
     public void saveData(List<InvoiceApplyLineDTO> invoiceApplyLineDTOS) {
         Map<String, InvoiceApplyHeader> invoiceApplyHeaderMap = getHeaderMap(invoiceApplyLineDTOS);
-        Utils.InvoiceApplyLineUtil.validate(new ArrayList<>(invoiceApplyLineDTOS),invoiceApplyLineRepository,invoiceApplyHeaderRepository);
+        validate(new ArrayList<>(invoiceApplyLineDTOS),invoiceApplyLineRepository,invoiceApplyHeaderRepository);
 
-        Utils.InvoiceApplyLineUtil.calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
+        calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
 
         List<InvoiceApplyLineDTO> insertLineDTOS = invoiceApplyLineDTOS.stream().filter(line -> line.getApplyLineId() == null).collect(Collectors.toList());
         List<InvoiceApplyLineDTO> updateLineDTOS = invoiceApplyLineDTOS.stream().filter(line -> line.getApplyLineId() != null).collect(Collectors.toList());
@@ -82,7 +84,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Transactional(rollbackFor = Exception.class)
     public  void delete(List<InvoiceApplyLineDTO> invoiceApplyLines){
         Map<String, InvoiceApplyHeader> invoiceApplyHeaderMap = getHeaderMap(invoiceApplyLines);
-        Utils.InvoiceApplyLineUtil.validate(new ArrayList<>(invoiceApplyLines),invoiceApplyLineRepository,invoiceApplyHeaderRepository);
+        validate(new ArrayList<>(invoiceApplyLines),invoiceApplyLineRepository,invoiceApplyHeaderRepository);
         deleteLines(invoiceApplyHeaderMap,invoiceApplyLines);
         updateHeaders(invoiceApplyHeaderMap);
     }
@@ -102,15 +104,15 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         String lineIds = invoiceApplyLineDTOS.stream().map(line->line.getApplyLineId().toString()).collect(Collectors.joining(","));
         List<InvoiceApplyLine> oldInvoiceApplyLines = invoiceApplyLineRepository.selectByIds(lineIds);
         invoiceApplyLineRepository.batchDeleteByPrimaryKey(new ArrayList<>(invoiceApplyLineDTOS));
-        Utils.InvoiceApplyHeaderUtil.subAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),oldInvoiceApplyLines);
+        invoiceApplyHeaderServiceImpl.subAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),oldInvoiceApplyLines);
     }
 
     private  void insertLines(Map<String, InvoiceApplyHeader> invoiceApplyHeaderMap,List<InvoiceApplyLineDTO> invoiceApplyLineDTOS){
         if(invoiceApplyLineDTOS.isEmpty()){
             return;
         }
-        Utils.InvoiceApplyLineUtil.calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
-        Utils.InvoiceApplyHeaderUtil.addAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS));
+        calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
+        invoiceApplyHeaderServiceImpl.addAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS));
         invoiceApplyLineRepository.batchInsertSelective(new ArrayList<>(invoiceApplyLineDTOS));
     }
 
@@ -120,8 +122,8 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         }
         String oldLineIds = invoiceApplyLineDTOS.stream().map(line -> line.getApplyLineId().toString()).collect(Collectors.joining(","));
         List<InvoiceApplyLine> oldLines = invoiceApplyLineRepository.selectByIds(oldLineIds);
-        Utils.InvoiceApplyLineUtil.calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
-        Utils.InvoiceApplyHeaderUtil.updateAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS),oldLines);
+        calcAmounts(new ArrayList<>(invoiceApplyLineDTOS));
+        invoiceApplyHeaderServiceImpl.updateAmounts(new ArrayList<>(invoiceApplyHeaderMap.values()),new ArrayList<>(invoiceApplyLineDTOS),oldLines);
         invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(invoiceApplyLineDTOS));
     }
 
@@ -142,6 +144,55 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         for(InvoiceApplyLineDTO invoiceApplyLineDTO:invoiceApplyLineDTOS){
             String invoiceApplyHeaderNumber = invoiceApplyHeaderMap.get(invoiceApplyLineDTO.getApplyHeaderId().toString()).getApplyHeaderNumber();
             invoiceApplyLineDTO.setInvoiceApplyHeaderNumber(invoiceApplyHeaderNumber);
+        }
+    }
+
+    public  void validate(List<InvoiceApplyLine> invoiceApplyLines, InvoiceApplyLineRepository invoiceApplyLineRepository, InvoiceApplyHeaderRepository invoiceApplyHeaderRepository){
+        Set<String> headerIdSet =invoiceApplyLines.stream().filter(line->line.getApplyHeaderId() != null).map(line->line.getApplyHeaderId().toString()).collect(Collectors.toSet());
+        if(!headerIdSet.isEmpty()) {
+            int expectedHeaderSize = headerIdSet.size();
+            int foundHeaderSize = invoiceApplyHeaderRepository.selectByIds(String.join(",", headerIdSet)).size();
+            if (expectedHeaderSize != foundHeaderSize) {
+                Object[] errorMsgArgs = new Object[]{"Expected header size not equal to found header size"};
+                String errorMsg = MessageAccessor.getMessage(Constants.MULTILINGUAL_INV_APPLY_LINE_SAVE_ERROR, errorMsgArgs, Locale.US).getDesc();
+                throw new CommonException(errorMsg);
+            }
+        }
+
+        List<Integer> badLineIndex = new ArrayList<>();
+        for (int i=0;i< invoiceApplyLines.size();i++){
+            if(invoiceApplyLines.get(i).getTotalAmount() != null
+                    || invoiceApplyLines.get(i).getTaxAmount() != null
+                    || invoiceApplyLines.get(i).getExcludeTaxAmount() != null){
+                badLineIndex.add(i);
+            }
+        }
+        if(!badLineIndex.isEmpty()){
+            Object[] errorMsgArgs = new Object[]{"Lines should have no total amount, tax amount, and exclude tax amount values. Bad lines index: "+badLineIndex};
+            String errorMsg = MessageAccessor.getMessage(Constants.MULTILINGUAL_INV_APPLY_LINE_SAVE_ERROR,errorMsgArgs,Locale.US).getDesc();
+            throw new CommonException(errorMsg);
+        }
+
+        Set<String> updateLineIdSet = invoiceApplyLines.stream().filter(line ->line.getApplyLineId() != null).map(line-> line.getApplyLineId().toString()).collect(Collectors.toSet());
+        if(!updateLineIdSet.isEmpty()){
+            int expectedLineSize = updateLineIdSet.size();
+            int foundLineSize = invoiceApplyLineRepository.selectByIds(String.join(",", updateLineIdSet)).size();
+            if(expectedLineSize != foundLineSize){
+                Object[] errorMsgArgs = new Object[]{"Expected update line size not equal to found line size"};
+                String errorMsg = MessageAccessor.getMessage(Constants.MULTILINGUAL_INV_APPLY_LINE_SAVE_ERROR,errorMsgArgs,Locale.US).getDesc();
+                throw new CommonException(errorMsg);
+            }
+        }
+    }
+    public  void calcAmounts(List<InvoiceApplyLine> invoiceApplyLines){
+        for(InvoiceApplyLine invoiceApplyLine: invoiceApplyLines){
+            BigDecimal totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
+            BigDecimal taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
+            BigDecimal excludeTaxAmount = totalAmount.subtract(taxAmount);
+
+            invoiceApplyLine.setTotalAmount(totalAmount);
+            invoiceApplyLine.setTaxAmount(taxAmount);
+            invoiceApplyLine.setExcludeTaxAmount(excludeTaxAmount);
         }
     }
 }
