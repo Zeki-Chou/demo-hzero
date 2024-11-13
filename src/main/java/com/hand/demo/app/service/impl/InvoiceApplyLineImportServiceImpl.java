@@ -6,6 +6,7 @@ import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
+import com.hand.demo.infra.constant.InvHeaderConstant;
 import io.choerodon.core.exception.CommonException;
 import org.hzero.boot.imported.app.service.BatchImportHandler;
 import org.hzero.boot.imported.infra.validator.annotation.ImportService;
@@ -137,7 +138,7 @@ public class InvoiceApplyLineImportServiceImpl extends BatchImportHandler {
             headerData.setTotalAmount(totalAmount);
             headerData.setExcludeTaxAmount(excludeTaxAmount);
             headerData.setTaxAmount(taxAmount);
-            redisHelper.delKey(headerData.getApplyHeaderNumber());
+            redisHelper.delKey(headerData.getApplyHeaderId() + InvHeaderConstant.PREFIX);
             invoiceApplyHeaderRepository.updateByPrimaryKey(headerData);
         }
     }

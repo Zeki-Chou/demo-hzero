@@ -182,7 +182,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         header.setApplyHeaderNumber(codeRuleBuilder.generateCode(InvHeaderConstant.RULE_CODE, variableMap));
 
         // delete on redis to make sure it will updated if theres new update on header data
-        redisHelper.delKey(header.getApplyHeaderNumber());
+        redisHelper.delKey(header.getApplyHeaderId() + InvHeaderConstant.PREFIX);
         invoiceApplyHeaderRepository.updateByPrimaryKey(header);
     }
 
@@ -243,7 +243,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         header.setExcludeTaxAmount(excludeTaxAmount);
         header.setTaxAmount(taxAmount);
 
-        redisHelper.delKey(header.getApplyHeaderNumber());
+        redisHelper.delKey(header.getApplyHeaderId() + InvHeaderConstant.PREFIX);
         invoiceApplyHeaderRepository.updateByPrimaryKey(header);
     }
 
@@ -252,15 +252,15 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     // soft delete header
     @Override
     public InvoiceApplyHeaderDTO delete(Long id) {
-        InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
+
         InvoiceApplyHeader data = invoiceApplyHeaderRepository.selectByPrimary(id);
-        if (data != null) {
-            data.setDelFlag(1);
-            dto = changeToDTO(data);
-        } else {
+        if (data == null) {
             throw new CommonException("Data hasnt found");
         }
-        redisHelper.delKey(dto.getApplyHeaderNumber());
+        InvoiceApplyHeaderDTO dto;
+        data.setDelFlag(1);
+        dto = changeToDTO(data);
+        redisHelper.delKey(id + InvHeaderConstant.PREFIX);
         return dto;
     }
 
@@ -281,7 +281,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         dto.setInvoiceApplyLines(listLines);
 
         String serializeDTO = JSON.toJSONString(dto);
-        redisHelper.strSet(String.valueOf(id), serializeDTO);
+        redisHelper.strSet(id + InvHeaderConstant.PREFIX, serializeDTO);
 
         return dto;
     }

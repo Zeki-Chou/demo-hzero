@@ -4,6 +4,7 @@ import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.dto.InvoiceApplyLineDTO;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import com.hand.demo.infra.constant.InvHeaderConstant;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -141,7 +142,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             headerData.setExcludeTaxAmount(excludeTaxAmount);
             headerData.setTaxAmount(taxAmount);
 
-            redisHelper.delKey(headerData.getApplyHeaderNumber());
+            redisHelper.delKey(headerData.getApplyHeaderId() + InvHeaderConstant.PREFIX);
             invoiceApplyHeaderRepository.updateByPrimaryKey(headerData);
         }
     }
@@ -173,6 +174,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             if (headerData != null) {
                 processLineDeletion(line, headerData, headerDTOList);
             }
+            redisHelper.delKey(headerData.getApplyHeaderId() + InvHeaderConstant.PREFIX);
         }
 
         return headerDTOList;
