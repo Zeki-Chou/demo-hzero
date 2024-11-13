@@ -48,11 +48,11 @@ public class InvApplyHeaderImportService extends BatchImportHandler {
                 .filter(header -> header.getApplyHeaderNumber() == null)
                 .collect(Collectors.toList());
 
-        List<String> batchCode = codeRuleBuilder.generateCode(insertList.size(), TaskConstants.CODE_RULE, null);
+        List<String> headerNumberList = codeRuleBuilder.generateCode(insertList.size(), TaskConstants.CODE_RULE, null);
 
         for(int i = 0; i < insertList.size(); i++) {
             InvoiceApplyHeader invoiceApplyHeader = insertList.get(i);
-            invoiceApplyHeader.setApplyHeaderNumber(batchCode.get(i));
+            invoiceApplyHeader.setApplyHeaderNumber(headerNumberList.get(i));
         }
 
         List<InvoiceApplyHeader> updateList = headers.stream()

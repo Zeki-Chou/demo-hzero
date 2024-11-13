@@ -58,16 +58,10 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
-        Page<InvoiceApplyHeader> headers;
+        Page<InvoiceApplyHeader> headers = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
 
         if (invoiceApplyHeader.getDelFlag() == null) {
             invoiceApplyHeader.setDelFlag(0);
-        }
-
-        if (invoiceApplyHeader.getDelFlag() == 1) {
-            headers = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.select("delFlag", 1));
-        } else {
-            headers = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.select("delFlag", 0));
         }
 
         List<InvoiceApplyHeaderDTO> headerDTOs = headers.getContent().stream()

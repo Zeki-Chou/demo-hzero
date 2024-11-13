@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.demo.infra.mapper.UploadConfigMapper">
+
+
+    <sql id = "BaseSql">
+        huc.upload_config_id,
+        huc.bucket_name,
+        huc.content_type,
+        huc.directory,
+        huc.file_format,
+        huc.storage_size,
+        huc.storage_unit,
+        huc.tenant_id,
+        huc.creation_date, 
+        huc.created_by, 
+        huc.last_updated_by, 
+        huc.last_update_date, 
+        huc.object_version_number
+    </sql>
+
+    <select id = "selectList" resultType = "com.hand.demo.domain.entity.UploadConfig">
+        select
+        <include refid = "BaseSql"/>
+        from hfle_upload_config huc
+        <where>
+            <if test="uploadConfigId !=null">
+                and huc.upload_config_id = #{uploadConfigId,jdbcType = INTEGER}
+            </if>
+            <if test="bucketName !=null">
+                and huc.bucket_name = #{bucketName,jdbcType = VARCHAR}
+            </if>
+            <if test="contentType !=null">
+                and huc.content_type = #{contentType,jdbcType = VARCHAR}
+            </if>
+            <if test="directory !=null">
+                and huc.directory = #{directory,jdbcType = VARCHAR}
+            </if>
+            <if test="fileFormat !=null">
+                and huc.file_format = #{fileFormat,jdbcType = VARCHAR}
+            </if>
+            <if test="storageSize !=null">
+                and huc.storage_size = #{storageSize,jdbcType = INTEGER}
+            </if>
+            <if test="storageUnit !=null">
+                and huc.storage_unit = #{storageUnit,jdbcType = VARCHAR}
+            </if>
+            <if test="tenantId !=null">
+                and huc.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>
+
