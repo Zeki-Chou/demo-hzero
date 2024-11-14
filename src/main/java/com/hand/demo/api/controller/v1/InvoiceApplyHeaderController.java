@@ -64,6 +64,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "Get Detail")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/{headerId}/detail")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public ResponseEntity<InvoiceApplyHeaderDTO> detail(@PathVariable Long organizationId, @PathVariable Long headerId) {
         InvoiceApplyHeaderDTO invoiceApplyHeader = invoiceApplyHeaderService.detail(headerId);
         return Results.success(invoiceApplyHeader);
