@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hzero.export.annotation.ExcelColumn;
 import org.hzero.export.annotation.ExcelSheet;
+import org.json.JSONObject;
 
 import javax.persistence.Column;
 import javax.persistence.Table;
@@ -42,11 +43,14 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @Column(name = "invoiceApplyLines")
     private List<InvoiceApplyLine> invoiceApplyLines;
 
-    public InvoiceApplyHeaderDTO(String applyStatusMeaning, String invoiceColorMeaning, String invoiceTypeMeaning, List<InvoiceApplyLine> invoiceApplyLines) {
+    private Boolean tenantAdminFlag;
+
+    public InvoiceApplyHeaderDTO(String applyStatusMeaning, String invoiceColorMeaning, String invoiceTypeMeaning, List<InvoiceApplyLine> invoiceApplyLines, Boolean tenantAdminFlag) {
         this.applyStatusMeaning = applyStatusMeaning;
         this.invoiceColorMeaning = invoiceColorMeaning;
         this.invoiceTypeMeaning = invoiceTypeMeaning;
         this.invoiceApplyLines = invoiceApplyLines;
+        this.tenantAdminFlag = tenantAdminFlag;
     }
 
     public InvoiceApplyHeaderDTO() {}

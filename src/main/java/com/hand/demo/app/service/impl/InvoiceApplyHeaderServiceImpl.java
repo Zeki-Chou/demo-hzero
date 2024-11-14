@@ -25,6 +25,7 @@ import org.opensaml.xml.signature.P;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvoiceApplyHeaderService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
@@ -67,12 +68,18 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
-    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
+    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeader) {
+        // dto pasang admin flag
+        JSONObject jsonObject = new JSONObject(iamRemoteService.selectSelf().getBody());
 
-//        JSONObject jsonObject = new JSONObject(iamRemoteService.selectSelf().getBody());
-//        if(!jsonObject.has("superTenantAdminFlag")) {
-//            invoiceApplyHeader.setCreatedBy(jsonObject.getLong("id"));
-//        }
+        Boolean tenantAdminFlag;
+        if(jsonObject.has("tenantAdminFlag")) {
+            tenantAdminFlag = jsonObject.getBoolean("tenantAdminFlag");
+        } else {
+            tenantAdminFlag = false;
+        }
+
+        invoiceApplyHeader.setTenantAdminFlag(tenantAdminFlag);
 
         Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> {
             if (invoiceApplyHeader.getDelFlag() == null || invoiceApplyHeader.getDelFlag() == 0) {
