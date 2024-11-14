@@ -23,13 +23,13 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     private InvoiceApplyHeaderMapper invoiceApplyHeaderMapper;
 
     @Override
-    public List<InvoiceApplyHeaderDTO> selectList(InvoiceApplyHeader invoiceApplyHeader) {
+    public List<InvoiceApplyHeaderDTO> selectList(InvoiceApplyHeaderDTO invoiceApplyHeader) {
         return invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
     }
 
     @Override
     public InvoiceApplyHeaderDTO selectByPrimary(Long applyHeaderId) {
-        InvoiceApplyHeader invoiceApplyHeader = new InvoiceApplyHeader();
+        InvoiceApplyHeaderDTO invoiceApplyHeader = new InvoiceApplyHeaderDTO();
         invoiceApplyHeader.setApplyHeaderId(applyHeaderId);
         List<InvoiceApplyHeaderDTO> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
         if (invoiceApplyHeaders.size() == 0) {

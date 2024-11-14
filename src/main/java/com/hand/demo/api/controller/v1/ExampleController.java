@@ -34,7 +34,7 @@ public class ExampleController extends BaseController {
     @Autowired
     private ExampleRepository exampleRepository;
 
-    @ApiOperation(value = "根据ID获取")
+    @ApiOperation(value = "id example")
     @Permission(level = ResourceLevel.SITE, permissionLogin = true)
     @ApiImplicitParams({
             @ApiImplicitParam(name = "id", value = "ID", paramType = "path")

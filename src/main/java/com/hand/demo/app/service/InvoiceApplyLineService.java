@@ -16,16 +16,16 @@ import java.util.List;
 public interface InvoiceApplyLineService {
 
     /**
-     * 查询数据
+     * find list of invoice line object depend on invoiceApplyLine criteria
      *
-     * @param pageRequest       分页参数
-     * @param invoiceApplyLines 查询条件
-     * @return 返回值
+     * @param pageRequest       page request
+     * @param invoiceApplyLines invoice apply lines
+     * @return page of invoice apply lines
      */
     Page<InvoiceApplyLine> selectList(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLines);
 
     /**
-     * 保存数据
+     * insert and update list of invoice lines list
      *
      * @param invoiceApplyLines 数据
      */

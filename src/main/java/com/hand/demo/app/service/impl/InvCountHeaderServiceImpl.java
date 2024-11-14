@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Inventory Count Header Table(InvCountHeader)应用服务
  *
- * @author
+ * @author Allan
  * @since 2024-10-25 14:03:01
  */
 @Service
@@ -107,5 +107,6 @@ public class InvCountHeaderServiceImpl implements InvCountHeaderService {
     public List<RunTaskHistory> showApprovedHistory(Long organizationId, WorkFlowInstanceDTO dto) {
         return client.approveHistoryByFlowKey(organizationId, dto.getFlowKey(), dto.getBusinessKey());
     }
+
 }
 

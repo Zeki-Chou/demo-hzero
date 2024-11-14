@@ -23,7 +23,7 @@ public interface InvoiceApplyHeaderService {
      * @param organizationId     tenant id
      * @return page of invoice header dto object
      */
-    Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader, Long organizationId);
+    Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeader, Long organizationId);
 
     /**
      * save and update data apply header

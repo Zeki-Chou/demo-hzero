@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * (InvoiceApplyHeader)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 14:40:36
  */
 public interface InvoiceApplyHeaderRepository extends BaseRepository<InvoiceApplyHeader> {
@@ -19,7 +19,7 @@ public interface InvoiceApplyHeaderRepository extends BaseRepository<InvoiceAppl
      * @param invoiceApplyHeader 查询条件
      * @return 返回值
      */
-    List<InvoiceApplyHeaderDTO> selectList(InvoiceApplyHeader invoiceApplyHeader);
+    List<InvoiceApplyHeaderDTO> selectList(InvoiceApplyHeaderDTO invoiceApplyHeader);
 
     /**
      * 根据主键查询（可关联表）

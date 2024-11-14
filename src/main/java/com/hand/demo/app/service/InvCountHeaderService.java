@@ -41,6 +41,5 @@ public interface InvCountHeaderService {
     Void withdrawWorkflow(Long organizationId, WorkFlowInstanceDTO dto);
 
     List<RunTaskHistory> showApprovedHistory(Long organizationId, WorkFlowInstanceDTO dto);
-
 }
 

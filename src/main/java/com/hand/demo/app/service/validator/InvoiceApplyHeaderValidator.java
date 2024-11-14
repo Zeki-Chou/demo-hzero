@@ -52,23 +52,22 @@ public class InvoiceApplyHeaderValidator extends BatchValidatorHandler {
 
         boolean flag = true;
         for (int i = 0; i < data.size(); i++) {
-            flag = true;
             try {
                 InvoiceApplyHeader header = objectMapper.readValue(data.get(i), InvoiceApplyHeader.class);
 
                 if (!invoiceTypeList.contains(header.getInvoiceType())) {
                     getContext().get(i).addErrorMsg("invalid invoice type");
-                    flag = !flag;
+                    flag = false;
                 }
 
                 if (!invoiceColorList.contains(header.getInvoiceColor())) {
                     getContext().get(i).addErrorMsg("invalid invoice color");
-                    flag = !flag;
+                    flag = false;
                 }
 
                 if (!applyStatusList.contains(header.getApplyStatus())) {
                     getContext().get(i).addErrorMsg("invalid apply status");
-                    flag = !flag;
+                    flag = false;
                 }
 
                 // check whether header number exists in database when updating header
@@ -78,13 +77,13 @@ public class InvoiceApplyHeaderValidator extends BatchValidatorHandler {
                     InvoiceApplyHeader exist = invoiceApplyHeaderRepository.selectOne(headerRecord);
                     if (exist == null) {
                         getContext().get(i).addErrorMsg("header number does not exist in database");
-                        flag = !flag;
+                        flag = false;
                     }
                 }
 
             } catch (JsonProcessingException e) {
                 getContext().get(i).addErrorMsg("Error reading JSON context");
-                flag = !flag;
+                flag = false;
             }
         }
 

@@ -25,9 +25,17 @@
         </dependency>
 
         <!-- 依赖服务列表 -->
+        <dependency>
+            <groupId>org.hzero.boot</groupId>
+            <artifactId>hzero-boot-platform</artifactId>
+        </dependency>
 
         <!-- 依赖组件列表 -->
-
+        <dependency>
+            <groupId>org.hzero.boot</groupId>
+            <artifactId>hzero-apaas-common</artifactId>
+            <version>2.8.1.RELEASE</version>
+        </dependency>
         <!-- 数据库驱动 -->
         <dependency>
             <groupId>mysql</groupId>

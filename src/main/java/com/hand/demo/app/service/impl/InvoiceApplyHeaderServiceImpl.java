@@ -6,26 +6,25 @@ import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
+import com.hand.demo.infra.constant.BaseConstant;
 import com.hand.demo.infra.constant.InvApplyHeaderConstant;
 import com.hand.demo.infra.mapper.InvoiceApplyHeaderMapper;
 import com.hand.demo.infra.util.InvoiceApplyHeaderUtils;
-import com.hand.demo.infra.util.Utils;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
+import io.choerodon.core.oauth.CustomUserDetails;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
-import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
-import org.hzero.mybatis.common.Criteria;
-import org.hzero.mybatis.common.query.Comparison;
-import org.hzero.mybatis.common.query.WhereField;
-import org.hzero.mybatis.domian.Condition;
+import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvoiceApplyHeaderService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
@@ -59,6 +58,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     private final InvoiceApplyLineService invoiceApplyLineService;
 
+    private final IamRemoteService iamRemoteService;
+
     public InvoiceApplyHeaderServiceImpl(
             InvoiceApplyLineRepository invoiceApplyLineRepository,
             InvoiceApplyLineService invoiceApplyLineService,
@@ -67,7 +68,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             RedisHelper redis,
             InvoiceApplyHeaderMapper mapper,
             CodeRuleBuilder codeRuleBuilder,
-            LovAdapter lovAdapter
+            LovAdapter lovAdapter,
+            IamRemoteService iamRemoteService
     ) {
         this.invoiceApplyLineRepository = invoiceApplyLineRepository;
         this.invoiceApplyLineService = invoiceApplyLineService;
@@ -77,13 +79,27 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         this.mapper = mapper;
         this.codeRuleBuilder = codeRuleBuilder;
         this.lovAdapter = lovAdapter;
+        this.iamRemoteService = iamRemoteService;
     }
 
     @Override
-    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader, Long organizationId) {
+    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeader, Long organizationId) {
+
         if (invoiceApplyHeader.getDelFlag() == null) {
             invoiceApplyHeader.setDelFlag(0);
         }
+
+        ResponseEntity<String> iamResponse = iamRemoteService.selectSelf();
+
+        if (iamResponse.getStatusCode() != HttpStatus.OK) {
+            throw new CommonException("Error getting iam object");
+        }
+
+        String responseJsonString = iamResponse.getBody();
+        JSONObject iamJsonString = new JSONObject(responseJsonString);
+        Boolean isTenantAdmin = iamJsonString.getBoolean("tenantAdminFlag");
+        invoiceApplyHeader.setTenantAdminFlag(isTenantAdmin);
+        invoiceApplyHeader.setTenantAdminFlag(false);
 
         Page<InvoiceApplyHeader> pageList = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
         List<InvoiceApplyHeaderDTO> headerDTOS = new ArrayList<>();
@@ -102,7 +118,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders, Long organizationId) {
         // validate
         validateHeader(invoiceApplyHeaders, organizationId);
@@ -111,13 +127,22 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
         // put list of invoice lines into map
         invoiceApplyHeaders.forEach(header -> {
-            String templateCode = InvoiceApplyHeaderUtils.generateTemplateCode(codeRuleBuilder);
-            header.setApplyHeaderNumber(templateCode);
+            StringBuilder stringBuilder = new StringBuilder();
+
+            if (header.getApplyHeaderNumber() == null) {
+                String newTemplateCode = InvoiceApplyHeaderUtils.generateInvoiceCode(codeRuleBuilder);
+                stringBuilder.append(newTemplateCode);
+            } else {
+                stringBuilder.append(header.getApplyHeaderNumber());
+            }
+
+            String templateCode = stringBuilder.toString();
 
             header.setTotalAmount(BigDecimal.ZERO);
             header.setTaxAmount(BigDecimal.ZERO);
             header.setExcludeTaxAmount(BigDecimal.ZERO);
 
+            header.setApplyHeaderNumber(templateCode);
             lineListMap.put(templateCode, header.getDataList());
         });
 
@@ -145,10 +170,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             redis.delKey(cacheName);
         }
 
-        if (!lineWithHeaderIdList.isEmpty()) {
-            invoiceApplyLineService.saveData(lineWithHeaderIdList);
-        }
-
+        invoiceApplyLineService.saveData(lineWithHeaderIdList);
     }
 
     @Override
@@ -203,7 +225,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     /**
-     * transform invoiceApplyHeader to appropriate DTO object
+     * transform invoiceApplyHeader to appropriate DTO object.
+     * Add the meaning of invoice type, color and apply status
      * @param invoiceApplyHeader invoice apply header object
      * @param organizationId tenant id
      * @return invoiceApplyHeaderDTO
@@ -213,20 +236,33 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
         BeanUtils.copyProperties(invoiceApplyHeader, dto);
 
-        String lang = "zh_CN";
-
         // get value set for apply status
-        String applyStatus = lovAdapter.queryLovMeaning(InvApplyHeaderConstant.APPLY_STATUS, organizationId, invoiceApplyHeader.getApplyStatus(), lang);
-
-        // get value set for invoice color
-        String invoiceColor = lovAdapter.queryLovMeaning(InvApplyHeaderConstant.INVOICE_COLOR, organizationId, invoiceApplyHeader.getInvoiceColor(), lang);
-
-        // get value set for invoice type
-        String invoiceType = lovAdapter.queryLovMeaning(InvApplyHeaderConstant.INVOICE_TYPE, organizationId, invoiceApplyHeader.getInvoiceType(), lang);
-
-        dto.setApplyStatusMeaning(applyStatus);
-        dto.setInvoiceTypeMeaning(invoiceType);
-        dto.setInvoiceColorMeaning(invoiceColor);
+//        String applyStatus = lovAdapter.queryLovMeaning(
+//                BaseConstant.InvApplyHeader.APPLY_STATUS_CODE,
+//                organizationId,
+//                invoiceApplyHeader.getApplyStatus(),
+//                BaseConstant.LANGUAGE_CN
+//        );
+//
+//        // get value set for invoice color
+//        String invoiceColor = lovAdapter.queryLovMeaning(
+//                BaseConstant.InvApplyHeader.INVOICE_COLOR_CODE,
+//                organizationId,
+//                invoiceApplyHeader.getInvoiceColor(),
+//                BaseConstant.LANGUAGE_CN
+//        );
+//
+//        // get value set for invoice type
+//        String invoiceType = lovAdapter.queryLovMeaning(
+//                InvApplyHeaderConstant.INVOICE_TYPE,
+//                organizationId,
+//                invoiceApplyHeader.getInvoiceType(),
+//                BaseConstant.LANGUAGE_CN
+//        );
+//
+//        dto.setApplyStatusMeaning(applyStatus);
+//        dto.setInvoiceTypeMeaning(invoiceType);
+//        dto.setInvoiceColorMeaning(invoiceColor);
 
         return dto;
     }

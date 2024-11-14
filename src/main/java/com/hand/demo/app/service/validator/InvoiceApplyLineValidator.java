@@ -32,7 +32,6 @@ public class InvoiceApplyLineValidator extends BatchValidatorHandler {
         boolean flag = true;
 
         for (int i = 0; i < data.size(); i++) {
-            flag = true;
             try {
                 InvoiceApplyLine invoiceApplyLine = objectMapper.readValue(data.get(i), InvoiceApplyLine.class);
 
@@ -42,10 +41,10 @@ public class InvoiceApplyLineValidator extends BatchValidatorHandler {
 
                 if (findHeader == null) {
                     getContext().get(i).addErrorMsg("invoice apply header not found");
-                    flag = !flag;
+                    flag = false;
                 } else if (findHeader.getDelFlag() == 1) {
                     getContext().get(i).addErrorMsg("invoice apply header has been deleted");
-                    flag = !flag;
+                    flag = false;
                 }
 
                 if (invoiceApplyLine.getApplyLineId() != null) {
@@ -53,13 +52,13 @@ public class InvoiceApplyLineValidator extends BatchValidatorHandler {
                     InvoiceApplyLine findApplyLine = invoiceApplyLineRepository.selectByPrimary(invoiceApplyLine.getApplyLineId());
                     if (findApplyLine == null) {
                         getContext().get(i).addErrorMsg("invoice apply line not found in database");
-                        flag = !flag;
+                        flag = false;
                     }
                 }
 
             } catch (JsonProcessingException e) {
                 getContext().get(i).addErrorMsg("Error processing JSON context");
-                flag = !flag;
+                flag = false;
             }
         }
 

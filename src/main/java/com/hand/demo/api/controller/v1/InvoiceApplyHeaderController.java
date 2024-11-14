@@ -8,6 +8,8 @@ import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
+import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
+import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
 import org.hzero.core.util.Results;
 import org.hzero.export.annotation.ExcelExport;
@@ -30,7 +32,6 @@ import java.util.List;
  * @author Allan
  * @since 2024-11-04 14:40:36
  */
-
 @RestController("invoiceApplyHeaderController.v1")
 @RequestMapping("/v1/{organizationId}/invoice-apply-headers")
 public class InvoiceApplyHeaderController extends BaseController {
@@ -43,8 +44,9 @@ public class InvoiceApplyHeaderController extends BaseController {
 
     @ApiOperation(value = "apply header list")
     @Permission(level = ResourceLevel.ORGANIZATION)
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     @GetMapping
-    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeaderDTO invoiceApplyHeader, @PathVariable Long organizationId,
                                                          @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID, direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader, organizationId);
         return Results.success(list);
@@ -52,6 +54,7 @@ public class InvoiceApplyHeaderController extends BaseController {
 
     @ApiOperation(value = "apply header detail")
     @Permission(level = ResourceLevel.ORGANIZATION)
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     @GetMapping("/{applyHeaderId}/detail")
     public ResponseEntity<InvoiceApplyHeaderDTO> detail(@PathVariable Long applyHeaderId) {
         InvoiceApplyHeaderDTO invoiceApplyHeader = invoiceApplyHeaderService.detail(applyHeaderId);

@@ -31,11 +31,16 @@ import java.util.stream.Collectors;
  */
 @Service
 public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
-    @Autowired
-    private InvoiceApplyLineRepository invoiceApplyLineRepository;
 
-    @Autowired
-    private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+    private final InvoiceApplyLineRepository invoiceApplyLineRepository;
+
+
+    private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+
+    public InvoiceApplyLineServiceImpl(InvoiceApplyLineRepository invoiceApplyLineRepository, InvoiceApplyHeaderRepository invoiceApplyHeaderRepository) {
+        this.invoiceApplyLineRepository = invoiceApplyLineRepository;
+        this.invoiceApplyHeaderRepository = invoiceApplyHeaderRepository;
+    }
 
     @Override
     public Page<InvoiceApplyLine> selectList(PageRequest pageRequest, InvoiceApplyLine invoiceApplyLine) {
@@ -45,6 +50,9 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Override
     @Transactional
     public void saveData(List<InvoiceApplyLine> invoiceApplyLines) {
+        if (invoiceApplyLines.isEmpty()) {
+            return;
+        }
         // validate invoice line
         validateData(invoiceApplyLines);
         // calculate the 3 amount from list of line
@@ -69,8 +77,10 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     public void deleteApplyLine(List<InvoiceApplyLine> invoiceApplyLines) {
         invoiceApplyLineRepository.batchDeleteByPrimaryKey(invoiceApplyLines);
         List<InvoiceApplyHeader> headersToUpdate = recalculateAmount(invoiceApplyLines);
-        List<InvoiceApplyHeader> updatedHeaderAmount = updateHeaderAmount(headersToUpdate);
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updatedHeaderAmount);
+        if (!headersToUpdate.isEmpty()) {
+            List<InvoiceApplyHeader> updatedHeaderAmount = updateHeaderAmount(headersToUpdate);
+            invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updatedHeaderAmount);
+        }
     }
 
     @Override
@@ -159,9 +169,11 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         }
 
         List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.selectByHeaderIds(headerIds);
+
         Map<Long, InvoiceApplyHeader> headersMap = headers
                 .stream()
                 .collect(Collectors.toMap(InvoiceApplyHeader::getApplyHeaderId, Function.identity()));
+
         invoiceApplyLines.forEach(line -> {
             InvoiceApplyHeader header = headersMap.get(line.getApplyHeaderId());
             BigDecimal totalAmount = header.getTotalAmount().add(line.getTotalAmount());
@@ -179,16 +191,16 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     }
 
     /**
-     * generate a string that contains joined ids separated by commas
+     * generate a string that contains joined headers ids separated by commas
      * @param invoiceApplyLines list of invoice line object
      * @return string of ids
      */
     private String generateStringIds(List<InvoiceApplyLine> invoiceApplyLines) {
-        List<String> headerIds = invoiceApplyLines
+        Set<String> headerIds = invoiceApplyLines
                 .stream()
                 .filter(line -> line.getApplyHeaderId() != null)
                 .map(line -> String.valueOf(line.getApplyHeaderId()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
         return String.join(",", headerIds);
     }
