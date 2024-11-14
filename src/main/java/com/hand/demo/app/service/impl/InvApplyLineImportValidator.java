@@ -37,7 +37,7 @@ public class InvApplyLineImportValidator extends BatchValidatorHandler {
             return Boolean.FALSE;
         }
 
-        AtomicBoolean flag = new AtomicBoolean(true);
+//        AtomicBoolean flag = new AtomicBoolean(true);
 
         List<Long> applyLineIds = new ArrayList<>();
         List<Long> applyHeaderIds = new ArrayList<>();

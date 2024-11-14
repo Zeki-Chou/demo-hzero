@@ -1,36 +1,32 @@
 package com.hand.demo.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
-import com.hand.demo.domain.entity.Task;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import com.hand.demo.infra.constant.InvoiceApplyConstants;
 import com.hand.demo.infra.constant.TaskConstants;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
-import io.choerodon.core.exception.ext.IllegalArgumentException;
-import io.choerodon.core.oauth.DetailsHelper;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import lombok.AllArgsConstructor;
+import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import com.hand.demo.app.service.InvoiceApplyHeaderService;
-import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
-import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
-import org.hzero.core.redis.RedisQueueHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +46,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     private InvoiceApplyLineService invoiceApplyLineService;
 
+    private IamRemoteService iamRemoteService;
+
     private final LovAdapter lovAdapter;
 
     private final CodeRuleBuilder codeRuleBuilder;
@@ -58,11 +56,36 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
-        Page<InvoiceApplyHeader> headers = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
 
-        if (invoiceApplyHeader.getDelFlag() == null) {
-            invoiceApplyHeader.setDelFlag(0);
+        JSONObject jsonObject = JSON.parseObject(iamRemoteService.selectSelf().getBody());
+        String tenantAdminFlag = "tenantAdminFlag";
+
+//        System.out.println("Masbrowww: " + DetailsHelper.getUserDetails());
+
+//        Long currentUserId = DetailsHelper.getUserDetails().getUserId();
+//        Long currentTenantId = DetailsHelper.getUserDetails().getTenantId();
+//
+//        if (!jsonObject.has(tenantAdminFlag) || !jsonObject.getBoolean(tenantAdminFlag)) {
+//            invoiceApplyHeader.setCreatedBy(currentUserId);
+//        }
+//
+//        invoiceApplyHeader.setTenantId(currentTenantId);
+
+
+        InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = new InvoiceApplyHeaderDTO();
+        BeanUtils.copyProperties(invoiceApplyHeader, invoiceApplyHeaderDTO);
+
+        Boolean isAdmin = jsonObject.getBooleanValue(tenantAdminFlag);
+        invoiceApplyHeaderDTO.setIsAdminFlag(isAdmin);
+
+        if (invoiceApplyHeaderDTO.getDelFlag() == null) {
+            invoiceApplyHeaderDTO.setDelFlag(0);
         }
+
+        Page<InvoiceApplyHeader> headers = PageHelper.doPageAndSort(pageRequest, () ->
+                invoiceApplyHeaderRepository.selectList(invoiceApplyHeaderDTO)
+        );
+
 
         List<InvoiceApplyHeaderDTO> headerDTOs = headers.getContent().stream()
                 .map(header -> {

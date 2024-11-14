@@ -27,4 +27,7 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
 
     @ExcelColumn(en = "Invoice Type Meaning", lovCode = InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE, order = 19)
     private String invoiceTypeMeaning;
+
+    @JsonIgnore
+    private Boolean isAdminFlag;
 }
