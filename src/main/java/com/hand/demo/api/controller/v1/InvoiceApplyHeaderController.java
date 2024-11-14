@@ -54,10 +54,10 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<Page<InvoiceApplyHeader>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
                                                             @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                  direction = Sort.Direction.DESC) PageRequest pageRequest) {
-        Page<InvoiceApplyHeader> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
         return Results.success(list);
     }
 

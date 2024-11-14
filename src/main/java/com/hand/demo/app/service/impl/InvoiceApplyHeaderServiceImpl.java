@@ -13,12 +13,15 @@ import io.choerodon.core.oauth.CustomUserDetails;
 import io.choerodon.core.oauth.DetailsHelper;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
+import org.json.JSONObject;
+import org.opensaml.xml.signature.P;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvoiceApplyHeaderService;
@@ -54,6 +57,9 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Autowired
     RedisHelper redisHelper;
 
+    @Autowired
+    IamRemoteService iamRemoteService;
+
     public InvoiceApplyHeaderServiceImpl(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, LovAdapter lovAdapter, CodeRuleBuilder codeRuleBuilder) {
         this.invoiceApplyHeaderRepository = invoiceApplyHeaderRepository;
         this.lovAdapter = lovAdapter;
@@ -61,7 +67,13 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
-    public Page<InvoiceApplyHeader> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
+    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
+
+//        JSONObject jsonObject = new JSONObject(iamRemoteService.selectSelf().getBody());
+//        if(!jsonObject.has("superTenantAdminFlag")) {
+//            invoiceApplyHeader.setCreatedBy(jsonObject.getLong("id"));
+//        }
+
         Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () -> {
             if (invoiceApplyHeader.getDelFlag() == null || invoiceApplyHeader.getDelFlag() == 0) {
                 invoiceApplyHeader.setDelFlag(0);
@@ -69,19 +81,24 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             return invoiceApplyHeaderRepository.selectList(invoiceApplyHeader);
         });
 
-        Page<InvoiceApplyHeader> invoiceApplyHeadersPage = new Page<>();
-        invoiceApplyHeadersPage.setContent(pageResult.getContent());
-        invoiceApplyHeadersPage.setTotalPages(pageResult.getTotalPages());
-        invoiceApplyHeadersPage.setTotalElements(pageResult.getTotalElements());
-        invoiceApplyHeadersPage.setNumber(pageResult.getNumber());
-        invoiceApplyHeadersPage.setSize(pageResult.getSize());
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOList = new ArrayList<>();
+        for (InvoiceApplyHeader data : pageResult) {
+            InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
+            BeanUtils.copyProperties(data, dto);
+            invoiceApplyHeaderDTOList.add(dto);
+        }
 
-        return invoiceApplyHeadersPage;
+        Page<InvoiceApplyHeaderDTO> invoiceApplyHeadersDTOPage = new Page<>();
+        invoiceApplyHeadersDTOPage.setContent(invoiceApplyHeaderDTOList);
+        invoiceApplyHeadersDTOPage.setTotalPages(pageResult.getTotalPages());
+        invoiceApplyHeadersDTOPage.setTotalElements(pageResult.getTotalElements());
+        invoiceApplyHeadersDTOPage.setNumber(pageResult.getNumber());
+        invoiceApplyHeadersDTOPage.setSize(pageResult.getSize());
+
+        return invoiceApplyHeadersDTOPage;
     }
 
-    @Override
-    public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
-//      validate error first
+    public void validateDTO(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOList) {
         List<LovValueDTO> countInvoiceType = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_TYPE, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countInvoiceColor = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_COLOR, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> countApplyStatus = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
@@ -91,8 +108,10 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         List<String> applyStatus = countApplyStatus.stream().map(LovValueDTO::getValue).collect(Collectors.toList());
 
         List<String> validationError = new ArrayList<>();
-        for(int i = 0; i < invoiceApplyHeaders.size(); i++) {
-            InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaders.get(i);
+        for(int i = 0; i < invoiceApplyHeaderDTOList.size(); i++) {
+            InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderDTOList.get(i);
+
+//          if header is not null, then it will validate
             if(invoiceApplyHeader.getApplyHeaderId() != null) {
                 InvoiceApplyHeader invoiceApplyHeaderNew = invoiceApplyHeaderRepository.selectByPrimary(invoiceApplyHeader.getApplyHeaderId());
                 if(invoiceApplyHeaderNew == null) {
@@ -106,7 +125,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                 validationError.add("Error Invoice Color"+"{"+ i +"}"+" : " + invoiceApplyHeader.getInvoiceColor());
             }
             if(!applyStatus.contains(invoiceApplyHeader.getApplyStatus())) {
-                validationError.add("Error Apply Status :"+"{"+ i +"}"+" " + invoiceApplyHeader.getApplyStatus());
+                validationError.add("Error Apply Status"+"{"+ i +"}"+" : " + invoiceApplyHeader.getApplyStatus());
             }
         }
 
@@ -116,10 +135,16 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 //            String error = MessageAccessor.getMessage(InvoiceApplyHeaderConstant.MULTILINGUAL_HEADER_ID, errorMsgArgs, Locale.CHINESE).getDesc();
             throw new CommonException("exam-47356.apply-header.error", validationError.toString());
         }
+    }
 
+    @Override
+    public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOList) {
+//      validate data first
+        validateDTO(invoiceApplyHeaderDTOList);
+
+//      seperated code for insert and update based on headerIs is exist or not
 //      code for insert DTO
-        List<InvoiceApplyHeaderDTO> insertListDTO = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
-
+        List<InvoiceApplyHeaderDTO> insertListDTO = invoiceApplyHeaderDTOList.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
         List<String> batchCode = codeRuleBuilder.generateCode(insertListDTO.size(), InvoiceApplyHeaderConstant.INVOICE_HEADER, null);
         for (int i = 0; i < insertListDTO.size(); i++) {
             InvoiceApplyHeader invoiceApplyHeader = insertListDTO.get(i);
@@ -178,11 +203,12 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
 
 //        code for update
-        List<InvoiceApplyHeaderDTO> updateListDTO = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
+        List<InvoiceApplyHeaderDTO> updateListDTO = invoiceApplyHeaderDTOList.stream().filter(line -> line.getApplyHeaderId() != null).collect(Collectors.toList());
         List<InvoiceApplyLine> invoiceApplyLineUpdate = new ArrayList<>();
         List<InvoiceApplyLine> invoiceApplyLineInsert = new ArrayList<>();
 
         for(int i = 0; i < updateListDTO.size(); i++) {
+//          code to set object version number
             InvoiceApplyHeader invoiceApplyHeader = updateListDTO.get(i);
             InvoiceApplyHeader invoiceApplyHeader1 = invoiceApplyHeaderRepository.selectByPrimary(invoiceApplyHeader.getApplyHeaderId());
             invoiceApplyHeader.setObjectVersionNumber(invoiceApplyHeader1.getObjectVersionNumber());
@@ -203,21 +229,23 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
                 } else {
                     invoiceApplyLineNew.setApplyLineId(invoiceApplyLine.getApplyLineId());
                 }
+
 //                this is the selected query so when is 0 it will be setted as an insert because the size is 0
                 List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.select(invoiceApplyLineNew);
                 BigDecimal taxAmount = BigDecimal.ZERO;
                 BigDecimal totalAmount = BigDecimal.ZERO;
                 BigDecimal excludeTaxAmount = BigDecimal.ZERO;
-//                if size > 0, it will do update, else is insert
+
+                totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
+                taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
+                excludeTaxAmount = totalAmount.subtract(taxAmount);
+
+//                if size > 0 which apply line is exist, it will do update, else will insert
                 if(invoiceApplyLines.size() > 0) {
                     InvoiceApplyLine invoiceApplyLine1 = invoiceApplyLines.get(0);
                     invoiceApplyLine.setObjectVersionNumber(invoiceApplyLine1.getObjectVersionNumber());
 
                     invoiceApplyLine.setApplyHeaderId(invoiceApplyHeaderDTO.getApplyHeaderId());
-
-                    totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
-                    taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
-                    excludeTaxAmount = totalAmount.subtract(taxAmount);
 
                     invoiceApplyLine.setTotalAmount(totalAmount);
                     invoiceApplyLine.setTaxAmount(taxAmount);
@@ -225,10 +253,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
                     invoiceApplyLineUpdate.add(invoiceApplyLine);
                 } else {
-                    totalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
-                    taxAmount = totalAmount.multiply(invoiceApplyLine.getTaxRate());
-                    excludeTaxAmount = totalAmount.subtract(taxAmount);
-
                     invoiceApplyLine.setApplyHeaderId(invoiceApplyHeader.getApplyHeaderId());
                     invoiceApplyLine.setTotalAmount(totalAmount);
                     invoiceApplyLine.setTaxAmount(taxAmount);

@@ -23,7 +23,7 @@ public interface InvoiceApplyHeaderService {
 //     * @param invoiceApplyHeaders 查询条件
      * @return 返回值
      */
-    public Page<InvoiceApplyHeader> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader);
+    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader);
 
     /**
      * 保存数据
