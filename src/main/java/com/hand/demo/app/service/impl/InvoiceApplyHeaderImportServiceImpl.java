@@ -1,5 +1,6 @@
 package com.hand.demo.app.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
@@ -40,7 +41,7 @@ public class InvoiceApplyHeaderImportServiceImpl extends BatchImportHandler {
                     insertHeaderList.add(header);
                 }
                 List<InvoiceApplyHeader> existsHeader = invoiceApplyHeaderRepository.select("applyHeaderNumber", header.getApplyHeaderNumber());
-                if(!existsHeader.isEmpty()){
+                if(CollUtil.isNotEmpty(existsHeader)){
                     header.setObjectVersionNumber(existsHeader.get(0).getObjectVersionNumber());
                     header.setApplyHeaderId(existsHeader.get(0).getApplyHeaderId());
                     updateHeaderList.add(header);

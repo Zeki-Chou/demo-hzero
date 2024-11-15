@@ -28,5 +28,11 @@ public interface InvoiceApplyLineRepository extends BaseRepository<InvoiceApplyL
      */
     InvoiceApplyLine selectByPrimary(Long applyLineId);
 
+    /**
+     * ListByHeaderId
+     *
+     * @param headerId headerId
+     * @return List<InvoiceApplyLine>
+     */
     List<InvoiceApplyLine> selectByHeaderId(Long headerId);
 }

@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.domain.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.domain.dto.InvoiceApplyReportQueryDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -8,6 +9,7 @@ import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
+import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
@@ -44,11 +46,12 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Autowired
     private InvoiceApplyHeaderService invoiceApplyHeaderService;
 
+
     @ApiOperation(value = "列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeaderDTO invoiceApplyHeader, @PathVariable Long organizationId,
                                                             @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                  direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
@@ -69,7 +72,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @PostMapping
     public ResponseEntity<List<InvoiceApplyHeaderDTO>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
         validObject(invoiceApplyHeaders);
-        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
+//        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
         invoiceApplyHeaderService.saveData(invoiceApplyHeaders);
         return Results.success(invoiceApplyHeaders);
@@ -87,9 +90,9 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "删除soft")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping("soft-delete")
-    public ResponseEntity<?> softDelete(@RequestParam Long applyHeaderId) {
+    public ResponseEntity<?> softDelete(@RequestParam List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS) {
 //        SecurityTokenHelper.validToken(invoiceApplyHeaders);
-        invoiceApplyHeaderService.softDelete(applyHeaderId);
+        invoiceApplyHeaderService.batchSoftDelete(invoiceApplyHeaderDTOS);
         return Results.success("Success Deleted");
     }
 
@@ -98,13 +101,31 @@ public class InvoiceApplyHeaderController extends BaseController {
     @GetMapping("excel-export")
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     @ExcelExport(InvoiceApplyHeaderDTO.class)
-    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> export(InvoiceApplyHeader invoiceApplyHeader,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> export(InvoiceApplyHeaderDTO invoiceApplyHeader,
                                                               @PathVariable Long organizationId,
                                                               @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                       direction = Sort.Direction.DESC) PageRequest pageRequest,
                                                               ExportParam exportParam,
                                                               HttpServletResponse response) {
-        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectListExport(pageRequest, invoiceApplyHeader);
+        return Results.success(list);
+    }
+
+    @ApiOperation(value = "List For Data Set RTF")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/listDataSet")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    public ResponseEntity<List<InvoiceApplyHeaderDTO>> listDataSet(InvoiceApplyHeaderDTO invoiceApplyHeader, @PathVariable Long organizationId) {
+        List<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectListForDataSet(invoiceApplyHeader);
+        return Results.success(list);
+    }
+
+    @ApiOperation(value = "List Report Excel")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/listReportExcel")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    public ResponseEntity<List<InvoiceApplyReportQueryDTO>> listReportExcel(InvoiceApplyReportQueryDTO invoiceApplyHeaderDTO, @PathVariable Long organizationId) {
+        List<InvoiceApplyReportQueryDTO> list = invoiceApplyHeaderService.selectListForExcel(invoiceApplyHeaderDTO, organizationId);
         return Results.success(list);
     }
 }

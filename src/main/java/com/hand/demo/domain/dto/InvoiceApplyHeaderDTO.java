@@ -29,4 +29,7 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @ExcelColumn(en = "List Invoice Line", order = 20, child = true)
     private List<InvoiceApplyLine> invoiceApplyLineList;
 
+    private String errorMsg;
+
+    private Boolean tenantAdminFlag;
 }

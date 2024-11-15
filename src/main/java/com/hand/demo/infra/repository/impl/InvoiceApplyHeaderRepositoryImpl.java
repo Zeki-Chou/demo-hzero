@@ -1,6 +1,6 @@
 package com.hand.demo.infra.repository.impl;
 
-import org.apache.commons.collections.CollectionUtils;
+import com.hand.demo.domain.dto.InvoiceApplyHeaderDTO;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.stereotype.Component;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
@@ -22,8 +22,13 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     private InvoiceApplyHeaderMapper invoiceApplyHeaderMapper;
 
     @Override
-    public List<InvoiceApplyHeader> selectList(InvoiceApplyHeader invoiceApplyHeader) {
+    public List<InvoiceApplyHeaderDTO> selectList(InvoiceApplyHeaderDTO invoiceApplyHeader) {
         return invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
+    }
+
+    @Override
+    public List<InvoiceApplyHeaderDTO> selectListDataSet(InvoiceApplyHeaderDTO invoiceApplyHeader) {
+        return invoiceApplyHeaderMapper.selectListDataSet(invoiceApplyHeader);
     }
 
     @Override

@@ -47,7 +47,8 @@ public class InvoiceApplyHeaderJob implements IJobHandler {
 
     private String getInvoiceJSON(Integer delFlag,
                                   String invoiceStatusCode,
-                                  String invoiceColorCode, String invoiceTypeCode){
+                                  String invoiceColorCode,
+                                  String invoiceTypeCode){
         InvoiceApplyHeader headerExample = new InvoiceApplyHeader();
         headerExample.setDelFlag(delFlag);
         headerExample.setApplyStatus(invoiceStatusCode);

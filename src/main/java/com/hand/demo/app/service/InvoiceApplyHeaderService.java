@@ -1,9 +1,12 @@
 package com.hand.demo.app.service;
 
 import com.hand.demo.domain.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.domain.dto.InvoiceApplyReportQueryDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
+import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
+import org.hzero.core.base.BaseConstants;
 
 import java.util.List;
 
@@ -19,13 +22,27 @@ public interface InvoiceApplyHeaderService {
      * 查询数据
      *
      * @param pageRequest         分页参数
-     * @param invoiceApplyHeaders 查询条件
+     * @param invoiceApplyHeadersDTO 查询条件
      * @return 返回值
      */
-    Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeaders);
+    Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeadersDTO);
 
-    InvoiceApplyHeader selectById(Long headerId);
+    /**
+     * Select List for Export
+     *
+     * @param pageRequest         分页参数
+     * @param invoiceApplyHeaderDTO 查询条件
+     * @return 返回值
+     */
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    Page<InvoiceApplyHeaderDTO> selectListExport(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeaderDTO);
 
+    /**
+     * Select List for Export
+     *
+     * @param headerId id
+     * @return 返回值
+     */
     InvoiceApplyHeaderDTO detail(Long headerId);
 
     InvoiceApplyHeader getHeaderById(Long headerId);
@@ -39,6 +56,12 @@ public interface InvoiceApplyHeaderService {
 
     void softDelete(Long applyHeaderId);
 
-    void updateByPrimaryKeySelective(InvoiceApplyHeader header);
+    void batchSoftDelete(List<InvoiceApplyHeaderDTO> applyHeaderDTOS);
+
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    List<InvoiceApplyHeaderDTO> selectListForDataSet(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO);
+
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    List<InvoiceApplyReportQueryDTO> selectListForExcel(InvoiceApplyReportQueryDTO invoiceApplyReportQueryDTO, Long organizationId);
 }
 
