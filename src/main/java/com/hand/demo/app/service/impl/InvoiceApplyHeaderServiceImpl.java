@@ -2,20 +2,24 @@ package com.hand.demo.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.*;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import com.hand.demo.infra.constant.InvHeaderConstant;
 import com.hand.demo.infra.constant.TaskConstant;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
+import io.choerodon.core.oauth.CustomUserDetails;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.redis.RedisHelper;
+import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvoiceApplyHeaderService;
@@ -51,13 +55,41 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Autowired
     private RedisHelper redisHelper;
 
+    @Autowired
+    IamRemoteService iamRemoteService;
+
+    @Autowired
+    InvoiceApplyLineService invoiceApplyLineService;
+
     // Get list of header and lines
     @Override
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
+    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeader) {
+        String remoteResponse = iamRemoteService.selectSelf().getBody();
+        JSONObject jsonObject = new JSONObject(remoteResponse);
+        Boolean adminFlag=false;
+        if (jsonObject.has("superTenantAdminFlag")) {
+            adminFlag = jsonObject.getBoolean("superTenantAdminFlag");
+        } else if(jsonObject.has("tenantAdminFlag")){
+            adminFlag = jsonObject.getBoolean("tenantAdminFlag");
+        }
+        invoiceApplyHeader.setSuperTenantAdminFlag(adminFlag);
+
         Page<InvoiceApplyHeader> pageResult = PageHelper.doPageAndSort(pageRequest, () ->
                 invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
+
+//        if (!jsonObject.has("superTenantAdminFlag")) {
+//            pageResult = PageHelper.doPageAndSort(pageRequest, () -> {
+//                        InvoiceApplyHeader header = new InvoiceApplyHeader();
+//                        header.setCreatedBy(userId);
+//                        return invoiceApplyHeaderRepository.selectList(header);
+//
+//                    }
+//            );
+//        }
+
         List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = new ArrayList<>();
+//        CustomUserDetails
         for (InvoiceApplyHeader data : pageResult) {
             invoiceApplyHeaderDTOS.add(changeToDTO(data));
         }
@@ -84,176 +116,63 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
         validationOfHeader(invoiceApplyHeaders);
 
-        List<InvoiceApplyHeader> insertList = filterInsertList(invoiceApplyHeaders);
-        List<InvoiceApplyHeader> updateList = filterUpdateList(invoiceApplyHeaders);
+        Map<String, String> variableMap = new HashMap<>();
+        Map<String, List<InvoiceApplyLine>> stringListMap = new HashMap<>();
+        variableMap.put("customSegment", "-");
 
-        if (!insertList.isEmpty()) {
-            processInsertList(insertList);
-        }
+        List<InvoiceApplyLine> lines = new ArrayList<>();
+        String headerNumber = codeRuleBuilder.generateCode(InvHeaderConstant.RULE_CODE, variableMap);
+        invoiceApplyHeaders.forEach(header -> {
+            if (header.getApplyHeaderNumber() == null) {
+                header.setApplyHeaderNumber(headerNumber);
+                stringListMap.put(headerNumber, header.getInvoiceApplyLines());
+            } else {
+                stringListMap.put(header.getApplyHeaderNumber(), header.getInvoiceApplyLines());
+            }
 
-        if (!updateList.isEmpty()) {
-            processUpdateList(updateList);
-        }
-    }
+            initializeHeaderAmounts(header);
+        });
 
-    // Filter the list with make sure the data doesnt have id
-    private List<InvoiceApplyHeader> filterInsertList(List<InvoiceApplyHeaderDTO> headers) {
-        return headers.stream()
+        List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream()
                 .filter(header -> header.getApplyHeaderId() == null)
                 .collect(Collectors.toList());
-    }
-
-    // Filter the list with make sure the data have id
-    private List<InvoiceApplyHeader> filterUpdateList(List<InvoiceApplyHeaderDTO> headers) {
-        return headers.stream()
+        List<InvoiceApplyHeader> updateList = invoiceApplyHeaders.stream()
                 .filter(header -> header.getApplyHeaderId() != null)
                 .collect(Collectors.toList());
-    }
 
-    //Logic for insert the header
-    private void processInsertList(List<InvoiceApplyHeader> insertList) {
-        Map<String, String> variableMap = initializeVariableMap();
-
-        for (InvoiceApplyHeader header : insertList) {
-            initializeHeaderAmounts(header);
-            invoiceApplyHeaderRepository.insert(header);
-
-            Long generatedId = header.getApplyHeaderId();
-            InvoiceApplyHeaderDTO headerDTO = changeToDTO(header);
-
-            // Check if there's lines it will processed
-            if (headerDTO.getInvoiceApplyLines() != null && !headerDTO.getInvoiceApplyLines().isEmpty()) {
-                processInvoiceApplyLines(headerDTO.getInvoiceApplyLines(), generatedId);
-                updateHeaderAmounts(header, headerDTO.getInvoiceApplyLines(), variableMap);
+        List<InvoiceApplyHeader> insertResult = invoiceApplyHeaderRepository.batchInsertSelective(insertList);
+        insertResult.forEach(header -> {
+            List<InvoiceApplyLine> lineMap = stringListMap.get(header.getApplyHeaderNumber());
+            // populate lines with header id
+            for (InvoiceApplyLine line : lineMap) {
+                line.setApplyHeaderId(header.getApplyHeaderId());
+                lines.add(line);
             }
+        });
+
+        List<InvoiceApplyHeader> updateResult = invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
+        updateResult.forEach(header -> {
+            List<InvoiceApplyLine> lineMap = stringListMap.get(header.getApplyHeaderNumber());
+            lines.addAll(lineMap);
+        });
+        invoiceApplyLineService.saveData(lines);
+
+        for (InvoiceApplyHeader header : invoiceApplyHeaders) {
+            changeToDTO(header);
         }
     }
 
-    // function to init variable map
-    private Map<String, String> initializeVariableMap() {
-        Map<String, String> variableMap = new HashMap<>();
-        variableMap.put("customSegment", "-");
-        return variableMap;
-    }
-
-    // Init amount for header
     private void initializeHeaderAmounts(InvoiceApplyHeader header) {
         header.setTotalAmount(BigDecimal.valueOf(0));
         header.setExcludeTaxAmount(BigDecimal.valueOf(0));
         header.setTaxAmount(BigDecimal.valueOf(0));
     }
 
-    // Logic to process list lines based on header id
-    private void processInvoiceApplyLines(List<InvoiceApplyLine> lines, Long headerId) {
-        // set init value each line and their amount
-        for (InvoiceApplyLine line : lines) {
-            line.setApplyHeaderId(headerId);
-            calculateLineAmounts(line);
-        }
-
-        // check if this is new line
-        List<InvoiceApplyLine> newLines = lines.stream()
-                .filter(line -> line.getApplyLineId() == null)
-                .collect(Collectors.toList());
-
-        // insert line
-        if (!newLines.isEmpty()) {
-            invoiceApplyLineRepository.batchInsert(newLines);
-        }
-    }
-
-
-    // line calculation
-    private void calculateLineAmounts(InvoiceApplyLine line) {
-        line.setTotalAmount(line.getUnitPrice().multiply(line.getQuantity()));
-        line.setTaxAmount(line.getTotalAmount().multiply(line.getTaxRate()));
-        line.setExcludeTaxAmount(line.getTotalAmount().subtract(line.getTaxAmount()));
-    }
-
-    // update for header amount based on their lines
-    private void updateHeaderAmounts(InvoiceApplyHeader header, List<InvoiceApplyLine> lines, Map<String, String> variableMap) {
-        BigDecimal totalAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTotalAmount);
-        BigDecimal excludeTaxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getExcludeTaxAmount);
-        BigDecimal taxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTaxAmount);
-
-        header.setTotalAmount(totalAmount);
-        header.setExcludeTaxAmount(excludeTaxAmount);
-        header.setTaxAmount(taxAmount);
-        header.setApplyHeaderNumber(codeRuleBuilder.generateCode(InvHeaderConstant.RULE_CODE, variableMap));
-
-        // delete on redis to make sure it will updated if theres new update on header data
-        redisHelper.delKey(header.getApplyHeaderId() + InvHeaderConstant.PREFIX);
-        invoiceApplyHeaderRepository.updateByPrimaryKey(header);
-    }
-
-    // calculate total amount
-    private BigDecimal calculateTotalAmount(List<InvoiceApplyLine> lines, Function<InvoiceApplyLine, BigDecimal> mapper) {
-        return lines.stream()
-                .map(mapper)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-
-    // processing updatelist if theres changes on their data
-    private void processUpdateList(List<InvoiceApplyHeader> updateList) {
-        invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(updateList);
-
-        for (InvoiceApplyHeader header : updateList) {
-            InvoiceApplyHeaderDTO headerDTO = changeToDTO(header);
-
-            // update the lines
-            if (headerDTO.getInvoiceApplyLines() != null && !headerDTO.getInvoiceApplyLines().isEmpty()) {
-                processExistingAndNewLines(headerDTO.getInvoiceApplyLines(), header.getApplyHeaderId());
-                updateHeaderAmountsForExisting(header, headerDTO.getInvoiceApplyLines());
-            }
-        }
-    }
-
-    // process the existing and new lines
-    private void processExistingAndNewLines(List<InvoiceApplyLine> lines, Long headerId) {
-        List<InvoiceApplyLine> newLines = lines.stream()
-                .filter(line -> line.getApplyLineId() == null)
-                .collect(Collectors.toList());
-
-        List<InvoiceApplyLine> existingLines = lines.stream()
-                .filter(line -> line.getApplyLineId() != null)
-                .collect(Collectors.toList());
-
-        // logic process for new line
-        for (InvoiceApplyLine line : newLines) {
-            line.setApplyHeaderId(headerId);
-            calculateLineAmounts(line);
-            invoiceApplyLineRepository.insert(line);
-        }
-
-        // logic process for existing line
-        for (InvoiceApplyLine line : existingLines) {
-            calculateLineAmounts(line);
-            invoiceApplyLineRepository.updateByPrimaryKey(line);
-        }
-    }
-
-    // update for header amount existing
-    private void updateHeaderAmountsForExisting(InvoiceApplyHeader header, List<InvoiceApplyLine> lines) {
-        BigDecimal totalAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTotalAmount);
-        BigDecimal excludeTaxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getExcludeTaxAmount);
-        BigDecimal taxAmount = calculateTotalAmount(lines, InvoiceApplyLine::getTaxAmount);
-
-        header.setTotalAmount(totalAmount);
-        header.setExcludeTaxAmount(excludeTaxAmount);
-        header.setTaxAmount(taxAmount);
-
-        redisHelper.delKey(header.getApplyHeaderId() + InvHeaderConstant.PREFIX);
-        invoiceApplyHeaderRepository.updateByPrimaryKey(header);
-    }
-
-
-
     // soft delete header
     @Override
     public InvoiceApplyHeaderDTO delete(Long id) {
 
-        InvoiceApplyHeader data = invoiceApplyHeaderRepository.selectByPrimary(id);
+        InvoiceApplyHeader data = invoiceApplyHeaderRepository.selectByPrimaryKey(id);
         if (data == null) {
             throw new CommonException("Data hasnt found");
         }
@@ -267,9 +186,9 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Override
     public InvoiceApplyHeaderDTO detail(Long id) {
         // check on redis if there's no value on redis it will set and return if the key is exist
-        if (redisHelper.hasKey(String.valueOf(id))) {
+        if (Boolean.TRUE.equals(redisHelper.hasKey(String.valueOf(id)))) {
             String result = redisHelper.strGet(String.valueOf(id));
-            if (result != null || !result.isEmpty()) {
+            if (!result.isEmpty()) {
                 return JSON.parseObject(result, InvoiceApplyHeaderDTO.class);
             }
         }

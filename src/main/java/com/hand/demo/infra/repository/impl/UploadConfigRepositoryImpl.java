@@ -14,7 +14,7 @@ import java.util.List;
  * 文件上传配置(UploadConfig)资源库
  *
  * @author
- * @since 2024-11-13 09:40:20
+ * @since 2024-11-13 09:44:58
  */
 @Component
 public class UploadConfigRepositoryImpl extends BaseRepositoryImpl<UploadConfig> implements UploadConfigRepository {

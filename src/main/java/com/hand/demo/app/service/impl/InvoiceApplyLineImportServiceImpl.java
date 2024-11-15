@@ -8,6 +8,7 @@ import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import com.hand.demo.infra.constant.InvHeaderConstant;
 import io.choerodon.core.exception.CommonException;
+import io.choerodon.core.oauth.DetailsHelper;
 import org.hzero.boot.imported.app.service.BatchImportHandler;
 import org.hzero.boot.imported.infra.validator.annotation.ImportService;
 import org.hzero.core.redis.RedisHelper;
@@ -40,6 +41,7 @@ public class InvoiceApplyLineImportServiceImpl extends BatchImportHandler {
     @Override
     public Boolean doImport(List<String> data) {
         List<InvoiceApplyLine> invoiceApplyLines = parseDataToInvoiceApplyLines(data);
+        DetailsHelper.getUserDetails().getAdmin();
 
         try {
             List<InvoiceApplyLine> insertList = filterInsertList(invoiceApplyLines);

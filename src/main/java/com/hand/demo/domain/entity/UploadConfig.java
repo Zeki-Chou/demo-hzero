@@ -22,7 +22,7 @@ import lombok.Setter;
  * 文件上传配置(UploadConfig)实体类
  *
  * @author
- * @since 2024-11-13 09:40:19
+ * @since 2024-11-13 09:44:58
  */
 
 @Getter
@@ -33,7 +33,7 @@ import lombok.Setter;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "hfle_upload_config")
 public class UploadConfig extends AuditDomain {
-    private static final long serialVersionUID = -75988371700765960L;
+    private static final long serialVersionUID = 200694456446654409L;
 
     public static final String FIELD_UPLOAD_CONFIG_ID = "uploadConfigId";
     public static final String FIELD_BUCKET_NAME = "bucketName";

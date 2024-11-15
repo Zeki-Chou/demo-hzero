@@ -79,32 +79,28 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     @Transactional(rollbackFor = Exception.class)
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public void saveData(List<InvoiceApplyLine> invoiceApplyLines) {
-        List<InvoiceApplyLine> insertList = filterInsertList(invoiceApplyLines);
-        List<InvoiceApplyLine> updateList = filterUpdateList(invoiceApplyLines);
+        invoiceApplyLines.forEach(invoiceApplyLine -> {
+            BigDecimal lineTotalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
+            BigDecimal lineTaxAmount =lineTotalAmount.multiply(invoiceApplyLine.getTaxRate());
+            BigDecimal lineExcludeTaxAmount = lineTotalAmount.subtract(lineTaxAmount);
 
-        calculateAmountsForLines(insertList);
-        if (!insertList.isEmpty()) {
-            invoiceApplyLineRepository.batchInsertSelective(insertList);
-        }
+            invoiceApplyLine.setTotalAmount(lineTotalAmount);
+            invoiceApplyLine.setTaxAmount(lineTaxAmount);
+            invoiceApplyLine.setExcludeTaxAmount(lineExcludeTaxAmount);
+        });
 
-        calculateAmountsForLines(updateList);
-        if (!updateList.isEmpty()) {
-            invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateList);
-        }
-
-        updateAffectedHeaders(invoiceApplyLines);
-    }
-
-    private List<InvoiceApplyLine> filterInsertList(List<InvoiceApplyLine> lines) {
-        return lines.stream()
+        List<InvoiceApplyLine> insertList = invoiceApplyLines.stream()
                 .filter(line -> line.getApplyLineId() == null)
                 .collect(Collectors.toList());
-    }
-
-    private List<InvoiceApplyLine> filterUpdateList(List<InvoiceApplyLine> lines) {
-        return lines.stream()
+        List<InvoiceApplyLine> updateList = invoiceApplyLines.stream()
                 .filter(line -> line.getApplyLineId() != null)
                 .collect(Collectors.toList());
+
+        invoiceApplyLineRepository.batchInsertSelective(insertList);
+        invoiceApplyLineRepository.batchUpdateByPrimaryKeySelective(updateList);
+
+        calculateAmountsForLines(invoiceApplyLines);
+        updateAffectedHeaders(invoiceApplyLines);
     }
 
     private void calculateAmountsForLines(List<InvoiceApplyLine> lines) {

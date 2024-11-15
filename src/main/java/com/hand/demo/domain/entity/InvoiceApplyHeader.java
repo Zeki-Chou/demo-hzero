@@ -39,7 +39,7 @@ import org.hzero.export.annotation.ExcelSheet;
 @VersionAudit
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
-@Table(name = "47358_invoice_apply_header")
+@Table(name = "t47358_invoice_apply_header")
 @Accessors(chain = true)
 public class InvoiceApplyHeader extends AuditDomain {
     private static final long serialVersionUID = 926057601092681173L;

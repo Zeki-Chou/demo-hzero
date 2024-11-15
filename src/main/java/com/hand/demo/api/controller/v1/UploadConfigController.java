@@ -24,7 +24,7 @@ import java.util.List;
  * 文件上传配置(UploadConfig)表控制层
  *
  * @author
- * @since 2024-11-13 09:40:20
+ * @since 2024-11-13 09:44:59
  */
 
 @RestController("uploadConfigController.v1")
@@ -37,7 +37,7 @@ public class UploadConfigController extends BaseController {
     @Autowired
     private UploadConfigService uploadConfigService;
 
-    @ApiOperation(value = "文件上传配置列表")
+    @ApiOperation(value = "Get List")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     public ResponseEntity<Page<UploadConfig>> list(UploadConfig uploadConfig, @PathVariable Long organizationId,
@@ -47,7 +47,7 @@ public class UploadConfigController extends BaseController {
         return Results.success(list);
     }
 
-    @ApiOperation(value = "文件上传配置明细")
+    @ApiOperation(value = "Detail")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/{uploadConfigId}/detail")
     public ResponseEntity<UploadConfig> detail(@PathVariable Long uploadConfigId) {
@@ -55,7 +55,7 @@ public class UploadConfigController extends BaseController {
         return Results.success(uploadConfig);
     }
 
-    @ApiOperation(value = "创建或更新文件上传配置")
+    @ApiOperation(value = "Save")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<UploadConfig>> save(@PathVariable Long organizationId, @RequestBody List<UploadConfig> uploadConfigs) {
@@ -66,7 +66,7 @@ public class UploadConfigController extends BaseController {
         return Results.success(uploadConfigs);
     }
 
-    @ApiOperation(value = "删除文件上传配置")
+    @ApiOperation(value = "Remove")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> remove(@RequestBody List<UploadConfig> uploadConfigs) {

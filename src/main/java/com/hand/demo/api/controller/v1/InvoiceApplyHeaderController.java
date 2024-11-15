@@ -47,7 +47,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeaderDTO invoiceApplyHeader, @PathVariable Long organizationId,
                                                             @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                     direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
@@ -65,7 +65,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "Save Data")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
-    public ResponseEntity<List<InvoiceApplyHeader>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeader> invoiceApplyHeaders) {
+    public ResponseEntity<List<InvoiceApplyHeaderDTO>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
         validObject(invoiceApplyHeaders);
 //        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
@@ -77,7 +77,8 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping("/list-lines")
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<List<InvoiceApplyHeaderDTO>> saveList(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
+    public ResponseEntity<List<InvoiceApplyHeaderDTO>> saveList(@PathVariable Long organizationId,
+                                                                @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
         validObject(invoiceApplyHeaders);
 //        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
@@ -108,7 +109,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @GetMapping("get-excel")
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     @ExcelExport(InvoiceApplyHeaderDTO.class)
-    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> listExcel(InvoiceApplyHeader invoiceApplyHeader,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> listExcel(InvoiceApplyHeaderDTO invoiceApplyHeader,
                                                                  @PathVariable Long organizationId,
                                                                  @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                          direction = Sort.Direction.DESC) PageRequest pageRequest,

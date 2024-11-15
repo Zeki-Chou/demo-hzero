@@ -1,5 +1,6 @@
 package com.hand.demo.infra.repository.impl;
 
+import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
@@ -24,15 +25,15 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     private InvoiceApplyHeaderMapper invoiceApplyHeaderMapper;
 
     @Override
-    public List<InvoiceApplyHeader> selectList(InvoiceApplyHeader invoiceApplyHeader) {
+    public List<InvoiceApplyHeaderDTO> selectList(InvoiceApplyHeaderDTO invoiceApplyHeader) {
         return invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
     }
 
     @Override
     public InvoiceApplyHeader selectByPrimary(Long applyHeaderId) {
-        InvoiceApplyHeader invoiceApplyHeader = new InvoiceApplyHeader();
+        InvoiceApplyHeaderDTO invoiceApplyHeader = new InvoiceApplyHeaderDTO();
         invoiceApplyHeader.setApplyHeaderId(applyHeaderId);
-        List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
         if (invoiceApplyHeaders.size() == 0) {
             return null;
         }

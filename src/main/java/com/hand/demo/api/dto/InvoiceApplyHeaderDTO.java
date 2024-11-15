@@ -26,4 +26,5 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @Transient
     @ExcelColumn(en = InvoiceApplyHeader.FIELD_INVOICE_TYPE, order = 15, lovCode = InvHeaderConstant.APPLY_TYPE_CODE)
     private String invoiceTypeMeaning;
+    private Boolean superTenantAdminFlag;
 }

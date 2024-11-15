@@ -9,7 +9,7 @@ import java.util.List;
  * 文件上传配置(UploadConfig)应用服务
  *
  * @author
- * @since 2024-11-13 09:40:19
+ * @since 2024-11-13 09:44:58
  */
 public interface UploadConfigMapper extends BaseMapper<UploadConfig> {
     /**
