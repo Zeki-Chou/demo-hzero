@@ -24,4 +24,5 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     private String applyStatusMeaning;
     @ExcelColumn(en = "Invoice Apply Line List", order = 12)
     private List<InvoiceApplyLine> invoiceApplyLineList;
+    private Boolean tenantAdminFlag;
 }

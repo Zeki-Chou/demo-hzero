@@ -1,5 +1,7 @@
 package com.hand.demo.domain.repository;
 
+import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyHeaderReportDTO;
 import org.hzero.mybatis.base.BaseRepository;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 
@@ -18,8 +20,8 @@ public interface InvoiceApplyHeaderRepository extends BaseRepository<InvoiceAppl
      * @param invoiceApplyHeader 查询条件
      * @return 返回值
      */
-    List<InvoiceApplyHeader> selectList(InvoiceApplyHeader invoiceApplyHeader);
-
+    List<InvoiceApplyHeader> selectList(InvoiceApplyHeaderDTO invoiceApplyHeader);
+    List<InvoiceApplyHeader> report(InvoiceApplyHeaderReportDTO invoiceApplyHeaderReportDTO);
     /**
      * 根据主键查询（可关联表）
      *
@@ -27,4 +29,5 @@ public interface InvoiceApplyHeaderRepository extends BaseRepository<InvoiceAppl
      * @return 返回值
      */
     InvoiceApplyHeader selectByPrimary(Long applyHeaderId);
+
 }

@@ -4,144 +4,171 @@
 
 
     <sql id = "BaseSql">
-        4iah.apply_header_id,
-        4iah.apply_header_number,
-        4iah.apply_status,
-        4iah.ATTRIBUTE1,
-        4iah.ATTRIBUTE10,
-        4iah.ATTRIBUTE11,
-        4iah.ATTRIBUTE12,
-        4iah.ATTRIBUTE13,
-        4iah.ATTRIBUTE14,
-        4iah.ATTRIBUTE15,
-        4iah.ATTRIBUTE2,
-        4iah.ATTRIBUTE3,
-        4iah.ATTRIBUTE4,
-        4iah.ATTRIBUTE5,
-        4iah.ATTRIBUTE6,
-        4iah.ATTRIBUTE7,
-        4iah.ATTRIBUTE8,
-        4iah.ATTRIBUTE9,
-        4iah.bill_to_address,
-        4iah.bill_to_email,
-        4iah.bill_to_person,
-        4iah.bill_to_phone,
-        4iah.del_flag,
-        4iah.exclude_tax_amount,
-        4iah.invoice_color,
-        4iah.invoice_type,
-        4iah.remark,
-        4iah.submit_time,
-        4iah.tax_amount,
-        4iah.tenant_id,
-        4iah.total_amount,
-        4iah.creation_date, 
-        4iah.created_by, 
-        4iah.last_updated_by, 
-        4iah.last_update_date, 
-        4iah.object_version_number
+        t4iah.apply_header_id,
+        t4iah.apply_header_number,
+        t4iah.apply_status,
+        t4iah.ATTRIBUTE1,
+        t4iah.ATTRIBUTE10,
+        t4iah.ATTRIBUTE11,
+        t4iah.ATTRIBUTE12,
+        t4iah.ATTRIBUTE13,
+        t4iah.ATTRIBUTE14,
+        t4iah.ATTRIBUTE15,
+        t4iah.ATTRIBUTE2,
+        t4iah.ATTRIBUTE3,
+        t4iah.ATTRIBUTE4,
+        t4iah.ATTRIBUTE5,
+        t4iah.ATTRIBUTE6,
+        t4iah.ATTRIBUTE7,
+        t4iah.ATTRIBUTE8,
+        t4iah.ATTRIBUTE9,
+        t4iah.bill_to_address,
+        t4iah.bill_to_email,
+        t4iah.bill_to_person,
+        t4iah.bill_to_phone,
+        t4iah.del_flag,
+        t4iah.exclude_tax_amount,
+        t4iah.invoice_color,
+        t4iah.invoice_type,
+        t4iah.remark,
+        t4iah.submit_time,
+        t4iah.tax_amount,
+        t4iah.tenant_id,
+        t4iah.total_amount,
+        t4iah.creation_date, 
+        t4iah.created_by, 
+        t4iah.last_updated_by, 
+        t4iah.last_update_date, 
+        t4iah.object_version_number
     </sql>
 
     <select id = "selectList" resultType = "com.hand.demo.domain.entity.InvoiceApplyHeader">
         select
         <include refid = "BaseSql"/>
-        from 47360_invoice_apply_header 4iah
+        from t47360_invoice_apply_header t4iah
         <where>
             <if test="applyHeaderId !=null">
-                and 4iah.apply_header_id = #{applyHeaderId,jdbcType = INTEGER}
+                and t4iah.apply_header_id = #{applyHeaderId,jdbcType = INTEGER}
             </if>
             <if test="applyHeaderNumber !=null">
-                and 4iah.apply_header_number = #{applyHeaderNumber,jdbcType = VARCHAR}
+                and t4iah.apply_header_number = #{applyHeaderNumber,jdbcType = VARCHAR}
             </if>
             <if test="applyStatus !=null">
-                and 4iah.apply_status = #{applyStatus,jdbcType = VARCHAR}
+                and t4iah.apply_status = #{applyStatus,jdbcType = VARCHAR}
             </if>
             <if test="attribute1 !=null">
-                and 4iah.ATTRIBUTE1 = #{attribute1,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE1 = #{attribute1,jdbcType = VARCHAR}
             </if>
             <if test="attribute10 !=null">
-                and 4iah.ATTRIBUTE10 = #{attribute10,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE10 = #{attribute10,jdbcType = VARCHAR}
             </if>
             <if test="attribute11 !=null">
-                and 4iah.ATTRIBUTE11 = #{attribute11,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE11 = #{attribute11,jdbcType = VARCHAR}
             </if>
             <if test="attribute12 !=null">
-                and 4iah.ATTRIBUTE12 = #{attribute12,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE12 = #{attribute12,jdbcType = VARCHAR}
             </if>
             <if test="attribute13 !=null">
-                and 4iah.ATTRIBUTE13 = #{attribute13,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE13 = #{attribute13,jdbcType = VARCHAR}
             </if>
             <if test="attribute14 !=null">
-                and 4iah.ATTRIBUTE14 = #{attribute14,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE14 = #{attribute14,jdbcType = VARCHAR}
             </if>
             <if test="attribute15 !=null">
-                and 4iah.ATTRIBUTE15 = #{attribute15,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE15 = #{attribute15,jdbcType = VARCHAR}
             </if>
             <if test="attribute2 !=null">
-                and 4iah.ATTRIBUTE2 = #{attribute2,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE2 = #{attribute2,jdbcType = VARCHAR}
             </if>
             <if test="attribute3 !=null">
-                and 4iah.ATTRIBUTE3 = #{attribute3,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE3 = #{attribute3,jdbcType = VARCHAR}
             </if>
             <if test="attribute4 !=null">
-                and 4iah.ATTRIBUTE4 = #{attribute4,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE4 = #{attribute4,jdbcType = VARCHAR}
             </if>
             <if test="attribute5 !=null">
-                and 4iah.ATTRIBUTE5 = #{attribute5,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE5 = #{attribute5,jdbcType = VARCHAR}
             </if>
             <if test="attribute6 !=null">
-                and 4iah.ATTRIBUTE6 = #{attribute6,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE6 = #{attribute6,jdbcType = VARCHAR}
             </if>
             <if test="attribute7 !=null">
-                and 4iah.ATTRIBUTE7 = #{attribute7,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE7 = #{attribute7,jdbcType = VARCHAR}
             </if>
             <if test="attribute8 !=null">
-                and 4iah.ATTRIBUTE8 = #{attribute8,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE8 = #{attribute8,jdbcType = VARCHAR}
             </if>
             <if test="attribute9 !=null">
-                and 4iah.ATTRIBUTE9 = #{attribute9,jdbcType = VARCHAR}
+                and t4iah.ATTRIBUTE9 = #{attribute9,jdbcType = VARCHAR}
             </if>
             <if test="billToAddress !=null">
-                and 4iah.bill_to_address = #{billToAddress,jdbcType = VARCHAR}
+                and t4iah.bill_to_address = #{billToAddress,jdbcType = VARCHAR}
             </if>
             <if test="billToEmail !=null">
-                and 4iah.bill_to_email = #{billToEmail,jdbcType = VARCHAR}
+                and t4iah.bill_to_email = #{billToEmail,jdbcType = VARCHAR}
             </if>
             <if test="billToPerson !=null">
-                and 4iah.bill_to_person = #{billToPerson,jdbcType = VARCHAR}
+                and t4iah.bill_to_person = #{billToPerson,jdbcType = VARCHAR}
             </if>
             <if test="billToPhone !=null">
-                and 4iah.bill_to_phone = #{billToPhone,jdbcType = VARCHAR}
+                and t4iah.bill_to_phone = #{billToPhone,jdbcType = VARCHAR}
             </if>
             <if test="delFlag !=null">
-                and 4iah.del_flag = #{delFlag,jdbcType = INTEGER}
+                and t4iah.del_flag = #{delFlag,jdbcType = INTEGER}
             </if>
             <if test="delFlag == null">
-                and 4iah.del_flag = 0
+                and t4iah.del_flag = 0
             </if>
             <if test="excludeTaxAmount !=null">
-                and 4iah.exclude_tax_amount = #{excludeTaxAmount,jdbcType = OTHER}
+                and t4iah.exclude_tax_amount = #{excludeTaxAmount,jdbcType = OTHER}
             </if>
             <if test="invoiceColor !=null">
-                and 4iah.invoice_color = #{invoiceColor,jdbcType = VARCHAR}
+                and t4iah.invoice_color = #{invoiceColor,jdbcType = VARCHAR}
             </if>
             <if test="invoiceType !=null">
-                and 4iah.invoice_type = #{invoiceType,jdbcType = VARCHAR}
+                and t4iah.invoice_type = #{invoiceType,jdbcType = VARCHAR}
             </if>
             <if test="remark !=null">
-                and 4iah.remark = #{remark,jdbcType = VARCHAR}
+                and t4iah.remark = #{remark,jdbcType = VARCHAR}
             </if>
             <if test="submitTime !=null">
-                and 4iah.submit_time = #{submitTime,jdbcType = TIMESTAMP}
+                and t4iah.submit_time = #{submitTime,jdbcType = TIMESTAMP}
             </if>
             <if test="taxAmount !=null">
-                and 4iah.tax_amount = #{taxAmount,jdbcType = OTHER}
+                and t4iah.tax_amount = #{taxAmount,jdbcType = OTHER}
             </if>
             <if test="tenantId !=null">
-                and 4iah.tenant_id = #{tenantId,jdbcType = INTEGER}
+                and t4iah.tenant_id = #{tenantId,jdbcType = INTEGER}
             </if>
             <if test="totalAmount !=null">
-                and 4iah.total_amount = #{totalAmount,jdbcType = OTHER}
+                and t4iah.total_amount = #{totalAmount,jdbcType = OTHER}
+            </if>
+
+        </where>
+    </select>
+
+    <select id = "report" resultType = "com.hand.demo.domain.entity.InvoiceApplyHeader">
+        select
+        <include refid = "BaseSql"/>
+        from t47360_invoice_apply_header t4iah
+        <where>
+            <if test="applyHeaderNumberFrom != null and applyHeaderNumberTo != null">
+                AND t4iah.apply_header_number BETWEEN #{applyHeaderNumberFrom} AND #{applyHeaderNumberTo}
+            </if>
+            <if test="creationDateFrom != null and creationDateTo != null">
+                AND t4iah.creation_date BETWEEN #{creationDateFrom} AND #{creationDateTo}
+            </if>
+            <if test="submitTimeFrom != null and submitTimeTo != null">
+                AND t4iah.submit_time BETWEEN #{submitTimeFrom} AND #{submitTimeTo}
+            </if>
+            <if test="applyStatuses != null">
+                AND t4iah.apply_status IN
+                <foreach item="status" index="index" collection="applyStatuses" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+            <if test="invoiceType != null">
+                AND t4iah.invoice_type = #{invoiceType}
             </if>
         </where>
     </select>

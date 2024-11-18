@@ -1,5 +1,7 @@
 package com.hand.demo.infra.constant;
 
+import org.hzero.boot.platform.lov.dto.LovValueDTO;
+
 /**
  * Utils
  */
@@ -16,6 +18,10 @@ public class Constants {
     public  static  final  String CODERULE_INV_APPLY_HEADER = "INV-HEADER-47360";
     public static final String INVOICE_HEADER_CACHE_PREFIX = "47360:invoice_header:";
     public   static final String INVOICE_HEADER_QUEUE = "invoiceInfo-47360";
+    public  static  final  String REMOTE_SERVICE_TENANT_ADMIN_FLAG = "tenantAdminFlag";
+    public  static  final  String REMOTE_SERVICE_TENANT_SUPER_ADMIN_FLAG = "superTenantAdminFlag";
+
+    public  static  final  String REMOTE_SERVICE_TENANT_Name = "tenantName";
     private Constants() {}
 
 

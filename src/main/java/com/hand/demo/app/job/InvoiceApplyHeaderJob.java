@@ -10,11 +10,13 @@ import com.hand.demo.domain.entity.InvoiceInfoQueue;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import com.hand.demo.infra.constant.Constants;
 import com.hand.demo.infra.feign.InvoiceInfoFeign;
+import io.choerodon.core.oauth.DetailsHelper;
 import org.hzero.boot.message.entity.Message;
 import org.hzero.boot.scheduler.infra.annotation.JobHandler;
 import org.hzero.boot.scheduler.infra.enums.ReturnT;
 import org.hzero.boot.scheduler.infra.handler.IJobHandler;
 import org.hzero.boot.scheduler.infra.tool.SchedulerTool;
+import org.hzero.core.base.BaseConstants;
 import org.hzero.core.redis.RedisHelper;
 import org.hzero.core.redis.RedisQueueHelper;
 import org.hzero.mybatis.domian.Condition;
@@ -50,7 +52,7 @@ public class InvoiceApplyHeaderJob implements IJobHandler {
     private String generateInvoiceInfoQueueJson(){
         Condition condition = new Condition(InvoiceApplyHeader.class);
         Condition.Criteria criteria = condition.createCriteria();
-        criteria.andEqualTo(InvoiceApplyHeader.FIELD_DEL_FLAG,0);
+        criteria.andEqualTo(InvoiceApplyHeader.FIELD_DEL_FLAG, BaseConstants.Flag.NO);
         criteria.andEqualTo(InvoiceApplyHeader.FIELD_APPLY_STATUS,"F");
         criteria.andEqualTo(InvoiceApplyHeader.FIELD_INVOICE_COLOR,"R");
         criteria.andEqualTo(InvoiceApplyHeader.FIELD_INVOICE_TYPE,"E");
@@ -58,7 +60,7 @@ public class InvoiceApplyHeaderJob implements IJobHandler {
 
         InvoiceInfoQueue invoiceInfoQueue = new InvoiceInfoQueue();
         invoiceInfoQueue.setEmployeeId("47360");
-        invoiceInfoQueue.setTenantId(0L);
+        invoiceInfoQueue.setTenantId(DetailsHelper.getUserDetails().getTenantId());
         invoiceInfoQueue.setContent(JSON.toJSONString(invoiceApplyHeaders));
 
         return JSON.toJSONString(invoiceInfoQueue);

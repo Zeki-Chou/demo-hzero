@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyHeaderReportDTO;
 import com.hand.demo.infra.constant.Constants;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
@@ -51,10 +52,10 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, @PathVariable Long organizationId,
                                                             @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                                     direction = Sort.Direction.DESC) PageRequest pageRequest) {
-        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeaderDTO);
         return Results.success(list);
     }
 
@@ -93,12 +94,21 @@ public class InvoiceApplyHeaderController extends BaseController {
     @GetMapping("/export")
     @ExcelExport(InvoiceApplyHeaderDTO.class)
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> export(InvoiceApplyHeader invoiceApplyHeader, @PathVariable Long organizationId,
+    public ResponseEntity<Page<InvoiceApplyHeaderDTO>> export(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, @PathVariable Long organizationId,
                                                      @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID,
                                                              direction = Sort.Direction.DESC) PageRequest pageRequest, ExportParam exportParam, HttpServletResponse httpServletResponse) {
-        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeaderDTO);
 
         return Results.success(list);
+    }
+
+    @ApiOperation(value = "Report")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/report")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    public ResponseEntity<InvoiceApplyHeaderReportDTO> report(@PathVariable Long organizationId, InvoiceApplyHeaderReportDTO invoiceApplyHeaderReportDTO) {
+        InvoiceApplyHeaderReportDTO returnedInvoiceApplyHeaderReportDTO = invoiceApplyHeaderService.report(organizationId, invoiceApplyHeaderReportDTO);
+        return Results.success(returnedInvoiceApplyHeaderReportDTO);
     }
 }
 

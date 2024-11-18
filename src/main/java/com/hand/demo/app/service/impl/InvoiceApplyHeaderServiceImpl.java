@@ -2,21 +2,20 @@ package com.hand.demo.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
-import com.hand.demo.api.dto.InvoiceApplyLineDTO;
-import com.hand.demo.app.service.InvoiceApplyLineService;
+import com.hand.demo.api.dto.InvoiceApplyHeaderReportDTO;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import com.hand.demo.infra.constant.Constants;
-import com.hand.demo.infra.util.Utils;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
+import io.choerodon.core.oauth.DetailsHelper;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
+import org.hzero.boot.platform.lov.dto.LovDTO;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
-import org.hzero.core.message.Message;
 import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
 import org.hzero.mybatis.domian.Condition;
@@ -28,7 +27,6 @@ import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.rmi.CORBA.Util;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,20 +53,13 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private RedisHelper redisHelper;
 
     @Override
-    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeader invoiceApplyHeader) {
-        Page<InvoiceApplyHeader> page =  PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
+    public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeaderDTO) {
+        Page<InvoiceApplyHeader> page =  PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeaderDTO));
 
-        List<InvoiceApplyHeaderDTO> convertedHeaders = new ArrayList<>();
-        for(InvoiceApplyHeader header: page.getContent()){
-            InvoiceApplyHeaderDTO convertedHeader = new InvoiceApplyHeaderDTO();
-            BeanUtils.copyProperties(header,convertedHeader);
-            convertedHeaders.add(convertedHeader);
-        }
-        populateLines(convertedHeaders);
-
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = convertHeadersToHeaderDTOS(page.getContent());
         Page<InvoiceApplyHeaderDTO> convertedPage = new Page<>();
         BeanUtils.copyProperties(page,convertedPage);
-        convertedPage.setContent(convertedHeaders);
+        convertedPage.setContent(invoiceApplyHeaderDTOS);
 
         return convertedPage;
     }
@@ -78,9 +69,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = getHeaderByCache(id);
         if(invoiceApplyHeaderDTO == null) {
             InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(id);
-            invoiceApplyHeaderDTO = new InvoiceApplyHeaderDTO();
-            BeanUtils.copyProperties(invoiceApplyHeader, invoiceApplyHeaderDTO);
-            populateLines(Collections.singletonList(invoiceApplyHeaderDTO));
+            invoiceApplyHeaderDTO = convertHeadersToHeaderDTOS(Collections.singletonList(invoiceApplyHeader)).get(0);
             setHeaderByCache(invoiceApplyHeaderDTO);
         }
 
@@ -113,6 +102,29 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     public void delete(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS) {
         deleteHeaders(invoiceApplyHeaderDTOS);
         delHeaderCache(invoiceApplyHeaderDTOS);
+    }
+
+    @Override
+    public InvoiceApplyHeaderReportDTO report(Long organizationId, InvoiceApplyHeaderReportDTO invoiceApplyHeaderReportDTO){
+        List<String> applyStatusMeanings = invoiceApplyHeaderReportDTO.getApplyStatusMeanings();
+        String invoiceTypeMeaning = invoiceApplyHeaderReportDTO.getInvoiceTypeMeaning();
+        if(applyStatusMeanings != null && !applyStatusMeanings.isEmpty()){
+            List<Map<String,Object>> applyStatusLoVs = lovAdapter.queryLovData(Constants.LOV_INV_APPLY_HEADER_APPLY_STATUS,organizationId,null,null,null,null);
+            List<String> applyStatuses = applyStatusLoVs.stream().filter(lov->applyStatusMeanings.contains(lov.get("meaning").toString())).map(lov->lov.get("value").toString()).collect(Collectors.toList());
+            invoiceApplyHeaderReportDTO.setApplyStatuses(applyStatuses);
+        }
+        if(invoiceTypeMeaning != null){
+            List<Map<String,Object>> invoiceTypeLoVs = lovAdapter.queryLovData(Constants.LOV_INV_APPLY_HEADER_INV_TYPE,organizationId,null,null,null,null);
+            String invoiceType = invoiceTypeLoVs.stream().filter(lov -> lov.get("meaning").toString().equals(invoiceTypeMeaning)).map(lov->lov.get("value").toString()).collect(Collectors.toList()).get(0);
+            invoiceApplyHeaderReportDTO.setInvoiceType(invoiceType);
+        }
+
+        List<InvoiceApplyHeader> invoiceApplyHeaders =  invoiceApplyHeaderRepository.report(invoiceApplyHeaderReportDTO);
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = convertHeadersToHeaderDTOS(invoiceApplyHeaders);
+
+        invoiceApplyHeaderReportDTO.setInvoiceApplyHeaderDTOS(invoiceApplyHeaderDTOS);
+        return invoiceApplyHeaderReportDTO;
+
     }
 
     private  void insertHeaders(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS){
@@ -168,8 +180,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
         invoiceApplyHeaderRepository.batchUpdateOptional(new ArrayList<>(invoiceApplyHeaderDTOS),InvoiceApplyHeader.FIELD_DEL_FLAG);
     }
-
-
 
     InvoiceApplyHeaderDTO getHeaderByCache(Long id){
         String invoiceHeaderJson = redisHelper.strGet( Constants.INVOICE_HEADER_CACHE_PREFIX +id);
@@ -295,6 +305,16 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
     }
 
+    private List<InvoiceApplyHeaderDTO> convertHeadersToHeaderDTOS(List<InvoiceApplyHeader> invoiceApplyHeaders){
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = new ArrayList<>();
+        for(InvoiceApplyHeader invoiceApplyHeader: invoiceApplyHeaders){
+            InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = new InvoiceApplyHeaderDTO();
+            BeanUtils.copyProperties(invoiceApplyHeader,invoiceApplyHeaderDTO);
+            invoiceApplyHeaderDTOS.add(invoiceApplyHeaderDTO);
+        }
+        populateLines(invoiceApplyHeaderDTOS);
+        return  invoiceApplyHeaderDTOS;
+    }
     public void validate(List<InvoiceApplyHeader> invoiceApplyHeaders, LovAdapter lovAdapter, InvoiceApplyHeaderRepository invoiceApplyHeaderRepository){
 
         List<LovValueDTO> applyStatusLov = lovAdapter.queryLovValue(Constants.LOV_INV_APPLY_HEADER_APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
@@ -332,11 +352,13 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             int expectedHeaderSize = updateHeaderIdSet.size();
             int foundHeaderSize = invoiceApplyHeaderRepository.selectByIds(String.join(",", updateHeaderIdSet)).size();
             if(expectedHeaderSize != foundHeaderSize){
-                Object[] errorMsgArgs = new Object[]{"Bad header request in the following item index: "+ badHeaderIndex,"test2","vpn"};
+                Object[] errorMsgArgs = new Object[]{"FOund header size not equal to expected"};
                 String errorMsg = MessageAccessor.getMessage(Constants.MULTILINGUAL_INV_APPLY_HEADER_SAVE_ERROR,errorMsgArgs,Locale.US).getDesc();
                 throw new CommonException(errorMsg);
             }
         }
     }
+
+
 }
 

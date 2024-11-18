@@ -1,7 +1,13 @@
 package com.hand.demo.infra.repository.impl;
 
+import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyHeaderReportDTO;
+import com.hand.demo.infra.constant.Constants;
 import org.apache.commons.collections.CollectionUtils;
+import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
@@ -21,21 +27,47 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     @Resource
     private InvoiceApplyHeaderMapper invoiceApplyHeaderMapper;
 
+    @Autowired
+    private IamRemoteService iamRemoteService;
+
     @Override
-    public List<InvoiceApplyHeader> selectList(InvoiceApplyHeader invoiceApplyHeader) {
-        return invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
+    public List<InvoiceApplyHeader> selectList(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO) {
+        setUserCondition(invoiceApplyHeaderDTO);
+        return invoiceApplyHeaderMapper.selectList(invoiceApplyHeaderDTO);
+    }
+
+    @Override
+    public List<InvoiceApplyHeader> report(InvoiceApplyHeaderReportDTO invoiceApplyHeaderReportDTO) {
+        String userJson = iamRemoteService.selectSelf().getBody();
+        JSONObject jsonObject= new JSONObject(userJson);
+        invoiceApplyHeaderReportDTO.setTenantName(jsonObject.getString(Constants.REMOTE_SERVICE_TENANT_Name));
+        return invoiceApplyHeaderMapper.report(invoiceApplyHeaderReportDTO);
     }
 
     @Override
     public InvoiceApplyHeader selectByPrimary(Long applyHeaderId) {
-        InvoiceApplyHeader invoiceApplyHeader = new InvoiceApplyHeader();
-        invoiceApplyHeader.setApplyHeaderId(applyHeaderId);
-        List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
+        InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = new InvoiceApplyHeaderDTO();
+        setUserCondition(invoiceApplyHeaderDTO);
+        invoiceApplyHeaderDTO.setApplyHeaderId(applyHeaderId);
+        List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeaderDTO);
         if (invoiceApplyHeaders.size() == 0) {
             return null;
         }
         return invoiceApplyHeaders.get(0);
     }
 
+    private  void setUserCondition(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO){
+        String userJson = iamRemoteService.selectSelf().getBody();
+        JSONObject jsonObject= new JSONObject(userJson);
+
+        boolean tenantAdminFlag = false;
+        if (jsonObject.has(Constants.REMOTE_SERVICE_TENANT_ADMIN_FLAG)){
+            tenantAdminFlag=jsonObject.getBoolean(Constants.REMOTE_SERVICE_TENANT_ADMIN_FLAG);
+        } else if (jsonObject.has(Constants.REMOTE_SERVICE_TENANT_SUPER_ADMIN_FLAG)) {
+            tenantAdminFlag=jsonObject.getBoolean(Constants.REMOTE_SERVICE_TENANT_SUPER_ADMIN_FLAG);
+        }
+
+        invoiceApplyHeaderDTO.setTenantAdminFlag(tenantAdminFlag);
+    }
 }
 

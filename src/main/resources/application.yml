@@ -90,6 +90,7 @@ logging:
     org.apache.ibatis: debug
     io.choerodon: debug
     org.hzero: debug
+    com.hand.demo: debug
 hzero:
   export:
     # 默认请求模式，允许的值 SYNC ASYNC，默认null
