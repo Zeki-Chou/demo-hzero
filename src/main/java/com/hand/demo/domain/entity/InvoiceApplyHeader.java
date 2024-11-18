@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hand.demo.infra.constant.BaseConstant;
+import com.hand.demo.infra.constant.InvCountHeaderConstant;
 import io.choerodon.mybatis.annotation.ModifyAudit;
 import io.choerodon.mybatis.annotation.VersionAudit;
 import io.choerodon.mybatis.domain.AuditDomain;
@@ -23,7 +25,7 @@ import org.hzero.export.annotation.ExcelColumn;
 /**
  * (InvoiceApplyHeader)实体类
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 14:40:36
  */
 
@@ -142,7 +144,7 @@ public class InvoiceApplyHeader extends AuditDomain {
 
     @ApiModelProperty(value = "(need Value Set) P : Paper invoice E : E-invoice")
     @NotEmpty
-    @LovValue("DEMO-47359.INV_APPLY_HEADER.INV_TYPE")
+    @LovValue(value = BaseConstant.InvApplyHeader.INVOICE_TYPE_CODE, meaningField = "invoiceTypeMeaning")
     @ExcelColumn(en = "invoice type")
     private String invoiceType;
 

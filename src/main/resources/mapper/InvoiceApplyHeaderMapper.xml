@@ -138,6 +138,46 @@
             <if test="totalAmount !=null">
                 and iah.total_amount = #{totalAmount,jdbcType = OTHER}
             </if>
+            <!--      creation date condition      -->
+            <if test="fromCreationDate != null and toCreationDate == null">
+                and iah.creation_date &gt; #{fromCreationDate, jdbcType = TIMESTAMP}
+            </if>
+            <if test="fromCreationDate == null and toCreationDate != null">
+                and iah.creation_date &lt; #{toCreationDate, jdbcType = TIMESTAMP}
+            </if>
+            <if test="fromCreationDate != null and toCreationDate != null">
+                and iah.creation_date between #{fromCreationDate, jdbcType = TIMESTAMP} and #{toCreationDate, jdbcType = TIMESTAMP}
+            </if>
+            
+            <!--    submit time condition        -->
+            <if test="fromSubmitTime != null and toSubmitTime == null">
+                and iah.submit_time &gt; #{fromSubmitTime, jdbcType = TIMESTAMP}
+            </if>
+            <if test="fromSubmitTime == null and toSubmitTime != null">
+                and iah.submit_time &lt; #{toSubmitTime, jdbcType = TIMESTAMP}
+            </if>
+            <if test="fromSubmitTime != null and toSubmitTime != null">
+                and iah.submit_time between #{fromSubmitTime, jdbcType = TIMESTAMP} and #{toSubmitTime, jdbcType = TIMESTAMP}
+            </if>
+            
+            <!--     apply header number  condition       -->
+            <if test="fromApplyHeaderNumber != null and toApplyHeaderNumber == null">
+                and iah.apply_header_umber &gt; #{oldestInvoiceApplyHeaderNumber, jdbcType = TIMESTAMP}
+            </if>
+            <if test="fromApplyHeaderNumber == null and toApplyHeaderNumber != null">
+                and iah.apply_header_number &lt; #{toApplyHeaderNumber, jdbcType = TIMESTAMP}
+            </if>
+            <if test="fromApplyHeaderNumber != null and toApplyHeaderNumber != null">
+                and iah.apply_header_number between #{oldestInvoiceApplyHeaderNumber, jdbcType = TIMESTAMP} and #{toApplyHeaderNumber, jdbcType = TIMESTAMP}
+            </if>
+            
+            <!--    apply status set condition        -->
+            <if test="applyStatusList != null and applyStatusList.size() > 0">
+               <foreach collection="applyStatusList" item="applyStatus" open= "and iah.apply_status in (" separator= "," close= ")">
+                   #{applyStatus}
+               </foreach>
+            </if>
+
         </where>
     </select>
 

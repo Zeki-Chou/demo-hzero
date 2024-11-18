@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.entity.InvoiceInfoQueue;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import com.hand.demo.infra.constant.BaseConstant;
 import org.hzero.boot.scheduler.infra.annotation.JobHandler;
 import org.hzero.boot.scheduler.infra.enums.ReturnT;
 import org.hzero.boot.scheduler.infra.handler.IJobHandler;
 import org.hzero.boot.scheduler.infra.tool.SchedulerTool;
+import org.hzero.core.base.BaseConstants;
 import org.hzero.core.redis.RedisQueueHelper;
 
 import java.util.List;
@@ -38,15 +40,15 @@ public class ExamJob implements IJobHandler {
         List<InvoiceApplyHeader> validInvoiceHeaderList = invoiceApplyHeaderList
                 .stream()
                 .filter(
-                        invoiceApplyHeader -> invoiceApplyHeader.getDelFlag() != 1 &&
-                        invoiceApplyHeader.getApplyStatus().equals("F") &&
-                        invoiceApplyHeader.getInvoiceType().equals("E") &&
-                        invoiceApplyHeader.getInvoiceColor().equals("R")
+                        invoiceApplyHeader -> BaseConstants.Flag.NO.equals(invoiceApplyHeader.getDelFlag())  &&
+                        invoiceApplyHeader.getApplyStatus().equals(BaseConstant.InvApplyHeader.APPLY_STATUS_FAILED) &&
+                        invoiceApplyHeader.getInvoiceType().equals(BaseConstant.InvApplyHeader.INVOICE_TYPE_EINVOICE) &&
+                        invoiceApplyHeader.getInvoiceColor().equals(BaseConstant.InvApplyHeader.INVOICE_COLOR_RED)
                 ).collect(Collectors.toList());
 
         try {
             InvoiceInfoQueue invoiceInfoQueue = new InvoiceInfoQueue();
-            invoiceInfoQueue.setEmployeeId("47359");
+            invoiceInfoQueue.setEmployeeId(BaseConstant.EMPLOYEE_ID);
             String listHeaderString = objectMapper.writeValueAsString(validInvoiceHeaderList);
             invoiceInfoQueue.setContent(listHeaderString);
             String invoiceInfoString = objectMapper.writeValueAsString(invoiceInfoQueue);

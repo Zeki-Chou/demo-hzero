@@ -18,6 +18,7 @@ import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
+import org.hzero.boot.platform.lov.dto.LovDTO;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.redis.RedisHelper;
 import org.json.JSONObject;
@@ -85,6 +86,28 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Override
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeader, Long organizationId) {
 
+        List<LovValueDTO> applyStatusLovValues = lovAdapter.queryLovValue(BaseConstant.InvApplyHeader.APPLY_STATUS_CODE, organizationId);
+        List<LovValueDTO>  invoiceTypeLovValues = lovAdapter.queryLovValue(BaseConstant.InvApplyHeader.INVOICE_TYPE_CODE, organizationId);
+
+        Map<String, String> applyStatusMap = applyStatusLovValues
+                                                                .stream()
+                                                                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
+        Map<String, String> invoiceTypeMap = invoiceTypeLovValues
+                                                                .stream()
+                                                                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
+
+        invoiceApplyHeader.setApplyStatusList(
+                invoiceApplyHeader
+                        .getApplyStatusList()
+                        .stream()
+                        .map(applyStatusMap::get)
+                        .collect(Collectors.toList())
+        );
+
+        if (invoiceTypeMap.containsKey(invoiceApplyHeader.getInvoiceType())) {
+            invoiceApplyHeader.setInvoiceType(invoiceApplyHeader.getInvoiceType());
+        }
+
         if (invoiceApplyHeader.getDelFlag() == null) {
             invoiceApplyHeader.setDelFlag(0);
         }
@@ -99,22 +122,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         JSONObject iamJsonString = new JSONObject(responseJsonString);
         Boolean isTenantAdmin = iamJsonString.getBoolean("tenantAdminFlag");
         invoiceApplyHeader.setTenantAdminFlag(isTenantAdmin);
-        invoiceApplyHeader.setTenantAdminFlag(false);
 
-        Page<InvoiceApplyHeader> pageList = PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
-        List<InvoiceApplyHeaderDTO> headerDTOS = new ArrayList<>();
-        for (InvoiceApplyHeader data : pageList) {
-            headerDTOS.add(mapToDto(data, organizationId));
-        }
-
-        Page<InvoiceApplyHeaderDTO> dtoPage = new Page<>();
-        dtoPage.setContent(headerDTOS);
-        dtoPage.setTotalPages(pageList.getTotalPages());
-        dtoPage.setTotalElements(pageList.getTotalElements());
-        dtoPage.setNumber(pageList.getNumber());
-        dtoPage.setSize(pageList.getSize());
-
-        return dtoPage;
+        return PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
     }
 
     @Override

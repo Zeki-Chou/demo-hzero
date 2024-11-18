@@ -36,11 +36,14 @@ import java.util.List;
 @RequestMapping("/v1/{organizationId}/invoice-apply-headers")
 public class InvoiceApplyHeaderController extends BaseController {
 
-    @Autowired
-    private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+    private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
 
-    @Autowired
-    private InvoiceApplyHeaderService invoiceApplyHeaderService;
+    private final InvoiceApplyHeaderService invoiceApplyHeaderService;
+
+    public InvoiceApplyHeaderController(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, InvoiceApplyHeaderService invoiceApplyHeaderService) {
+        this.invoiceApplyHeaderRepository = invoiceApplyHeaderRepository;
+        this.invoiceApplyHeaderService = invoiceApplyHeaderService;
+    }
 
     @ApiOperation(value = "apply header list")
     @Permission(level = ResourceLevel.ORGANIZATION)
@@ -49,6 +52,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     public ResponseEntity<Page<InvoiceApplyHeaderDTO>> list(InvoiceApplyHeaderDTO invoiceApplyHeader, @PathVariable Long organizationId,
                                                          @ApiIgnore @SortDefault(value = InvoiceApplyHeader.FIELD_APPLY_HEADER_ID, direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader, organizationId);
+
         return Results.success(list);
     }
 

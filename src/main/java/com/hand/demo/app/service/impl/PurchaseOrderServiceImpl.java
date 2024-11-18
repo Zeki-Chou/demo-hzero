@@ -51,11 +51,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             if (order.getSupplierId() == null || order.getBuyerIds() == null) {
                 throw new CommonException("empty supplier and buyer Id");
             }
-
-            // purchase number prefix check
-//            if (!order.getPurchaseOrderNumber().startsWith("ORDER-")) {
-//                throw new CommonException("purchase number format must start with ORDER-");
-//            }
         }
 
         List<PurchaseOrder> insertList = purchaseOrders.stream().filter(line -> line.getId() == null).collect(Collectors.toList());

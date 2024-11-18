@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * 任务表(Task)应用服务
  *
- * @author
+ * @author Allan
  * @since 2024-10-28 14:57:35
  */
 @Service
@@ -62,7 +62,6 @@ public class TaskServiceImpl implements TaskService {
             Task task = tasks.get(i);
             String taskType = task.getTaskType();
             if (!validTaskTypes.contains(taskType)) {
-                // throw new CommonException("demo47359.task_type_error", task.getTaskType());
                 String errorMsg = "Row " + (i+1) + " of task type " + taskType + " is not a valid Task Type";
                 errorList.add(errorMsg);
             }

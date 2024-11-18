@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Redis Message Queue Table(InvoiceInfoQueue)表控制层
  *
- * @author
+ * @author Allan
  * @since 2024-11-08 11:07:41
  */
 

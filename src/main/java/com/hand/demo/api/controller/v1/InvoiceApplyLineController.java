@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * (InvoiceApplyLine)表控制层
  *
- * @author
+ * @author Allan
  * @since 2024-11-04 11:21:14
  */
 
@@ -36,11 +36,14 @@ import java.util.List;
 @RequestMapping("/v1/{organizationId}/invoice-apply-lines")
 public class InvoiceApplyLineController extends BaseController {
 
-    @Autowired
-    private InvoiceApplyLineRepository invoiceApplyLineRepository;
+    private final InvoiceApplyLineRepository invoiceApplyLineRepository;
 
-    @Autowired
-    private InvoiceApplyLineService invoiceApplyLineService;
+    private final InvoiceApplyLineService invoiceApplyLineService;
+
+    public InvoiceApplyLineController(InvoiceApplyLineRepository invoiceApplyLineRepository, InvoiceApplyLineService invoiceApplyLineService) {
+        this.invoiceApplyLineRepository = invoiceApplyLineRepository;
+        this.invoiceApplyLineService = invoiceApplyLineService;
+    }
 
     @ApiOperation(value = "列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
