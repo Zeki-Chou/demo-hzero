@@ -9,6 +9,7 @@ import org.hzero.export.annotation.ExcelColumn;
 import org.hzero.export.annotation.ExcelSheet;
 
 import javax.persistence.Transient;
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -27,4 +28,12 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @ExcelColumn(en = InvoiceApplyHeader.FIELD_INVOICE_TYPE, order = 15, lovCode = InvHeaderConstant.APPLY_TYPE_CODE)
     private String invoiceTypeMeaning;
     private Boolean superTenantAdminFlag;
+    private String concatInvoiceName;
+    private String rangeFirstInvoiceNumber;
+    private String rangeLastInvoiceNumber;
+    private Date rangeFirstInvoiceCreationDate;
+    private Date rangeLastInvoiceCreationDate;
+    private Date rangeFirstInvoiceSubmitTime;
+    private Date rangeLastInvoiceSubmitTime;
+    private List<String> listApplyStatus;
 }

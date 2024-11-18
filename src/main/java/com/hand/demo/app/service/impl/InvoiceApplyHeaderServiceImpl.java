@@ -9,7 +9,6 @@ import com.hand.demo.infra.constant.InvHeaderConstant;
 import com.hand.demo.infra.constant.TaskConstant;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
-import io.choerodon.core.oauth.CustomUserDetails;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
@@ -29,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -67,7 +65,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeader) {
         String remoteResponse = iamRemoteService.selectSelf().getBody();
         JSONObject jsonObject = new JSONObject(remoteResponse);
-        Boolean adminFlag=false;
+        Boolean adminFlag = false;
         if (jsonObject.has("superTenantAdminFlag")) {
             adminFlag = jsonObject.getBoolean("superTenantAdminFlag");
         } else if(jsonObject.has("tenantAdminFlag")){
@@ -89,7 +87,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 //        }
 
         List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = new ArrayList<>();
-//        CustomUserDetails
         for (InvoiceApplyHeader data : pageResult) {
             invoiceApplyHeaderDTOS.add(changeToDTO(data));
         }
@@ -184,6 +181,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     }
 
     @Override
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public InvoiceApplyHeaderDTO detail(Long id) {
         // check on redis if there's no value on redis it will set and return if the key is exist
         if (Boolean.TRUE.equals(redisHelper.hasKey(String.valueOf(id)))) {
@@ -203,6 +201,41 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         redisHelper.strSet(id + InvHeaderConstant.PREFIX, serializeDTO);
 
         return dto;
+    }
+
+
+    @Override
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    public List<InvoiceApplyHeaderDTO> detailReportExcel(InvoiceApplyHeaderDTO invoiceApplyHeader, Long organizationId) {
+        // Mapping logic directly in the method
+        List<LovValueDTO> listInvoiceType = lovAdapter.queryLovValue(InvHeaderConstant.APPLY_TYPE_CODE, organizationId);
+        List<LovValueDTO> listApplyStatus = lovAdapter.queryLovValue(InvHeaderConstant.APPLY_STATUS_CODE, organizationId);
+
+        Map<String, String> invoiceType = listInvoiceType.stream().collect(Collectors.toMap(
+                LovValueDTO::getMeaning, LovValueDTO::getValue
+        ));
+
+        Map<String, String> applyStatus = listApplyStatus.stream().collect(Collectors.toMap(
+                LovValueDTO::getMeaning, LovValueDTO::getValue
+        ));
+
+        if (invoiceType.containsKey(invoiceApplyHeader.getInvoiceType())) {
+            invoiceApplyHeader.setInvoiceType(invoiceType.get(invoiceApplyHeader.getInvoiceType()));
+        }
+
+        if (invoiceApplyHeader.getListApplyStatus() != null && applyStatus.containsKey(invoiceApplyHeader.getApplyStatus())) {
+            List<String> transformedTypes = invoiceApplyHeader.getListApplyStatus().stream()
+                    .map(type -> applyStatus.getOrDefault(type, type)) // Use the map to transform
+                    .collect(Collectors.toList());
+            invoiceApplyHeader.setListApplyStatus(transformedTypes); // Update the DTO with the transformed list
+        }
+
+        List<InvoiceApplyHeaderDTO> dtos = invoiceApplyHeaderRepository.selectList(invoiceApplyHeader);
+        for (InvoiceApplyHeaderDTO dto : dtos) {
+          dto.setInvoiceApplyLines(invoiceApplyLineRepository.select(InvoiceApplyLine.FIELD_APPLY_HEADER_ID,
+                  dto.getApplyHeaderId()));
+        }
+        return dtos;
     }
 
 

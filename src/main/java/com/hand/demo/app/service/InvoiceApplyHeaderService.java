@@ -3,7 +3,6 @@ package com.hand.demo.app.service;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
-import com.hand.demo.domain.entity.InvoiceApplyHeader;
 
 import java.util.List;
 
@@ -34,5 +33,7 @@ public interface InvoiceApplyHeaderService {
     InvoiceApplyHeaderDTO delete(Long id);
 
     InvoiceApplyHeaderDTO detail(Long id);
+
+    List<InvoiceApplyHeaderDTO> detailReportExcel(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, Long organizationId);
 }
 

@@ -57,6 +57,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "Get Detail")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/{applyHeaderId}/detail")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public ResponseEntity<InvoiceApplyHeaderDTO> detail(@PathVariable Long applyHeaderId) {
         InvoiceApplyHeaderDTO dto = invoiceApplyHeaderService.detail(applyHeaderId);
         return Results.success(dto);
@@ -116,6 +117,16 @@ public class InvoiceApplyHeaderController extends BaseController {
                                                                  ExportParam exportParam,
                                                                  HttpServletResponse httpServletResponse) {
         Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
+        return Results.success(list);
+    }
+
+    @ApiOperation(value = "Get List Report Excel")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("get-report")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    public ResponseEntity<List<InvoiceApplyHeaderDTO>> listReportExcel(
+            @PathVariable Long organizationId, InvoiceApplyHeaderDTO invoiceApplyHeader) {
+        List<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.detailReportExcel(invoiceApplyHeader, organizationId);
         return Results.success(list);
     }
 

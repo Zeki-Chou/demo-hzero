@@ -146,6 +146,48 @@
             <if test="createdBy !=null">
                 and iah.created_by = #{createdBy,jdbcType = INTEGER}
             </if>
+            <if test="rangeFirstInvoiceCreationDate != null and rangeLastInvoiceCreationDate != null">
+                AND iah.creation_date BETWEEN #{rangeFirstInvoiceCreationDate, jdbcType=TIMESTAMP}
+                AND #{rangeLastInvoiceCreationDate, jdbcType=TIMESTAMP}
+            </if>
+
+            <if test="rangeFirstInvoiceCreationDate != null and rangeLastInvoiceCreationDate == null">
+                AND iah.creation_date &gt;= #{rangeFirstInvoiceCreationDate, jdbcType=TIMESTAMP}
+            </if>
+
+            <if test="rangeFirstInvoiceCreationDate == null and rangeLastInvoiceCreationDate != null">
+                AND iah.creation_date &lt;= #{rangeLastInvoiceCreationDate, jdbcType=TIMESTAMP}
+            </if>
+            <if test="rangeFirstInvoiceSubmitTime != null and rangeLastInvoiceSubmitTime != null">
+                AND iah.submit_time BETWEEN #{rangeFirstInvoiceSubmitTime, jdbcType=TIMESTAMP}
+                AND #{rangeLastInvoiceSubmitTime, jdbcType=TIMESTAMP}
+            </if>
+
+            <if test="rangeFirstInvoiceSubmitTime != null and rangeLastInvoiceSubmitTime == null">
+                AND iah.submit_time &gt;= #{rangeFirstInvoiceSubmitTime, jdbcType=TIMESTAMP}
+            </if>
+
+            <if test="rangeFirstInvoiceSubmitTime == null and rangeLastInvoiceSubmitTime != null">
+                AND iah.submit_time &lt;= #{rangeLastInvoiceSubmitTime, jdbcType=TIMESTAMP}
+            </if>
+            <if test="rangeFirstInvoiceNumber != null and rangeLastInvoiceNumber != null">
+                AND iah.apply_header_number BETWEEN #{rangeFirstInvoiceNumber, jdbcType=VARCHAR}
+                AND #{rangeLastInvoiceNumber, jdbcType=VARCHAR}
+            </if>
+
+            <if test="rangeFirstInvoiceNumber != null and rangeLastInvoiceNumber == null">
+                AND iah.apply_header_number &gt;= #{rangeFirstInvoiceNumber, jdbcType=VARCHAR}
+            </if>
+
+            <if test="rangeFirstInvoiceNumber == null and rangeLastInvoiceNumber != null">
+                AND iah.apply_header_number &lt;= #{rangeLastInvoiceNumber, jdbcType=VARCHAR}
+            </if>
+            <if test="listApplyStatus != null and listApplyStatus.size() > 0">
+                AND iah.apply_status IN
+                <foreach item="status" collection="listApplyStatus" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
         </where>
     </select>
 </mapper>
