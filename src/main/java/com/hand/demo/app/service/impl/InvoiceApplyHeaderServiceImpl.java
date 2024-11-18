@@ -336,6 +336,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         List<Map<String, Object>> listApplyStatusValue = lovAdapter.queryLovData(InvoiceApplyHeaderConstant.LovCode.APPLY_STATUS, organizationId, null, null, null, null);
         List<Map<String, Object>> listInvoiceType = lovAdapter.queryLovData(InvoiceApplyHeaderConstant.LovCode.INVOICE_TYPE, organizationId, null, null, null, null);
 
+        //Get lov Value code
         for (int i = 0; i < listStatus.size(); i++) {
             String status = listStatus.get(i);  // Get the status from the list
             for (Map<String, Object> lovValue : listApplyStatusValue) {
@@ -405,7 +406,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             dto.setInvoiceTypeParam(invoiceTypeParam);
             dto.setTenantName(tenantName);
         }
-
         return headerDTOList;
     }
 }
