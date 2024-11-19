@@ -39,4 +39,8 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
 
     private List<String> applyStatusList;
 
+    private String realName;
+
+    private String invoiceNames;
+
 }

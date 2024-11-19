@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.controller.dto.InvoiceApplyInfoDTO;
 import com.hand.demo.api.controller.dto.InvoiceApplyLineDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
@@ -23,7 +24,10 @@ import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * (InvoiceApplyLine)表控制层
@@ -53,6 +57,13 @@ public class InvoiceApplyLineController extends BaseController {
                                                                direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<InvoiceApplyLine> list = invoiceApplyLineService.selectList(pageRequest, invoiceApplyLine);
         return Results.success(list);
+    }
+
+    @ApiOperation(value = "get invoice apply info")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping
+    public ResponseEntity<InvoiceApplyInfoDTO> applyInfo(InvoiceApplyLineDTO invoiceApplyLineDTO) {
+        return Results.success(null);
     }
 
     @ApiOperation(value = "明细")
