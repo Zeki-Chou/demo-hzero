@@ -1,6 +1,7 @@
 package com.hand.demo.app.service;
 
 import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.controller.dto.InvoiceApplyInfoDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
@@ -51,5 +52,12 @@ public interface InvoiceApplyHeaderService {
      * @return list of header dto
      */
     List<InvoiceApplyHeaderDTO> exportAll(Long organizationId);
+
+    /**
+     * @param invoiceApplyInfoDTO apply info dto
+     * @param organizationId tenant id
+     * @return
+     */
+    InvoiceApplyInfoDTO getApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO, Long organizationId);
 }
 

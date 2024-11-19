@@ -1,8 +1,11 @@
 package com.hand.demo.api.controller.dto;
 
+import lombok.Data;
+
 import java.util.Date;
 import java.util.List;
 
+@Data
 public class InvoiceApplyInfoDTO {
     private Date fromSubmitTime;
 
@@ -18,5 +21,5 @@ public class InvoiceApplyInfoDTO {
 
     private List<String> applyStatusList;
 
-    private InvoiceApplyHeaderDTO invoiceApplyHeaderDTO;
+    private List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS;
 }

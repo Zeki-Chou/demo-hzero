@@ -2,6 +2,7 @@ package com.hand.demo.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.controller.dto.InvoiceApplyInfoDTO;
 import com.hand.demo.app.service.InvoiceApplyLineService;
 import com.hand.demo.domain.entity.IamUser;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
@@ -84,49 +85,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeader, Long organizationId) {
-
-        List<LovValueDTO> applyStatusLovValues = lovAdapter.queryLovValue(BaseConstant.InvApplyHeader.APPLY_STATUS_CODE, organizationId);
-        List<LovValueDTO>  invoiceTypeLovValues = lovAdapter.queryLovValue(BaseConstant.InvApplyHeader.INVOICE_TYPE_CODE, organizationId);
-
-        Map<String, String> applyStatusMap = applyStatusLovValues
-                                                .stream()
-                                                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
-        Map<String, String> invoiceTypeMap = invoiceTypeLovValues
-                                                .stream()
-                                                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
-
-        if (invoiceApplyHeader.getApplyStatusList() != null) {
-            List<String> applyStatusMeaningList = invoiceApplyHeader
-                                                    .getApplyStatusList()
-                                                    .stream()
-                                                    .map(applyStatusMap::get)
-                                                    .collect(Collectors.toList());
-            invoiceApplyHeader.setApplyStatusList(applyStatusMeaningList);
-        }
-
-        if (invoiceApplyHeader.getInvoiceType() != null && invoiceTypeMap.containsKey(invoiceApplyHeader.getInvoiceType())) {
-            String invoiceTypeValue = invoiceTypeMap.get(invoiceApplyHeader.getInvoiceType());
-            invoiceApplyHeader.setInvoiceType(invoiceTypeValue);
-        }
-
-        if (invoiceApplyHeader.getDelFlag() == null) {
-            invoiceApplyHeader.setDelFlag(0);
-        }
-
-        String responseJsonString = getIamResponseBody();
-        JSONObject iamJsonString = new JSONObject(responseJsonString);
-
-        if (iamJsonString.has("tenantAdminFlag")) {
-            Boolean isTenantAdmin = iamJsonString.getBoolean("tenantAdminFlag");
-            invoiceApplyHeader.setTenantAdminFlag(isTenantAdmin);
-        }
-
-        if (iamJsonString.has("superTenantAdminFlag")) {
-            Boolean isTenantAdmin = iamJsonString.getBoolean("superTenantAdminFlag");
-            invoiceApplyHeader.setTenantAdminFlag(isTenantAdmin);
-        }
-
-        return PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeader));
+        return PageHelper.doPageAndSort(pageRequest, () -> getInvoiceApplyHeaderDTOList(invoiceApplyHeader,  organizationId));
     }
 
     @Override
@@ -241,6 +200,21 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return headerDTOS;
     }
 
+    @Override
+    public InvoiceApplyInfoDTO getApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO, Long organizationId) {
+        InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
+        dto.setFromSubmitTime(invoiceApplyInfoDTO.getFromSubmitTime());
+        dto.setToSubmitTime(invoiceApplyInfoDTO.getToSubmitTime());
+        dto.setFromCreationDate(invoiceApplyInfoDTO.getFromCreationDate());
+        dto.setToCreationDate(invoiceApplyInfoDTO.getToCreationDate());
+        dto.setFromApplyHeaderNumber(invoiceApplyInfoDTO.getFromApplyHeaderNumber());
+        dto.setToApplyHeaderNumber(invoiceApplyInfoDTO.getToApplyHeaderNumber());
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = getInvoiceApplyHeaderDTOList(dto, organizationId);
+
+        invoiceApplyInfoDTO.setInvoiceApplyHeaderDTOS(invoiceApplyHeaderDTOS);
+        return invoiceApplyInfoDTO;
+    }
+
     /**
      * transform invoiceApplyHeader to appropriate DTO object.
      * Add the meaning of invoice type, color and apply status
@@ -292,6 +266,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
     }
 
+    /**
+     * make get request to get response entity for Iam response body.
+     * throw error if response status not return 200
+     * @return iam response body
+     */
     private String getIamResponseBody() {
         ResponseEntity<String> iamResponse = iamRemoteService.selectSelf();
 
@@ -300,6 +279,51 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
 
         return iamResponse.getBody();
+    }
+
+    private List<InvoiceApplyHeaderDTO> getInvoiceApplyHeaderDTOList(InvoiceApplyHeaderDTO invoiceApplyHeader, Long organizationId) {
+        List<LovValueDTO> applyStatusLovValues = lovAdapter.queryLovValue(BaseConstant.InvApplyHeader.APPLY_STATUS_CODE, organizationId);
+        List<LovValueDTO>  invoiceTypeLovValues = lovAdapter.queryLovValue(BaseConstant.InvApplyHeader.INVOICE_TYPE_CODE, organizationId);
+
+        Map<String, String> applyStatusMap = applyStatusLovValues
+                .stream()
+                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
+        Map<String, String> invoiceTypeMap = invoiceTypeLovValues
+                .stream()
+                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
+
+        if (invoiceApplyHeader.getApplyStatusList() != null) {
+            List<String> applyStatusMeaningList = invoiceApplyHeader
+                    .getApplyStatusList()
+                    .stream()
+                    .map(applyStatusMap::get)
+                    .collect(Collectors.toList());
+            invoiceApplyHeader.setApplyStatusList(applyStatusMeaningList);
+        }
+
+        if (invoiceApplyHeader.getInvoiceType() != null && invoiceTypeMap.containsKey(invoiceApplyHeader.getInvoiceType())) {
+            String invoiceTypeValue = invoiceTypeMap.get(invoiceApplyHeader.getInvoiceType());
+            invoiceApplyHeader.setInvoiceType(invoiceTypeValue);
+        }
+
+        if (invoiceApplyHeader.getDelFlag() == null) {
+            invoiceApplyHeader.setDelFlag(0);
+        }
+
+        String responseJsonString = getIamResponseBody();
+        JSONObject iamJsonString = new JSONObject(responseJsonString);
+
+        if (iamJsonString.has("tenantAdminFlag")) {
+            Boolean isTenantAdmin = iamJsonString.getBoolean("tenantAdminFlag");
+            invoiceApplyHeader.setTenantAdminFlag(isTenantAdmin);
+        }
+
+        if (iamJsonString.has("superTenantAdminFlag")) {
+            Boolean isTenantAdmin = iamJsonString.getBoolean("superTenantAdminFlag");
+            invoiceApplyHeader.setTenantAdminFlag(isTenantAdmin);
+        }
+
+        return invoiceApplyHeaderRepository.selectList(invoiceApplyHeader);
     }
 }
 
