@@ -41,4 +41,16 @@ public class ExternalServiceImpl extends BaseAppService implements ExternalServi
         return interfaceInvokeSdk.invoke(externalRequestDTO.getNamespace(), externalRequestDTO.getServerCode(),
                 externalRequestDTO.getInterfaceCode(), requestPayloadDTO);
     }
+
+    @Override
+    public ResponsePayloadDTO invokeGetListAzhar(String jsonString, ExternalRequestDTO externalRequestDTO) {
+        RequestPayloadDTO requestPayloadDTO = new RequestPayloadDTO();
+        Map<String, String> map = new HashMap<>();
+        map.put("Authorization", jsonString);
+        requestPayloadDTO.setHeaderParamMap(map);
+        return  interfaceInvokeSdk.invoke(externalRequestDTO.getNamespace(), externalRequestDTO.getServerCode(),
+                externalRequestDTO.getInterfaceCode(), requestPayloadDTO);
+    }
+
+
 }

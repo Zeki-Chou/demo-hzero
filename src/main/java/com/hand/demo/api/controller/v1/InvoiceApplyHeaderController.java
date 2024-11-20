@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceHeaderReportDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -123,10 +124,10 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "Get List Report Excel")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("get-report")
-    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<List<InvoiceApplyHeaderDTO>> listReportExcel(
+    @ProcessLovValue(targetField = "body.listHeader")
+    public ResponseEntity<InvoiceHeaderReportDTO> listReportExcel(
             @PathVariable Long organizationId, InvoiceApplyHeaderDTO invoiceApplyHeader) {
-        List<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.detailReportExcel(invoiceApplyHeader, organizationId);
+        InvoiceHeaderReportDTO list = invoiceApplyHeaderService.detailReportExcel(invoiceApplyHeader, organizationId);
         return Results.success(list);
     }
 

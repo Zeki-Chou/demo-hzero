@@ -36,4 +36,12 @@ public class ExternalController {
                                     ExternalRequestDTO externalRequestDTO) {
         return externalService.invokeXML(requestXML, externalRequestDTO);
     }
+
+    @ApiOperation(value = "CALL AZHAR GET LIST (EXTERNAL) ")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/call-azhar")
+    public ResponsePayloadDTO callGetListAzhar (String jsonString,
+                                       ExternalRequestDTO externalRequestDTO) {
+        return externalService.invokeGetListAzhar(jsonString, externalRequestDTO);
+    }
 }

@@ -36,4 +36,7 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     private Date rangeFirstInvoiceSubmitTime;
     private Date rangeLastInvoiceSubmitTime;
     private List<String> listApplyStatus;
+    private String userIamName;
+    private String tenantName;
+    private String submitTimeString;
 }

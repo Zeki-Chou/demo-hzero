@@ -1,6 +1,7 @@
 package com.hand.demo.app.service;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceHeaderReportDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 
@@ -34,6 +35,6 @@ public interface InvoiceApplyHeaderService {
 
     InvoiceApplyHeaderDTO detail(Long id);
 
-    List<InvoiceApplyHeaderDTO> detailReportExcel(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, Long organizationId);
+    InvoiceHeaderReportDTO detailReportExcel(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, Long organizationId);
 }
 
