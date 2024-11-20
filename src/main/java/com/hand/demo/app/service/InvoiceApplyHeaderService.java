@@ -1,6 +1,8 @@
 package com.hand.demo.app.service;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTOOut;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -36,4 +38,5 @@ public interface InvoiceApplyHeaderService {
     public List<InvoiceApplyHeaderDTO> exportAll (PageRequest pageRequest);
     public void countApplyLineUpdateHeader (Long header_id);
     public void countApplyLineUpdateWithHeader (InvoiceApplyHeader invoiceApplyHeader);
+    public InvoiceApplyInfoDTO invoiceApplyInfoDetail (InvoiceApplyInfoDTO invoiceApplyInfoDTO);
 }

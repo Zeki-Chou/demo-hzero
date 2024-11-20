@@ -2,7 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hand.demo.infra.mapper.InvoiceApplyHeaderMapper">
 
-
     <sql id = "BaseSql">
         iah.apply_header_id,
         iah.apply_header_number,
@@ -141,6 +140,38 @@
                 and iah.total_amount = #{totalAmount,jdbcType = OTHER}
             </if>
         </where>
+    </select>
+
+    <select id="invoiceApplyInfo" resultType = "com.hand.demo.api.dto.InvoiceApplyInfoDTOOut">
+        select tiah.apply_header_number as invoice_number, tiah.apply_status, tiah.submit_time, tiah.invoice_color,
+        tiah.invoice_type, tiah.total_amount, tiah.exclude_tax_amount, tiah.tax_amount,
+        group_concat(tial.invoice_name separator ', ') as invoice_name
+        from t47356_invoice_apply_header tiah
+        left join t47356_invoice_apply_line tial on tiah.apply_header_id = tial.apply_header_id
+        <where>
+        <if test="applyHeaderNumberFrom != null and applyHeaderNumberTo != null">
+            and tiah.apply_header_number between #{applyHeaderNumberFrom} and #{applyHeaderNumberTo}
+        </if>
+        <if test="creationDateFrom != null and creationDateTo != null">
+            and tiah.creation_date between #{creationDateFrom} and #{creationDateTo}
+        </if>
+        <if test="invoiceType != null">
+            and tiah.invoice_type = #{invoiceType}
+        </if>
+        <if test="submitTimeFrom != null and submitTimeTo != null">
+            and tiah.submit_time between #{submitTimeFrom} and #{submitTimeTo}
+        </if>
+        <if test = "applyStatusList != null">
+            <if test="applyStatusList.size() > 0">
+                and tiah.apply_status in
+                <foreach collection="applyStatusList" index="index" item="item" open= "(" separator= "," close= ")">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        </where>
+        group by tiah.apply_header_number, tiah.submit_time, tiah.invoice_color,
+        tiah.invoice_type, tiah.total_amount, tiah.exclude_tax_amount, tiah.tax_amount, tiah.apply_status
     </select>
 </mapper>
 

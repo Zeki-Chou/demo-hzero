@@ -1,5 +1,8 @@
 package com.hand.demo.infra.repository.impl;
 
+import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTOOut;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.stereotype.Component;
@@ -37,5 +40,9 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
         return invoiceApplyHeaders.get(0);
     }
 
+    @Override
+    public List<InvoiceApplyInfoDTOOut> invoiceApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO) {
+        return invoiceApplyHeaderMapper.invoiceApplyInfo(invoiceApplyInfoDTO);
+    }
 }
 

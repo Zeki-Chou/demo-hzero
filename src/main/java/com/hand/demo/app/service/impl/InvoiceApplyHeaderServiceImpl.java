@@ -2,9 +2,14 @@ package com.hand.demo.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTOOut;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
+import com.hand.demo.domain.entity.User;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
+import com.hand.demo.domain.repository.UserRepository;
 import com.hand.demo.infra.constant.InvoiceApplyHeaderConstant;
+import com.hand.demo.infra.mapper.UserMapper;
 import com.hand.demo.infra.util.Utils;
 import com.netflix.discovery.converters.Auto;
 import io.choerodon.core.domain.Page;
@@ -20,6 +25,7 @@ import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.message.MessageAccessor;
 import org.hzero.core.redis.RedisHelper;
+import org.hzero.mybatis.domian.Condition;
 import org.json.JSONObject;
 import org.opensaml.xml.signature.P;
 import org.springframework.beans.BeanUtils;
@@ -45,6 +51,9 @@ import java.util.stream.Collectors;
 public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService {
     @Autowired
     private InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private InvoiceApplyLineRepository invoiceApplyLineRepository;
@@ -103,6 +112,69 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         invoiceApplyHeadersDTOPage.setSize(pageResult.getSize());
 
         return invoiceApplyHeadersDTOPage;
+    }
+
+    public void invoiceApplySetData (InvoiceApplyInfoDTO invoiceApplyInfoDTO) {
+        if(invoiceApplyInfoDTO.getCreationDateFrom() == null && invoiceApplyInfoDTO.getCreationDateTo() != null) {
+            invoiceApplyInfoDTO.setCreationDateFrom(new Date());
+        }
+
+        if(invoiceApplyInfoDTO.getSubmitTimeFrom() == null && invoiceApplyInfoDTO.getSubmitTimeTo() != null) {
+            invoiceApplyInfoDTO.setSubmitTimeFrom(new Date());
+        }
+    }
+
+    public InvoiceApplyInfoDTO invoiceApplyInfoDetail (InvoiceApplyInfoDTO invoiceApplyInfoDTO) {
+        invoiceApplySetData(invoiceApplyInfoDTO);
+
+        List<LovValueDTO> countInvoiceType = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.INVOICE_TYPE, BaseConstants.DEFAULT_TENANT_ID);
+        List<LovValueDTO> countApplyStatus = lovAdapter.queryLovValue(InvoiceApplyHeaderConstant.APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
+
+        Map<String, String> applyStatusMapValueToKey = countApplyStatus.stream()
+                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
+
+        Map<String, String> invoiceTypeMapValueToKey = countInvoiceType.stream()
+                .collect(Collectors.toMap(LovValueDTO::getMeaning, LovValueDTO::getValue));
+
+        String invoiceTypeMeaning = "";
+
+        if (invoiceTypeMapValueToKey.containsKey(invoiceApplyInfoDTO.getInvoiceType())) {
+            invoiceTypeMeaning = invoiceApplyInfoDTO.getInvoiceType();
+        }
+
+        List<String> applyStatus = invoiceApplyInfoDTO.getApplyStatusList();
+        List<String> applyStatusKeys = new ArrayList<>();
+        List<String> applyStatusMeanings = new ArrayList<>();
+
+        if(applyStatus != null) {
+            for (String key : applyStatus) {
+                if (applyStatusMapValueToKey.containsKey(key)) {
+                    applyStatusKeys.add(applyStatusMapValueToKey.get(key));
+                    applyStatusMeanings.add(key);
+                }
+            }
+
+            invoiceApplyInfoDTO.setApplyStatusList(applyStatusKeys);
+        }
+
+        if(invoiceApplyInfoDTO.getInvoiceType() != null) {
+            invoiceApplyInfoDTO.setInvoiceType(invoiceTypeMapValueToKey.get(invoiceApplyInfoDTO.getInvoiceType()));
+        }
+
+        List<InvoiceApplyInfoDTOOut> invoiceApplyInfoDTOOut = invoiceApplyHeaderRepository.invoiceApplyInfo(invoiceApplyInfoDTO);
+
+        invoiceApplyInfoDTO.setInvoiceApplyInfoDTOOut(invoiceApplyInfoDTOOut);
+
+        if(invoiceApplyInfoDTO.getInvoiceType() != null) {
+            invoiceApplyInfoDTO.setInvoiceType(invoiceTypeMeaning);
+        }
+        if(applyStatus != null) {
+            invoiceApplyInfoDTO.setApplyStatusMeaning(applyStatusMeanings.toString().replace("[", "").replace("]", ""));
+        }
+
+        JSONObject jsonObject = new JSONObject(iamRemoteService.selectSelf().getBody());
+        invoiceApplyInfoDTO.setTenantName(jsonObject.getString("tenantName"));
+        return invoiceApplyInfoDTO;
     }
 
     public void validateDTO(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOList) {
@@ -279,9 +351,9 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     public InvoiceApplyHeaderDTO detail(Long headerId) {
         String result = redisHelper.strGet("hpfm:demo:invoice" + headerId.toString());
-        if (result != null && !result.isEmpty()) {
-            return JSON.parseObject(result, InvoiceApplyHeaderDTO.class);
-        }
+//        if (result != null && !result.isEmpty()) {
+//            return JSON.parseObject(result, InvoiceApplyHeaderDTO.class);
+//        }
 
         InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(headerId);
         InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = new InvoiceApplyHeaderDTO();
@@ -293,6 +365,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         invoiceApplyHeaderDTO.setInvoiceApplyLines(invoiceApplyLineList);
 
         BeanUtils.copyProperties(invoiceApplyHeader, invoiceApplyHeaderDTO);
+
+        CustomUserDetails user = DetailsHelper.getUserDetails();
+
+//        User user = userRepository.selectByPrimary(invoiceApplyHeader.getCreatedBy());
+        invoiceApplyHeaderDTO.setCreatedName(user.getRealName());
 
         String serializeDTO = JSON.toJSONString(invoiceApplyHeaderDTO);
         redisHelper.strSet("hpfm:demo:invoice" + headerId.toString(), serializeDTO);

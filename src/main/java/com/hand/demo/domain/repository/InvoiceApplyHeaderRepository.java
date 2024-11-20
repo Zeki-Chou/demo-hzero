@@ -1,5 +1,8 @@
 package com.hand.demo.domain.repository;
 
+import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTOOut;
 import org.hzero.mybatis.base.BaseRepository;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 
@@ -27,4 +30,6 @@ public interface InvoiceApplyHeaderRepository extends BaseRepository<InvoiceAppl
      * @return 返回值
      */
     InvoiceApplyHeader selectByPrimary(Long applyHeaderId);
+
+    public List<InvoiceApplyInfoDTOOut> invoiceApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO);
 }

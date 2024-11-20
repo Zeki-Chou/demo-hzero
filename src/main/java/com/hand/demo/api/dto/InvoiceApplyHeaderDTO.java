@@ -39,18 +39,21 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @Column(name = "invoiceTypeMeaning")
     private String invoiceTypeMeaning;
 
+    private Boolean tenantAdminFlag;
+
+    private String createdName;
+
     @ExcelColumn(en = "invoiceApplyLines")
     @Column(name = "invoiceApplyLines")
     private List<InvoiceApplyLine> invoiceApplyLines;
 
-    private Boolean tenantAdminFlag;
-
-    public InvoiceApplyHeaderDTO(String applyStatusMeaning, String invoiceColorMeaning, String invoiceTypeMeaning, List<InvoiceApplyLine> invoiceApplyLines, Boolean tenantAdminFlag) {
+    public InvoiceApplyHeaderDTO(String applyStatusMeaning, String invoiceColorMeaning, String invoiceTypeMeaning, List<InvoiceApplyLine> invoiceApplyLines, Boolean tenantAdminFlag, String createdName) {
         this.applyStatusMeaning = applyStatusMeaning;
         this.invoiceColorMeaning = invoiceColorMeaning;
         this.invoiceTypeMeaning = invoiceTypeMeaning;
         this.invoiceApplyLines = invoiceApplyLines;
         this.tenantAdminFlag = tenantAdminFlag;
+        this.createdName = createdName;
     }
 
     public InvoiceApplyHeaderDTO() {}

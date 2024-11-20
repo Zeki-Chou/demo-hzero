@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * User Table(User)应用服务
+ * 用户(User)应用服务
  *
  * @author
- * @since 2024-11-01 08:00:18
+ * @since 2024-11-18 08:28:23
  */
 @Service
 public class UserServiceImpl implements UserService {

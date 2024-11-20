@@ -2,6 +2,8 @@ package com.hand.demo.api.controller.v1;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTOOut;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
@@ -104,5 +106,12 @@ public class InvoiceApplyHeaderController extends BaseController {
     public ResponseEntity<List<InvoiceApplyHeaderDTO>> complexSelect(@PathVariable Long organizationId, ExportParam exportParam, HttpServletResponse response, PageRequest pageRequest) {
         return Results.success(invoiceApplyHeaderService.exportAll(pageRequest));
     }
-}
 
+    @ApiOperation(value = "Invoice Apply Info")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/invoiceApplyInfo")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY + ".invoiceApplyInfoDTOOut")
+    public ResponseEntity<InvoiceApplyInfoDTO> selectInvoiceApplyInfoDTO(@PathVariable Long organizationId, InvoiceApplyInfoDTO invoiceApplyInfoDTO) {
+        return Results.success(invoiceApplyHeaderService.invoiceApplyInfoDetail(invoiceApplyInfoDTO));
+    }
+}

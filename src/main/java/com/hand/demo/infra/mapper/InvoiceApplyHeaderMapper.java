@@ -1,5 +1,7 @@
 package com.hand.demo.infra.mapper;
 
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTOOut;
 import io.choerodon.mybatis.common.BaseMapper;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 
@@ -19,5 +21,6 @@ public interface InvoiceApplyHeaderMapper extends BaseMapper<InvoiceApplyHeader>
      * @return 返回值
      */
     List<InvoiceApplyHeader> selectList(InvoiceApplyHeader invoiceApplyHeader);
+    List<InvoiceApplyInfoDTOOut> invoiceApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO);
 }
 

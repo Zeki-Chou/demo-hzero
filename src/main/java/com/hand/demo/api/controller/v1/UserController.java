@@ -21,10 +21,10 @@ import springfox.documentation.annotations.ApiIgnore;
 import java.util.List;
 
 /**
- * User Table(User)表控制层
+ * 用户(User)表控制层
  *
  * @author
- * @since 2024-11-01 08:00:19
+ * @since 2024-11-18 08:28:23
  */
 
 @RestController("userController.v1")
@@ -37,7 +37,7 @@ public class UserController extends BaseController {
     @Autowired
     private UserService userService;
 
-    @ApiOperation(value = "User Table列表")
+    @ApiOperation(value = "用户列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
     public ResponseEntity<Page<User>> list(User user, @PathVariable Long organizationId,
@@ -47,7 +47,7 @@ public class UserController extends BaseController {
         return Results.success(list);
     }
 
-    @ApiOperation(value = "User Table明细")
+    @ApiOperation(value = "用户明细")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/{id}/detail")
     public ResponseEntity<User> detail(@PathVariable Long id) {
@@ -55,18 +55,18 @@ public class UserController extends BaseController {
         return Results.success(user);
     }
 
-    @ApiOperation(value = "创建或更新User Table")
+    @ApiOperation(value = "创建或更新用户")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<User>> save(@PathVariable Long organizationId, @RequestBody List<User> users) {
         validObject(users);
         SecurityTokenHelper.validTokenIgnoreInsert(users);
-        users.forEach(item -> item.setTenantId(organizationId));
+        users.forEach(item -> item.setOrganizationId(organizationId));
         userService.saveData(users);
         return Results.success(users);
     }
 
-    @ApiOperation(value = "删除User Table")
+    @ApiOperation(value = "删除用户")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> remove(@RequestBody List<User> users) {
