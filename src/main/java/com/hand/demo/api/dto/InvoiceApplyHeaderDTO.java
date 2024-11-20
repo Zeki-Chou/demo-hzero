@@ -30,4 +30,8 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
 
     @JsonIgnore
     private Boolean isAdminFlag;
+
+    private String sign;
+
+    private String invoiceName;
 }

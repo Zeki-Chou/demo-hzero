@@ -1,6 +1,7 @@
 package com.hand.demo.app.service;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
@@ -34,5 +35,7 @@ public interface InvoiceApplyHeaderService {
     void softDeleteById(Long applyHeaderId);
 
     InvoiceApplyHeaderDTO detail(Long applyHeaderId);
+
+    InvoiceApplyInfoDTO getInvoiceApplyInfo(InvoiceApplyInfoDTO infoDTO);
 
 }

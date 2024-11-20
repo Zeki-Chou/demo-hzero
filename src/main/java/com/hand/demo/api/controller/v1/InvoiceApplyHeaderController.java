@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -107,6 +108,17 @@ public class InvoiceApplyHeaderController extends BaseController {
     ) {
         Page<InvoiceApplyHeaderDTO> list = invoiceApplyHeaderService.selectList(pageRequest, invoiceApplyHeader);
         return Results.success(list);
+    }
+
+    @ApiOperation(value = "Invoice Apply Info")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/info")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY + ".invoiceApplyHeaderList")
+    public ResponseEntity<InvoiceApplyInfoDTO> applyInfo(
+            InvoiceApplyInfoDTO infoDTO,
+            @PathVariable Long organizationId
+    ) {
+        return Results.success(invoiceApplyHeaderService.getInvoiceApplyInfo(infoDTO));
     }
 }
 
