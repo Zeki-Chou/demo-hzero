@@ -1,6 +1,8 @@
 package com.hand.demo.app.service.impl;
 
 import com.hand.demo.api.controller.dto.CalculatorDTO;
+import com.hand.demo.api.controller.dto.HeaderExternalDTO;
+import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.controller.dto.TranslationDTO;
 import com.hand.demo.app.service.ExternalService;
 import org.hzero.boot.interfaces.sdk.dto.RequestPayloadDTO;
@@ -34,12 +36,28 @@ public class ExternalServiceImpl implements ExternalService {
         Map<String, String> requestParamsMap = new HashMap<>();
 
         String payloadNumber = String.format(
-                "<tem:intA>%d</tem:intA>" +
-                        "<tem:intB>%d</tem:intB>", dto.getNum1(), dto.getNum2());
+                "<tem:intA>%d</tem:intA>" + "<tem:intB>%d</tem:intB>"
+                , dto.getNum1(), dto.getNum2());
 
         requestPayload.setPayload(payloadNumber);
         requestPayload.setMediaType("application/soap+xml");
         requestPayload.setRequestParamMap(requestParamsMap);
         return interfaceInvokeSdk.invoke(dto.getNameSpace(), dto.getServerCode(), dto.getInterfaceCode(), requestPayload);
     }
+
+    @Override
+    public ResponsePayloadDTO getInvoiceHeaderDetailExternal(Long organizationId, HeaderExternalDTO dto) {
+        RequestPayloadDTO requestPayload = new RequestPayloadDTO();
+        Map<String, String> pathVariableMap = new HashMap<>();
+        Map<String, String> headerParamsMap = new HashMap<>();
+
+        pathVariableMap.put("headerId", String.valueOf(dto.getApplyHeaderId()));
+        pathVariableMap.put("organizationId", String.valueOf(organizationId));
+        headerParamsMap.put("Authorization", "Bearer " + String.valueOf(dto.getToken()));
+
+        requestPayload.setPathVariableMap(pathVariableMap);
+        requestPayload.setHeaderParamMap(headerParamsMap);
+        return interfaceInvokeSdk.invoke(dto.getNameSpace(), dto.getServerCode(), dto.getInterfaceCode(), requestPayload);
+    }
+
 }

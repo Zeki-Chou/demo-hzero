@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.controller.dto.CalculatorDTO;
+import com.hand.demo.api.controller.dto.HeaderExternalDTO;
 import com.hand.demo.api.controller.dto.TranslationDTO;
 import com.hand.demo.app.service.ExternalService;
 import io.choerodon.core.iam.ResourceLevel;
@@ -34,4 +35,12 @@ public class ExternalController extends BaseController {
     public ResponseEntity<ResponsePayloadDTO> add(CalculatorDTO dto) {
         return Results.success(service.add(dto));
     }
+
+    @ApiOperation(value = "invoice header detail")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping("/invoice-header/detail")
+    public ResponseEntity<ResponsePayloadDTO> invHeaderDetail(HeaderExternalDTO dto, @PathVariable Long organizationId) {
+        return Results.success(service.getInvoiceHeaderDetailExternal(organizationId, dto));
+    }
+
 }

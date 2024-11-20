@@ -16,7 +16,6 @@ import org.hzero.core.util.Results;
 import org.hzero.export.annotation.ExcelExport;
 import org.hzero.export.vo.ExportParam;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.hand.demo.app.service.InvoiceApplyHeaderService;
@@ -58,7 +57,7 @@ public class InvoiceApplyHeaderController extends BaseController {
 
     @ApiOperation(value = "apply info")
     @Permission(level = ResourceLevel.ORGANIZATION)
-    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY + ".invoiceApplyHeaderDTOS")
     @GetMapping("/info")
     public ResponseEntity<InvoiceApplyInfoDTO> invoiceApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO, @PathVariable Long organizationId) {
         InvoiceApplyInfoDTO dto = invoiceApplyHeaderService.getApplyInfo(invoiceApplyInfoDTO, organizationId);

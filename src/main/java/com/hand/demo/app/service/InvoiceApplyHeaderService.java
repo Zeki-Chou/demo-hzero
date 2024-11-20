@@ -55,7 +55,7 @@ public interface InvoiceApplyHeaderService {
 
     /**
      * @param invoiceApplyInfoDTO apply info dto
-     * @param organizationId tenant id
+     * @param organizationId        tenant id
      * @return
      */
     InvoiceApplyInfoDTO getApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO, Long organizationId);

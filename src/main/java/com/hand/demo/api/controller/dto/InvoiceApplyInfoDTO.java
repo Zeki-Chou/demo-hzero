@@ -19,7 +19,11 @@ public class InvoiceApplyInfoDTO {
 
     private String toApplyHeaderNumber;
 
+    private String invoiceType;
+
     private List<String> applyStatusList;
+
+    private String tenantName;
 
     private List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS;
 }

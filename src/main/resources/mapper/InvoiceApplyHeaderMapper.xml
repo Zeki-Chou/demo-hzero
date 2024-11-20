@@ -140,10 +140,10 @@
             </if>
             <!--      creation date condition      -->
             <if test="fromCreationDate != null and toCreationDate == null">
-                and iah.creation_date &gt; #{fromCreationDate, jdbcType = TIMESTAMP}
+                and iah.creation_date &gt;= #{fromCreationDate, jdbcType = TIMESTAMP}
             </if>
             <if test="fromCreationDate == null and toCreationDate != null">
-                and iah.creation_date &lt; #{toCreationDate, jdbcType = TIMESTAMP}
+                and iah.creation_date &lt;= #{toCreationDate, jdbcType = TIMESTAMP}
             </if>
             <if test="fromCreationDate != null and toCreationDate != null">
                 and iah.creation_date between #{fromCreationDate, jdbcType = TIMESTAMP} and #{toCreationDate, jdbcType = TIMESTAMP}
@@ -151,10 +151,10 @@
             
             <!--    submit time condition        -->
             <if test="fromSubmitTime != null and toSubmitTime == null">
-                and iah.submit_time &gt; #{fromSubmitTime, jdbcType = TIMESTAMP}
+                and iah.submit_time &gt;= #{fromSubmitTime, jdbcType = TIMESTAMP}
             </if>
             <if test="fromSubmitTime == null and toSubmitTime != null">
-                and iah.submit_time &lt; #{toSubmitTime, jdbcType = TIMESTAMP}
+                and iah.submit_time &lt;= #{toSubmitTime, jdbcType = TIMESTAMP}
             </if>
             <if test="fromSubmitTime != null and toSubmitTime != null">
                 and iah.submit_time between #{fromSubmitTime, jdbcType = TIMESTAMP} and #{toSubmitTime, jdbcType = TIMESTAMP}
@@ -162,13 +162,13 @@
             
             <!--     apply header number  condition       -->
             <if test="fromApplyHeaderNumber != null and toApplyHeaderNumber == null">
-                and iah.apply_header_umber &gt; #{oldestInvoiceApplyHeaderNumber, jdbcType = TIMESTAMP}
+                and iah.apply_header_number &gt;= #{fromApplyHeaderNumber, jdbcType = TIMESTAMP}
             </if>
             <if test="fromApplyHeaderNumber == null and toApplyHeaderNumber != null">
-                and iah.apply_header_number &lt; #{toApplyHeaderNumber, jdbcType = TIMESTAMP}
+                and iah.apply_header_number &lt;= #{toApplyHeaderNumber, jdbcType = TIMESTAMP}
             </if>
             <if test="fromApplyHeaderNumber != null and toApplyHeaderNumber != null">
-                and iah.apply_header_number between #{oldestInvoiceApplyHeaderNumber, jdbcType = TIMESTAMP} and #{toApplyHeaderNumber, jdbcType = TIMESTAMP}
+                and iah.apply_header_number between #{fromApplyHeaderNumber, jdbcType = TIMESTAMP} and #{toApplyHeaderNumber, jdbcType = TIMESTAMP}
             </if>
             
             <!--    apply status set condition        -->

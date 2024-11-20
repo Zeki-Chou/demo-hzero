@@ -4,9 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.controller.dto.InvoiceApplyInfoDTO;
 import com.hand.demo.app.service.InvoiceApplyLineService;
-import com.hand.demo.domain.entity.IamUser;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
-import com.hand.demo.domain.repository.IamUserRepository;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import com.hand.demo.infra.constant.BaseConstant;
 import com.hand.demo.infra.constant.InvApplyHeaderConstant;
@@ -45,23 +43,15 @@ import java.util.stream.Collectors;
  */
 @Service
 public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService {
+
     private final LovAdapter lovAdapter;
-
     private final CodeRuleBuilder codeRuleBuilder;
-
     private final InvoiceApplyHeaderMapper mapper;
-
     private final RedisHelper redis;
-
     private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
-
     private final InvoiceApplyLineRepository invoiceApplyLineRepository;
-
     private final InvoiceApplyLineService invoiceApplyLineService;
-
     private final IamRemoteService iamRemoteService;
-
-    private static final Long REDIS_EXPIRE_DURATION = 60L;
 
     public InvoiceApplyHeaderServiceImpl(
             InvoiceApplyLineRepository invoiceApplyLineRepository,
@@ -136,9 +126,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             lineWithHeaderIdList.addAll(invoiceApplyLineList);
 
             // delete cache since header data may change
-            redis.setCurrentDatabase(13);
-            String cacheName = header.getApplyHeaderId() + "-applyheader-47359";
-            redis.delKey(cacheName);
+            deleteCache(header.getApplyHeaderId());
         }
 
         invoiceApplyLineService.saveData(lineWithHeaderIdList);
@@ -154,7 +142,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     @Override
     public InvoiceApplyHeaderDTO detail(Long applyHeaderId) {
-        String cacheName = applyHeaderId + "-applyheader-47359";
+        String cacheName = applyHeaderId + BaseConstant.InvApplyHeader.CACHE_PREFIX;
         redis.setCurrentDatabase(13);
 
         if (Boolean.TRUE.equals(redis.hasKey(cacheName))) {
@@ -180,11 +168,8 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         // get the name of the creator for the invoice header
         CustomUserDetails userDetail = DetailsHelper.getUserDetails();
         dto.setRealName(userDetail.getRealName());
+        cacheData(dto);
 
-        String jsonStringDto = JSON.toJSONString(dto);
-
-        redis.strSet(cacheName, jsonStringDto);
-        redis.setExpire(cacheName, REDIS_EXPIRE_DURATION);
         return dto;
     }
 
@@ -203,13 +188,26 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Override
     public InvoiceApplyInfoDTO getApplyInfo(InvoiceApplyInfoDTO invoiceApplyInfoDTO, Long organizationId) {
         InvoiceApplyHeaderDTO dto = new InvoiceApplyHeaderDTO();
-        dto.setFromSubmitTime(invoiceApplyInfoDTO.getFromSubmitTime());
-        dto.setToSubmitTime(invoiceApplyInfoDTO.getToSubmitTime());
-        dto.setFromCreationDate(invoiceApplyInfoDTO.getFromCreationDate());
-        dto.setToCreationDate(invoiceApplyInfoDTO.getToCreationDate());
-        dto.setFromApplyHeaderNumber(invoiceApplyInfoDTO.getFromApplyHeaderNumber());
-        dto.setToApplyHeaderNumber(invoiceApplyInfoDTO.getToApplyHeaderNumber());
+        BeanUtils.copyProperties(invoiceApplyInfoDTO, dto);
+
         List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = getInvoiceApplyHeaderDTOList(dto, organizationId);
+        List<InvoiceApplyLine> invoiceApplyLines = getInvoiceApplyLines(invoiceApplyHeaderDTOS);
+
+        if (!invoiceApplyLines.isEmpty()) {
+            Map<Long, String> listMap = invoiceApplyLines
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            InvoiceApplyLine::getApplyHeaderId, // Group by applyHeaderId
+                            Collectors.mapping(
+                                    InvoiceApplyLine::getInvoiceName, // Map to invoiceName
+                                    Collectors.joining(",") // Join names with a comma
+                            )
+                    ));
+            invoiceApplyHeaderDTOS.forEach(header->header.setInvoiceNames(listMap.get(header.getApplyHeaderId())));
+        }
+
+        JSONObject iamJsonString = getIamJSONObject();
+        invoiceApplyInfoDTO.setTenantName(iamJsonString.getString(BaseConstant.Iam.IAM_TENANTNAME));
 
         invoiceApplyInfoDTO.setInvoiceApplyHeaderDTOS(invoiceApplyHeaderDTOS);
         return invoiceApplyInfoDTO;
@@ -271,14 +269,15 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
      * throw error if response status not return 200
      * @return iam response body
      */
-    private String getIamResponseBody() {
+    private JSONObject getIamJSONObject() {
         ResponseEntity<String> iamResponse = iamRemoteService.selectSelf();
 
         if (!iamResponse.getStatusCode().equals(HttpStatus.OK)) {
             throw new CommonException("Error getting iam object");
         }
 
-        return iamResponse.getBody();
+        String responseBody = iamResponse.getBody();
+        return new JSONObject(responseBody);
     }
 
     private List<InvoiceApplyHeaderDTO> getInvoiceApplyHeaderDTOList(InvoiceApplyHeaderDTO invoiceApplyHeader, Long organizationId) {
@@ -294,10 +293,10 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
         if (invoiceApplyHeader.getApplyStatusList() != null) {
             List<String> applyStatusMeaningList = invoiceApplyHeader
-                    .getApplyStatusList()
-                    .stream()
-                    .map(applyStatusMap::get)
-                    .collect(Collectors.toList());
+                                                        .getApplyStatusList()
+                                                        .stream()
+                                                        .map(applyStatusMap::get)
+                                                        .collect(Collectors.toList());
             invoiceApplyHeader.setApplyStatusList(applyStatusMeaningList);
         }
 
@@ -310,8 +309,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             invoiceApplyHeader.setDelFlag(0);
         }
 
-        String responseJsonString = getIamResponseBody();
-        JSONObject iamJsonString = new JSONObject(responseJsonString);
+        JSONObject iamJsonString = getIamJSONObject();
 
         if (iamJsonString.has("tenantAdminFlag")) {
             Boolean isTenantAdmin = iamJsonString.getBoolean("tenantAdminFlag");
@@ -325,5 +323,50 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
         return invoiceApplyHeaderRepository.selectList(invoiceApplyHeader);
     }
+
+    /**
+     * set invoice apply lines to corresponding invoice apply header in the
+     * dataList attribute
+     * @param invoiceApplyHeaderList  list of invoice apply header
+     */
+    private List<InvoiceApplyLine> getInvoiceApplyLines(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderList) {
+        if (invoiceApplyHeaderList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> invoiceApplyHeaderIds = invoiceApplyHeaderList
+                .stream()
+                .map(InvoiceApplyHeader::getApplyHeaderId)
+                .collect(Collectors.toList());
+
+        return invoiceApplyLineRepository.selectByHeaderIds(invoiceApplyHeaderIds);
+    }
+
+    private InvoiceApplyHeaderDTO getCacheData(Long applyHeaderId) {
+        String cacheName = applyHeaderId + BaseConstant.InvApplyHeader.CACHE_PREFIX;
+        redis.setCurrentDatabase(13);
+
+        if (Boolean.TRUE.equals(redis.hasKey(cacheName))) {
+            String jsonString = redis.strGet(cacheName);
+            return JSON.parseObject(jsonString, InvoiceApplyHeaderDTO.class);
+        }
+
+        return null;
+    }
+
+    private void deleteCache(Long applyHeaderId) {
+        redis.setCurrentDatabase(13);
+        String cacheName = applyHeaderId + BaseConstant.InvApplyHeader.CACHE_PREFIX;
+        redis.delKey(cacheName);
+    }
+
+    private void cacheData(InvoiceApplyHeaderDTO dto) {
+        redis.setCurrentDatabase(13);
+        String jsonStringDto = JSON.toJSONString(dto);
+        String cacheName = dto.getApplyHeaderId() + BaseConstant.InvApplyHeader.CACHE_PREFIX;
+        redis.strSet(cacheName, jsonStringDto);
+        redis.setExpire(cacheName, BaseConstant.Redis.EXPIRE_DURATION);
+    }
+
 }
 
