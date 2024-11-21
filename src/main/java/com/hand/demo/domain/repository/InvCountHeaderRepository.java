@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Inventory Count Header Table(InvCountHeader)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-10-25 14:03:00
  */
 public interface InvCountHeaderRepository extends BaseRepository<InvCountHeader> {

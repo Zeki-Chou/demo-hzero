@@ -30,7 +30,7 @@ public class InvoiceApplyLineRepositoryImpl extends BaseRepositoryImpl<InvoiceAp
         InvoiceApplyLine invoiceApplyLine = new InvoiceApplyLine();
         invoiceApplyLine.setApplyLineId(applyLineId);
         List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineMapper.selectList(invoiceApplyLine);
-        if (invoiceApplyLines.size() == 0) {
+        if (invoiceApplyLines.isEmpty()) {
             return null;
         }
         return invoiceApplyLines.get(0);

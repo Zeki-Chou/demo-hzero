@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * (PurchaseOrder)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-11-01 10:50:58
  */
 public interface PurchaseOrderRepository extends BaseRepository<PurchaseOrder> {

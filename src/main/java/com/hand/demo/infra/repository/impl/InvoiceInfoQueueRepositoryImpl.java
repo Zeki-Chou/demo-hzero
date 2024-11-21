@@ -31,7 +31,7 @@ public class InvoiceInfoQueueRepositoryImpl extends BaseRepositoryImpl<InvoiceIn
         InvoiceInfoQueue invoiceInfoQueue = new InvoiceInfoQueue();
         invoiceInfoQueue.setId(id);
         List<InvoiceInfoQueue> invoiceInfoQueues = invoiceInfoQueueMapper.selectList(invoiceInfoQueue);
-        if (invoiceInfoQueues.size() == 0) {
+        if (invoiceInfoQueues.isEmpty()) {
             return null;
         }
         return invoiceInfoQueues.get(0);

@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 任务表(Task)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-10-28 14:57:35
  */
 @Component
@@ -31,7 +31,7 @@ public class TaskRepositoryImpl extends BaseRepositoryImpl<Task> implements Task
         Task task = new Task();
         task.setId(id);
         List<Task> tasks = taskMapper.selectList(task);
-        if (tasks.size() == 0) {
+        if (tasks.isEmpty()) {
             return null;
         }
         return tasks.get(0);

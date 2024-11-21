@@ -32,7 +32,7 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
         InvoiceApplyHeaderDTO invoiceApplyHeader = new InvoiceApplyHeaderDTO();
         invoiceApplyHeader.setApplyHeaderId(applyHeaderId);
         List<InvoiceApplyHeaderDTO> invoiceApplyHeaders = invoiceApplyHeaderMapper.selectList(invoiceApplyHeader);
-        if (invoiceApplyHeaders.size() == 0) {
+        if (invoiceApplyHeaders.isEmpty()) {
             return null;
         }
         return invoiceApplyHeaders.get(0);
@@ -41,6 +41,11 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     @Override
     public void updateByHeaderNumber(InvoiceApplyHeader invoiceApplyHeader) {
         invoiceApplyHeaderMapper.updateByHeaderNumber(invoiceApplyHeader);
+    }
+
+    @Override
+    public void deleteWithFlag(InvoiceApplyHeader invoiceApplyHeader) {
+        invoiceApplyHeaderMapper.updateDelFlag(invoiceApplyHeader);
     }
 }
 

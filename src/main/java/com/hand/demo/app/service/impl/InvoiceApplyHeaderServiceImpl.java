@@ -8,7 +8,6 @@ import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
 import com.hand.demo.infra.constant.BaseConstant;
 import com.hand.demo.infra.constant.InvApplyHeaderConstant;
-import com.hand.demo.infra.mapper.InvoiceApplyHeaderMapper;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
 import io.choerodon.core.oauth.CustomUserDetails;
@@ -45,7 +44,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
     private final LovAdapter lovAdapter;
     private final CodeRuleBuilder codeRuleBuilder;
-    private final InvoiceApplyHeaderMapper mapper;
     private final RedisHelper redis;
     private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
     private final InvoiceApplyLineRepository invoiceApplyLineRepository;
@@ -57,7 +55,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             InvoiceApplyLineService invoiceApplyLineService,
             InvoiceApplyHeaderRepository invoiceApplyHeaderRepository,
             RedisHelper redis,
-            InvoiceApplyHeaderMapper mapper,
             CodeRuleBuilder codeRuleBuilder,
             LovAdapter lovAdapter,
             IamRemoteService iamRemoteService
@@ -66,7 +63,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         this.invoiceApplyLineService = invoiceApplyLineService;
         this.invoiceApplyHeaderRepository = invoiceApplyHeaderRepository;
         this.redis = redis;
-        this.mapper = mapper;
         this.codeRuleBuilder = codeRuleBuilder;
         this.lovAdapter = lovAdapter;
         this.iamRemoteService = iamRemoteService;
@@ -86,25 +82,25 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         List<InvoiceApplyLine> lineWithHeaderIdList = new ArrayList<>();
 
         // put list of invoice lines into map
-        invoiceApplyHeaders.forEach(header -> {
+        for (InvoiceApplyHeaderDTO invoiceApplyHeader : invoiceApplyHeaders) {
             StringBuilder stringBuilder = new StringBuilder();
 
-            if (header.getApplyHeaderNumber() == null) {
-                String newTemplateCode =generateInvoiceCode(codeRuleBuilder);
+            if (invoiceApplyHeader.getApplyHeaderNumber() == null) {
+                String newTemplateCode = generateInvoiceCode();
                 stringBuilder.append(newTemplateCode);
             } else {
-                stringBuilder.append(header.getApplyHeaderNumber());
+                stringBuilder.append(invoiceApplyHeader.getApplyHeaderNumber());
             }
 
             String templateCode = stringBuilder.toString();
 
-            header.setTotalAmount(BigDecimal.ZERO);
-            header.setTaxAmount(BigDecimal.ZERO);
-            header.setExcludeTaxAmount(BigDecimal.ZERO);
+            invoiceApplyHeader.setTotalAmount(BigDecimal.ZERO);
+            invoiceApplyHeader.setTaxAmount(BigDecimal.ZERO);
+            invoiceApplyHeader.setExcludeTaxAmount(BigDecimal.ZERO);
 
-            header.setApplyHeaderNumber(templateCode);
-            lineListMap.put(templateCode, header.getDataList());
-        });
+            invoiceApplyHeader.setApplyHeaderNumber(templateCode);
+            lineListMap.put(templateCode, invoiceApplyHeader.getInvoiceApplyLines());
+        }
 
         //update and insert new headers
         List<InvoiceApplyHeader> insertList = invoiceApplyHeaders.stream().filter(line -> line.getApplyHeaderId() == null).collect(Collectors.toList());
@@ -137,7 +133,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         if (invoiceApplyHeaderRepository.selectByPrimary(invoiceApplyHeader.getApplyHeaderId()) == null) {
             throw new CommonException("demo-47359.warn.invoice_apply_line.not_found", invoiceApplyHeader.getApplyHeaderId());
         }
-        mapper.updateDelFlag(invoiceApplyHeader);
+        invoiceApplyHeaderRepository.deleteWithFlag(invoiceApplyHeader);
     }
 
     @Override
@@ -163,7 +159,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         InvoiceApplyLine invoiceApplyLine = new InvoiceApplyLine();
         invoiceApplyLine.setApplyHeaderId(applyHeaderId);
         List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.selectList(invoiceApplyLine);
-        dto.setDataList(invoiceApplyLines);
+        dto.setInvoiceApplyLines(invoiceApplyLines);
 
         // get the name of the creator for the invoice header
         CustomUserDetails userDetail = DetailsHelper.getUserDetails();
@@ -176,13 +172,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Override
     public List<InvoiceApplyHeaderDTO> exportAll(Long organizationId) {
         List<InvoiceApplyHeader> headers = invoiceApplyHeaderRepository.selectAll();
-        List<InvoiceApplyHeaderDTO> headerDTOS = new ArrayList<>();
-
-        for (InvoiceApplyHeader header : headers) {
-            headerDTOS.add(mapToDto(header));
-        }
-
-        return headerDTOS;
+        return headers.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     @Override
@@ -231,23 +221,9 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
      * @param organizationId tenant id
      */
     private void validateHeader(List<InvoiceApplyHeaderDTO> dtoList, Long organizationId) {
-        List<String> applyStatusList = lovAdapter
-                .queryLovValue(InvApplyHeaderConstant.APPLY_STATUS, organizationId)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
-
-        List<String> invoiceColorList = lovAdapter
-                .queryLovValue(InvApplyHeaderConstant.INVOICE_COLOR, organizationId)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
-
-        List<String> invoiceTypeList = lovAdapter
-                .queryLovValue(InvApplyHeaderConstant.INVOICE_TYPE, organizationId)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+        List<String> applyStatusList = getLovValueList(BaseConstant.InvApplyHeader.APPLY_STATUS_CODE, organizationId);
+        List<String> invoiceColorList = getLovValueList(BaseConstant.InvApplyHeader.INVOICE_COLOR_CODE, organizationId);
+        List<String> invoiceTypeList =  getLovValueList(BaseConstant.InvApplyHeader.INVOICE_TYPE_CODE, organizationId);
 
         for (InvoiceApplyHeaderDTO header: dtoList) {
             if (!invoiceTypeList.contains(header.getInvoiceType())) {
@@ -342,6 +318,11 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return invoiceApplyLineRepository.selectByHeaderIds(invoiceApplyHeaderIds);
     }
 
+    /**
+     * get cached JSON string
+     * @param key key
+     * @return JSON string
+     */
     private String getCacheData(String key) {
         redis.setCurrentDatabase(13);
 
@@ -352,11 +333,20 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         return "";
     }
 
+    /**
+     * delete value from cache with associated key
+     * @param key key
+     */
     private void deleteCache(String key) {
         redis.setCurrentDatabase(13);
         redis.delKey(key);
     }
 
+    /**
+     * cache invoice apply header dto
+     * @param dto invoice apply header dto
+     * @param key key to store the dto into cache
+     */
     private void cacheData(InvoiceApplyHeaderDTO dto, String key) {
         redis.setCurrentDatabase(13);
         String jsonStringDto = JSON.toJSONString(dto);
@@ -364,11 +354,22 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         redis.setExpire(key, BaseConstant.Redis.EXPIRE_DURATION);
     }
 
-    private String generateInvoiceCode(CodeRuleBuilder codeRuleBuilder) {
+    /**
+     * generate invoice header number
+     * @return invoice header number with format
+     */
+    private String generateInvoiceCode() {
         Map<String, String> variableMap = new HashMap<>();
         variableMap.put("customSegment", "-");
         return codeRuleBuilder.generateCode(InvApplyHeaderConstant.RULE_CODE, variableMap);
     }
 
+    private List<String> getLovValueList(String lovCode, Long organizationId) {
+        return lovAdapter
+                    .queryLovValue(lovCode, organizationId)
+                    .stream()
+                    .map(LovValueDTO::getValue)
+                    .collect(Collectors.toList());
+    }
 }
 

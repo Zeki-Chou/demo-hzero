@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * User Table(User)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-10-31 10:21:06
  */
 public interface UserRepository extends BaseRepository<User> {

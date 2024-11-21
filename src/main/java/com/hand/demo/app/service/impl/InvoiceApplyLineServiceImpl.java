@@ -1,17 +1,13 @@
 package com.hand.demo.app.service.impl;
 
-import com.hand.demo.api.controller.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.controller.dto.InvoiceApplyLineDTO;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
-import com.hand.demo.infra.util.Utils;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
-import org.opensaml.xml.signature.P;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvoiceApplyLineService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvoiceApplyLine;
@@ -95,13 +91,13 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
         // convert from list to map with key header id and value of header number
         Map<Long, String> headersMap = headers
-                                        .stream()
-                                        .collect(
+                                            .stream()
+                                            .collect(
                                                 Collectors.toMap(
                                                     InvoiceApplyHeader::getApplyHeaderId,
                                                     InvoiceApplyHeader::getApplyHeaderNumber
                                                 )
-                                        );
+                                            );
 
         List<InvoiceApplyLineDTO> invoiceApplyLineDTOList = new ArrayList<>();
         for (InvoiceApplyLine invoiceApplyLine : lineList) {
@@ -159,6 +155,11 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         return headers;
     }
 
+    /**
+     * calculate the total, tax and exclude tax amount for each header in the list
+     * @param headers list of invoice apply header
+     * @return list of invoice apply headers with updated amount
+     */
     private List<InvoiceApplyHeader> updateHeaderAmount(List<InvoiceApplyHeader> headers) {
         // get lines related to their corresponding header id
         List<Long> headerIds = headers.stream().map(InvoiceApplyHeader::getApplyHeaderId).collect(Collectors.toList());
@@ -217,6 +218,10 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
     /**
      * calculate the total, tax, and exclude tax amount from the invoice line object
+     * calculations:
+     * total amount = price * quantity
+     * tax amount = total amount * tax rate
+     * exclude tax amount = total amount - tax amount
      * @param invoiceApplyLine invoice line object
      * @return new object with calculated amount
      */

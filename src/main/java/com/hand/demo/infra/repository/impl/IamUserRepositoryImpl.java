@@ -31,7 +31,7 @@ public class IamUserRepositoryImpl extends BaseRepositoryImpl<IamUser> implement
         IamUser iamUser = new IamUser();
         iamUser.setId(id);
         List<IamUser> iamUsers = iamUserMapper.selectList(iamUser);
-        if (iamUsers.size() == 0) {
+        if (iamUsers.isEmpty()) {
             return null;
         }
         return iamUsers.get(0);

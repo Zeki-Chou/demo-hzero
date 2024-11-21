@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * (PurchaseOrder)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-11-01 10:50:58
  */
 @Component
@@ -31,7 +31,7 @@ public class PurchaseOrderRepositoryImpl extends BaseRepositoryImpl<PurchaseOrde
         PurchaseOrder purchaseOrder = new PurchaseOrder();
         purchaseOrder.setId(id);
         List<PurchaseOrder> purchaseOrders = purchaseOrderMapper.selectList(purchaseOrder);
-        if (purchaseOrders.size() == 0) {
+        if (purchaseOrders.isEmpty()) {
             return null;
         }
         return purchaseOrders.get(0);

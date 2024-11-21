@@ -1,16 +1,12 @@
 package com.hand.demo.infra.util;
 
-import com.hand.demo.domain.entity.InvoiceApplyHeader;
-import com.hand.demo.domain.entity.InvoiceApplyLine;
-import com.hand.demo.domain.repository.InvoiceApplyLineRepository;
-import com.hand.demo.infra.constant.InvApplyHeaderConstant;
-import com.hand.demo.infra.constant.PurchaseStatus;
-import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
+import io.choerodon.core.exception.CommonException;
+import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
+import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Utils
@@ -20,5 +16,21 @@ public class Utils {
 
     public static String generateNStringMasking(int length, String maskCharacter) {
         return String.join("", Collections.nCopies(length, maskCharacter));
+    }
+
+    /**
+     * make get request to get response entity for Iam response body.
+     * throw error if response status not return 200
+     * @return iam response body
+     */
+    public static JSONObject getIamJSONObject(IamRemoteService iamRemoteService) {
+        ResponseEntity<String> iamResponse = iamRemoteService.selectSelf();
+
+        if (!iamResponse.getStatusCode().equals(HttpStatus.OK)) {
+            throw new CommonException("Error getting iam object");
+        }
+
+        String responseBody = iamResponse.getBody();
+        return new JSONObject(responseBody);
     }
 }

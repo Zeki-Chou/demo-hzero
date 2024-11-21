@@ -31,7 +31,7 @@ public class UploadConfigRepositoryImpl extends BaseRepositoryImpl<UploadConfig>
         UploadConfig uploadConfig = new UploadConfig();
         uploadConfig.setUploadConfigId(uploadConfigId);
         List<UploadConfig> uploadConfigs = uploadConfigMapper.selectList(uploadConfig);
-        if (uploadConfigs.size() == 0) {
+        if (uploadConfigs.isEmpty()) {
             return null;
         }
         return uploadConfigs.get(0);

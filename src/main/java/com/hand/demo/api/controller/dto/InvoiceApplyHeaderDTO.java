@@ -21,7 +21,7 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @ExcelColumn(en = "invoice color meaning")
     private String invoiceColorMeaning;
 
-    private List<InvoiceApplyLine> dataList;
+    private List<InvoiceApplyLine> invoiceApplyLines;
 
     private Boolean tenantAdminFlag;
 

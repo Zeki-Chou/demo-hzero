@@ -31,7 +31,7 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
         InvCountHeader invCountHeader = new InvCountHeader();
         invCountHeader.setCountHeaderId(countHeaderId);
         List<InvCountHeader> invCountHeaders = invCountHeaderMapper.selectList(invCountHeader);
-        if (invCountHeaders.size() == 0) {
+        if (invCountHeaders.isEmpty()) {
             return null;
         }
         return invCountHeaders.get(0);

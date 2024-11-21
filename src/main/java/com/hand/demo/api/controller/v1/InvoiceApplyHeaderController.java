@@ -37,7 +37,6 @@ import java.util.List;
 public class InvoiceApplyHeaderController extends BaseController {
 
     private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
-
     private final InvoiceApplyHeaderService invoiceApplyHeaderService;
 
     public InvoiceApplyHeaderController(InvoiceApplyHeaderRepository invoiceApplyHeaderRepository, InvoiceApplyHeaderService invoiceApplyHeaderService) {
@@ -88,6 +87,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PutMapping
     public ResponseEntity<?> delete(@RequestBody InvoiceApplyHeader invoiceApplyHeader) {
+        SecurityTokenHelper.validToken(invoiceApplyHeader);
         invoiceApplyHeaderService.deleteData(invoiceApplyHeader);
         return Results.success();
     }

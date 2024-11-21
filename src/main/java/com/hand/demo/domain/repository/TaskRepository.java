@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 任务表(Task)资源库
  *
- * @author
+ * @author Allan
  * @since 2024-10-28 14:57:35
  */
 public interface TaskRepository extends BaseRepository<Task> {

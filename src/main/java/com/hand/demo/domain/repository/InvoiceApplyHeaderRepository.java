@@ -29,5 +29,15 @@ public interface InvoiceApplyHeaderRepository extends BaseRepository<InvoiceAppl
      */
     InvoiceApplyHeaderDTO selectByPrimary(Long applyHeaderId);
 
+    /**
+     * update by invoice apply header number
+     * @param invoiceApplyHeader invoice apply header entity
+     */
     void updateByHeaderNumber(InvoiceApplyHeader invoiceApplyHeader);
+
+    /**
+     * delete by changing del_flag
+     * @param invoiceApplyHeader invoice apply header entity
+     */
+    void deleteWithFlag(InvoiceApplyHeader invoiceApplyHeader);
 }
