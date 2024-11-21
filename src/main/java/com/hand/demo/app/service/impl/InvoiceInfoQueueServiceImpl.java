@@ -15,13 +15,17 @@ import java.util.stream.Collectors;
 /**
  * Redis Message Queue Table(InvoiceInfoQueue)应用服务
  *
- * @author
+ * @author Allan
  * @since 2024-11-08 11:07:41
  */
 @Service
 public class InvoiceInfoQueueServiceImpl implements InvoiceInfoQueueService {
-    @Autowired
-    private InvoiceInfoQueueRepository invoiceInfoQueueRepository;
+
+    private final InvoiceInfoQueueRepository invoiceInfoQueueRepository;
+
+    public InvoiceInfoQueueServiceImpl(InvoiceInfoQueueRepository invoiceInfoQueueRepository) {
+        this.invoiceInfoQueueRepository = invoiceInfoQueueRepository;
+    }
 
     @Override
     public Page<InvoiceInfoQueue> selectList(PageRequest pageRequest, InvoiceInfoQueue invoiceInfoQueue) {

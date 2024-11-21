@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
     private final InvoiceApplyLineRepository invoiceApplyLineRepository;
-
-
     private final InvoiceApplyHeaderRepository invoiceApplyHeaderRepository;
 
     public InvoiceApplyLineServiceImpl(InvoiceApplyLineRepository invoiceApplyLineRepository, InvoiceApplyHeaderRepository invoiceApplyHeaderRepository) {
@@ -56,7 +54,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         // validate invoice line
         validateData(invoiceApplyLines);
         // calculate the 3 amount from list of line
-        List<InvoiceApplyLine> updatedLineAmounts = invoiceApplyLines.stream().map(Utils::calculateAmountLine).collect(Collectors.toList());
+        List<InvoiceApplyLine> updatedLineAmounts = invoiceApplyLines.stream().map(this::calculateAmountLine).collect(Collectors.toList());
 
         // insert and update invoice line
         List<InvoiceApplyLine> insertList = updatedLineAmounts.stream().filter(line -> line.getApplyLineId() == null).collect(Collectors.toList());
@@ -97,20 +95,21 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
 
         // convert from list to map with key header id and value of header number
         Map<Long, String> headersMap = headers
-                .stream()
-                .collect(
-                        Collectors.toMap(
-                                InvoiceApplyHeader::getApplyHeaderId,
-                                InvoiceApplyHeader::getApplyHeaderNumber
-                        )
-                );
+                                        .stream()
+                                        .collect(
+                                                Collectors.toMap(
+                                                    InvoiceApplyHeader::getApplyHeaderId,
+                                                    InvoiceApplyHeader::getApplyHeaderNumber
+                                                )
+                                        );
 
-        return lineList.stream().map(line -> {
-            InvoiceApplyLineDTO lineDto = mapToDto(line);
+        List<InvoiceApplyLineDTO> invoiceApplyLineDTOList = new ArrayList<>();
+        for (InvoiceApplyLine invoiceApplyLine : lineList) {
+            InvoiceApplyLineDTO lineDto = mapToDto(invoiceApplyLine);
             lineDto.setApplyHeaderNumber(headersMap.get(lineDto.getApplyHeaderId()));
-            return lineDto;
-        }).collect(Collectors.toList());
-
+            invoiceApplyLineDTOList.add(lineDto);
+        }
+        return invoiceApplyLineDTOList;
     }
 
     /**
@@ -152,11 +151,11 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
     private List<InvoiceApplyHeader> recalculateAmount(List<InvoiceApplyLine> invoiceApplyLines) {
         String headerIds = generateStringIds(invoiceApplyLines);
         List<InvoiceApplyHeader> headers = invoiceApplyHeaderRepository.selectByIds(headerIds);
-        headers.forEach(header -> {
+        for (InvoiceApplyHeader header : headers) {
             header.setTotalAmount(BigDecimal.ZERO);
             header.setTaxAmount(BigDecimal.ZERO);
             header.setExcludeTaxAmount(BigDecimal.ZERO);
-        });
+        }
         return headers;
     }
 
@@ -174,7 +173,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
                 .stream()
                 .collect(Collectors.toMap(InvoiceApplyHeader::getApplyHeaderId, Function.identity()));
 
-        invoiceApplyLines.forEach(line -> {
+        for (InvoiceApplyLine line : invoiceApplyLines) {
             InvoiceApplyHeader header = headersMap.get(line.getApplyHeaderId());
             BigDecimal totalAmount = header.getTotalAmount().add(line.getTotalAmount());
             BigDecimal taxAmount = header.getTaxAmount().add(line.getTaxAmount());
@@ -185,7 +184,7 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
             header.setExcludeTaxAmount(excludeTaxAmount);
 
             headersMap.put(header.getApplyHeaderId(), header);
-        });
+        }
 
         return new ArrayList<>(headersMap.values());
     }
@@ -214,6 +213,23 @@ public class InvoiceApplyLineServiceImpl implements InvoiceApplyLineService {
         InvoiceApplyLineDTO dto = new InvoiceApplyLineDTO();
         BeanUtils.copyProperties(invoiceApplyLine, dto);
         return dto;
+    }
+
+    /**
+     * calculate the total, tax, and exclude tax amount from the invoice line object
+     * @param invoiceApplyLine invoice line object
+     * @return new object with calculated amount
+     */
+    private InvoiceApplyLine calculateAmountLine(InvoiceApplyLine invoiceApplyLine) {
+        BigDecimal lineTotalAmount = invoiceApplyLine.getUnitPrice().multiply(invoiceApplyLine.getQuantity());
+        BigDecimal lineTaxAmount = lineTotalAmount.multiply(invoiceApplyLine.getTaxRate());
+        BigDecimal lineExcludeTaxAmount = lineTotalAmount.subtract(lineTaxAmount);
+
+        invoiceApplyLine.setTotalAmount(lineTotalAmount);
+        invoiceApplyLine.setTaxAmount(lineTaxAmount);
+        invoiceApplyLine.setExcludeTaxAmount(lineExcludeTaxAmount);
+
+        return invoiceApplyLine;
     }
 }
 

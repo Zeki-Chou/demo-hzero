@@ -53,7 +53,7 @@ public class ExternalServiceImpl implements ExternalService {
 
         pathVariableMap.put("headerId", String.valueOf(dto.getApplyHeaderId()));
         pathVariableMap.put("organizationId", String.valueOf(organizationId));
-        headerParamsMap.put("Authorization", "Bearer " + String.valueOf(dto.getToken()));
+        headerParamsMap.put("Authorization", "Bearer " + dto.getToken());
 
         requestPayload.setPathVariableMap(pathVariableMap);
         requestPayload.setHeaderParamMap(headerParamsMap);

@@ -43,7 +43,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         for (PurchaseOrder order: purchaseOrders) {
             // purchase status validation check
-            if (!Utils.validPurchaseStatus(order.getCountStatus())) {
+            if (!validPurchaseStatus(order.getCountStatus())) {
                 throw new CommonException(order.getCountStatus() + " is invalid purchase status");
             }
 
@@ -87,6 +87,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         BeanUtils.copyProperties(purchaseOrder, dto);
         dto.setBuyerNames(buyerList);
         return dto;
+    }
+
+    private boolean validPurchaseStatus(String status) {
+        for (PurchaseStatus s: PurchaseStatus.values()) {
+            if (s.name().equals(status)) {
+                return Boolean.TRUE;
+            }
+        }
+        return Boolean.FALSE;
     }
 }
 

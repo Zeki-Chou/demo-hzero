@@ -3,6 +3,7 @@ package com.hand.demo.domain.entity;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hand.demo.infra.constant.BaseConstant;
 import com.hand.demo.infra.constant.InvCountHeaderConstant;
@@ -21,6 +22,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hzero.boot.platform.lov.annotation.LovValue;
 import org.hzero.export.annotation.ExcelColumn;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * (InvoiceApplyHeader)实体类
@@ -152,6 +154,8 @@ public class InvoiceApplyHeader extends AuditDomain {
     private String remark;
 
     @ExcelColumn(en = "submit time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date submitTime;
 
     @ApiModelProperty(value = "sum(line tax_amount)")
