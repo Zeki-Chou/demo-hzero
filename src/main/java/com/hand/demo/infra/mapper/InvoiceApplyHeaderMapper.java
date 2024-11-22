@@ -3,6 +3,8 @@ package com.hand.demo.infra.mapper;
 import com.hand.demo.domain.dto.InvoiceApplyHeaderDTO;
 import io.choerodon.mybatis.common.BaseMapper;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
+import org.apache.ibatis.annotations.Select;
+import org.mule.runtime.extension.api.annotation.param.Query;
 
 import java.util.List;
 
@@ -26,6 +28,8 @@ public interface InvoiceApplyHeaderMapper extends BaseMapper<InvoiceApplyHeader>
      * @return 返回值
      */
     List<InvoiceApplyHeaderDTO> selectListDataSet(InvoiceApplyHeaderDTO invoiceApplyHeader);
+
+
 }
 
 

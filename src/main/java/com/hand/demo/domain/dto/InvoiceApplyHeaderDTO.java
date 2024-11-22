@@ -32,4 +32,18 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     private String errorMsg;
 
     private Boolean tenantAdminFlag;
+
+    private String signName;
+
+    private String listLineName;
+
+    private String invoiceNumberFrom;
+    private String invoiceNumberTo;
+    private String creationDateFrom;
+    private String creationDateTo;
+    private String submitTimeFrom;
+    private String submitTimeTo;
+    private String invoiceTypeParam;
+    private List<String> listApplyStatus;
+
 }

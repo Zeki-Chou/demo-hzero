@@ -62,6 +62,6 @@ public interface InvoiceApplyHeaderService {
     List<InvoiceApplyHeaderDTO> selectListForDataSet(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO);
 
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    List<InvoiceApplyReportQueryDTO> selectListForExcel(InvoiceApplyReportQueryDTO invoiceApplyReportQueryDTO, Long organizationId);
+    InvoiceApplyReportQueryDTO selectListForExcel(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, Long organizationId);
 }
 

@@ -11,6 +11,7 @@ import com.hand.demo.infra.constant.CodeRuleConstant;
 import com.hand.demo.infra.constant.InvoiceApplyHeaderConstant;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
+import io.choerodon.core.oauth.DetailsHelper;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
@@ -30,6 +31,7 @@ import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -307,79 +309,62 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
 
         for (InvoiceApplyHeaderDTO headerDTO : headerDTOS) {
             headerDTO.setInvoiceApplyLineList(lineHeaders.get(headerDTO.getApplyHeaderId()));
+            headerDTO.setSignName(DetailsHelper.getUserDetails().getRealName());
         }
 
-//        String iamUserString = iamRemoteService.selectSelf().getBody();
-//        JSONObject jsonIam = new JSONObject(iamUserString);
 
-//        Boolean tenantAdminFlag = jsonIam.optBoolean("tenantAdminFlag", false);
         if (invoiceApplyHeaderDTO.getDelFlag() == null) {
             invoiceApplyHeaderDTO.setDelFlag(0);
         }
-//        invoiceApplyHeaderDTO.setTenantAdminFlag(tenantAdminFlag);
 
         return headerDTOS;
     }
 
-    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+//    @ProcessLovValue(targetField = "body.listHeader")
     @Override
-    public List<InvoiceApplyReportQueryDTO> selectListForExcel(InvoiceApplyReportQueryDTO invoiceApplyReportQueryDTO, Long organizationId) {
-        String numberFrom = invoiceApplyReportQueryDTO.getInvoiceNumberFrom();
-        String numberTo = invoiceApplyReportQueryDTO.getInvoiceNumberTo();
-        String creationDateFrom = invoiceApplyReportQueryDTO.getCreationDateFrom();
-        String creationDateTo = invoiceApplyReportQueryDTO.getCreationDateTo();
-        String submitTimeFrom = invoiceApplyReportQueryDTO.getSubmitTimeFrom();
-        String submitTimeTo = invoiceApplyReportQueryDTO.getSubmitTimeTo();
-        String invoiceTypeParam = invoiceApplyReportQueryDTO.getInvoiceTypeParam();
-
-        List<String> listStatus = invoiceApplyReportQueryDTO.getListApplyStatus();
+    public InvoiceApplyReportQueryDTO selectListForExcel(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, Long organizationId) {
+        List<String> listStatus = invoiceApplyHeaderDTO.getListApplyStatus();
         List<Map<String, Object>> listApplyStatusValue = lovAdapter.queryLovData(InvoiceApplyHeaderConstant.LovCode.APPLY_STATUS, organizationId, null, null, null, null);
         List<Map<String, Object>> listInvoiceType = lovAdapter.queryLovData(InvoiceApplyHeaderConstant.LovCode.INVOICE_TYPE, organizationId, null, null, null, null);
 
         //Get lov Value code
-        for (int i = 0; i < listStatus.size(); i++) {
-            String status = listStatus.get(i);  // Get the status from the list
-            for (Map<String, Object> lovValue : listApplyStatusValue) {
-                if (status.equals(lovValue.get("meaning"))) {
-                    listStatus.set(i, (String) lovValue.get("value"));  // Update the value in the list
+        ArrayList<String> listStatusBefore = new ArrayList<>();
+        if(invoiceApplyHeaderDTO.getListApplyStatus() != null){
+            listStatusBefore = new ArrayList<>(invoiceApplyHeaderDTO.getListApplyStatus());
+
+            for (int i = 0; i < listStatus.size(); i++) {
+                for (Map<String, Object> lovValue : listApplyStatusValue) {
+                    if (listStatus.get(i).equals(lovValue.get("meaning"))) {
+                        listStatus.set(i, (String) lovValue.get("value"));  // Set value to the list
+                        break;
+                    }
+                }
+            }
+            invoiceApplyHeaderDTO.setListApplyStatus(listStatus);
+        }
+
+        String invoiceTypeBefore = "";
+        if(invoiceApplyHeaderDTO.getInvoiceTypeParam() != null){
+            String invoiceTypeCode = invoiceApplyHeaderDTO.getInvoiceTypeParam();
+            invoiceTypeBefore = invoiceApplyHeaderDTO.getInvoiceTypeParam();
+            for (Map<String, Object> lovValue : listInvoiceType){
+                if(invoiceTypeCode.equals(lovValue.get("meaning"))){
+                    invoiceTypeCode = (String) lovValue.get("value");
                     break;
                 }
             }
+            invoiceApplyHeaderDTO.setInvoiceTypeParam(invoiceTypeCode);
         }
 
-        for (Map<String, Object> lovValue : listInvoiceType){
-            if(invoiceTypeParam.equals(lovValue.get("meaning"))){
-                invoiceTypeParam = (String) lovValue.get("value");
-                break;
-            }
-        }
+        List<InvoiceApplyHeaderDTO> headersDTO = invoiceApplyHeaderRepository.selectList(invoiceApplyHeaderDTO);
 
         String iamUserString = iamRemoteService.selectSelf().getBody();
         JSONObject jsonIam = new JSONObject(iamUserString);
-
-        Long tenantId = jsonIam.getLong("tenantId");
         String tenantName = jsonIam.getString("tenantName");
-
-        Condition condition = new Condition(InvoiceApplyHeader.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        criteria.andEqualTo(InvoiceApplyHeader.FIELD_TENANT_ID, tenantId)
-                .andBetween(InvoiceApplyHeader.FIELD_APPLY_HEADER_NUMBER, numberFrom, numberTo)
-                .andBetween(InvoiceApplyHeader.FIELD_CREATION_DATE, creationDateFrom, creationDateTo)
-                .andBetween(InvoiceApplyHeader.FIELD_SUBMIT_TIME, submitTimeFrom, submitTimeTo)
-                .andIn(InvoiceApplyHeader.FIELD_APPLY_STATUS, listStatus)
-                .andEqualTo(InvoiceApplyHeader.FIELD_INVOICE_TYPE, invoiceTypeParam);
-
-        List<InvoiceApplyHeader> headers = invoiceApplyHeaderRepository.selectByCondition(condition);
-        List<InvoiceApplyReportQueryDTO> headerDTOList = new LinkedList<>();
-        for(InvoiceApplyHeader header : headers){
-            InvoiceApplyReportQueryDTO dto = new InvoiceApplyReportQueryDTO();
-            BeanUtils.copyProperties(header, dto);
-            headerDTOList.add(dto);
-        }
 
         //Collect All HeaderId, to query linelist
         Set<Long> headerIds = new HashSet<>();
-        for (InvoiceApplyHeader header : headers) {
+        for (InvoiceApplyHeaderDTO header : headersDTO) {
             headerIds.add(header.getApplyHeaderId());
         }
 
@@ -394,19 +379,30 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         Map<Long, List<InvoiceApplyLine>> linesGroupedByHeaderId = linesByHeader.stream()
                 .collect(Collectors.groupingBy(InvoiceApplyLine::getApplyHeaderId));
 
-        for(InvoiceApplyReportQueryDTO dto : headerDTOList){
-            dto.setInvoiceApplyLineList(linesGroupedByHeaderId.get(dto.getApplyHeaderId()));
-            dto.setInvoiceNumberFrom(numberFrom);
-            dto.setInvoiceNumberTo(numberTo);
-            dto.setCreationDateFrom(creationDateFrom);
-            dto.setCreationDateTo(creationDateTo);
-            dto.setSubmitTimeFrom(submitTimeFrom);
-            dto.setSubmitTimeTo(submitTimeTo);
-            dto.setListApplyStatus(listStatus);
-            dto.setInvoiceTypeParam(invoiceTypeParam);
-            dto.setTenantName(tenantName);
+        for(InvoiceApplyHeaderDTO dto : headersDTO){
+            List<InvoiceApplyLine> lines = (linesGroupedByHeaderId.get(dto.getApplyHeaderId()));
+            if(lines != null){
+                String concatInvoiceName = lines.stream().map(InvoiceApplyLine::getInvoiceName).collect(Collectors.joining(", "));
+                dto.setListLineName(concatInvoiceName);
+            }
         }
-        return headerDTOList;
+
+        InvoiceApplyReportQueryDTO reportQueryDTO = new InvoiceApplyReportQueryDTO();
+        reportQueryDTO.setTenantName(tenantName);
+        reportQueryDTO.setInvoiceNumberFrom(invoiceApplyHeaderDTO.getInvoiceNumberFrom());
+        reportQueryDTO.setInvoiceNumberTo(invoiceApplyHeaderDTO.getInvoiceNumberTo());
+        reportQueryDTO.setCreationDateFrom(invoiceApplyHeaderDTO.getCreationDateFrom());
+        reportQueryDTO.setCreationDateTo(invoiceApplyHeaderDTO.getCreationDateTo());
+        reportQueryDTO.setSubmitTimeFrom(invoiceApplyHeaderDTO.getSubmitTimeFrom());
+        reportQueryDTO.setSubmitTimeTo(invoiceApplyHeaderDTO.getSubmitTimeTo());
+        reportQueryDTO.setListApplyStatus(invoiceApplyHeaderDTO.getListApplyStatus());
+        if(invoiceApplyHeaderDTO.getListApplyStatus() != null){
+            reportQueryDTO.setListStatusString(listStatusBefore.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+        }
+        reportQueryDTO.setInvoiceTypeParam(invoiceTypeBefore);
+        reportQueryDTO.setListHeader(headersDTO);
+
+        return reportQueryDTO;
     }
 }
 

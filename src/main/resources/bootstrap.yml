@@ -1,8 +1,8 @@
 server:
-  port: 8080
+  port: 8070
 management:
   server:
-    port: 8081
+    port: 8071
   endpoints:
     web:
       exposure:

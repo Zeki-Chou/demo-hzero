@@ -7,11 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InvoiceApplyReportQueryDTO extends InvoiceApplyHeaderDTO{
+public class InvoiceApplyReportQueryDTO{
     private String tenantName;
     private String invoiceNumberFrom;
     private String invoiceNumberTo;
@@ -21,4 +20,6 @@ public class InvoiceApplyReportQueryDTO extends InvoiceApplyHeaderDTO{
     private String submitTimeTo;
     private String invoiceTypeParam;
     private List<String> listApplyStatus;
+    private String listStatusString;
+    private List<InvoiceApplyHeaderDTO> listHeader;
 }

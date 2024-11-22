@@ -27,6 +27,7 @@ import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -72,7 +73,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @PostMapping
     public ResponseEntity<List<InvoiceApplyHeaderDTO>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
         validObject(invoiceApplyHeaders);
-//        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
+//        SecurityTokenHelper.validTokenIgnoreInsert(new ArrayList<InvoiceApplyHeader>(invoiceApplyHeaders));
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
         invoiceApplyHeaderService.saveData(invoiceApplyHeaders);
         return Results.success(invoiceApplyHeaders);
@@ -123,10 +124,10 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "List Report Excel")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/listReportExcel")
-    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
-    public ResponseEntity<List<InvoiceApplyReportQueryDTO>> listReportExcel(InvoiceApplyReportQueryDTO invoiceApplyHeaderDTO, @PathVariable Long organizationId) {
-        List<InvoiceApplyReportQueryDTO> list = invoiceApplyHeaderService.selectListForExcel(invoiceApplyHeaderDTO, organizationId);
-        return Results.success(list);
+    @ProcessLovValue(targetField = "body.listHeader")
+    public ResponseEntity<InvoiceApplyReportQueryDTO> listReportExcel(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, @PathVariable Long organizationId) {
+        InvoiceApplyReportQueryDTO reportQueryDTO = invoiceApplyHeaderService.selectListForExcel(invoiceApplyHeaderDTO, organizationId);
+        return Results.success(reportQueryDTO);
     }
 }
 

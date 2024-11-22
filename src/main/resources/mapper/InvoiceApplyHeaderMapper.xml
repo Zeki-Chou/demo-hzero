@@ -147,6 +147,47 @@
             <if test="totalAmount !=null">
                 and iah.total_amount = #{totalAmount,jdbcType = OTHER}
             </if>
+            <if test="creationDateFrom != null and creationDateTo != null">
+                AND iah.creation_date BETWEEN #{creationDateFrom, jdbcType=TIMESTAMP}
+                AND #{creationDateTo, jdbcType=TIMESTAMP}
+            </if>
+
+            <if test="creationDateFrom != null and creationDateTo == null">
+                AND iah.creation_date &gt;= #{creationDateFrom, jdbcType=TIMESTAMP}
+            </if>
+
+            <if test="creationDateFrom == null and creationDateTo != null">
+                AND iah.creation_date &lt;= #{creationDateTo, jdbcType=TIMESTAMP}
+            </if>
+            <if test="submitTimeFrom != null and submitTimeTo != null">
+                AND iah.submit_time BETWEEN #{submitTimeFrom, jdbcType=TIMESTAMP}
+                AND #{submitTimeTo, jdbcType=TIMESTAMP}
+            </if>
+            <if test="submitTimeFrom != null and submitTimeTo == null">
+                AND iah.submit_time &gt;= #{submitTimeFrom, jdbcType=TIMESTAMP}
+            </if>
+            <if test="submitTimeFrom == null and submitTimeTo != null">
+                AND iah.submit_time &lt;= #{submitTimeTo, jdbcType=TIMESTAMP}
+            </if>
+            <if test="invoiceNumberFrom != null and invoiceNumberTo != null">
+                AND iah.apply_header_number BETWEEN #{invoiceNumberFrom, jdbcType=VARCHAR}
+                AND #{invoiceNumberTo, jdbcType=VARCHAR}
+            </if>
+            <if test="invoiceNumberFrom != null and invoiceNumberTo == null">
+                AND iah.apply_header_number &gt;= #{invoiceNumberFrom, jdbcType=VARCHAR}
+            </if>
+            <if test="invoiceNumberFrom == null and invoiceNumberTo != null">
+                AND iah.apply_header_number &lt;= #{invoiceNumberTo, jdbcType=VARCHAR}
+            </if>
+            <if test="listApplyStatus != null and listApplyStatus.size() > 0">
+                AND iah.apply_status IN
+                <foreach item="status" collection="listApplyStatus" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+            <if test="invoiceTypeParam !=null">
+                and iah.invoice_type = #{invoiceTypeParam, jdbcType = VARCHAR}
+            </if>
         </where>
     </select>
     <select id="selectListDataSet" resultType="com.hand.demo.domain.dto.InvoiceApplyHeaderDTO">
