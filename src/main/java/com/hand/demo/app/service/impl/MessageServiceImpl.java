@@ -2,8 +2,10 @@ package com.hand.demo.app.service.impl;
 
 import com.hand.demo.app.service.MessageService;
 import com.hand.demo.domain.entity.MessageFormat;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.hand.demo.domain.entity.User;
+import com.hand.demo.domain.repository.UserRepository;
 import org.hzero.boot.message.MessageClient;
+import org.hzero.boot.message.entity.FlyBookMsgType;
 import org.hzero.boot.message.entity.Message;
 import org.hzero.boot.message.entity.Receiver;
 import org.hzero.core.base.BaseAppService;
@@ -11,22 +13,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.alibaba.fastjson.JSON;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-
 @Service
 public class MessageServiceImpl extends BaseAppService implements MessageService {
 
     private final MessageClient client;
+    private final UserRepository userRepository;
 
     @Autowired
-    public MessageServiceImpl(MessageClient client) {
+    public MessageServiceImpl(MessageClient client, UserRepository userRepository) {
         this.client = client;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -47,9 +48,9 @@ public class MessageServiceImpl extends BaseAppService implements MessageService
 
         if (messages == null || messages.isEmpty()) {
             // generate template code
-            Message message = client.sendWebMessage(organizationId, "DEMO-47359", receivers, params);
             params.put("msg1", "${msg1}");
             params.put("msg2", "${msg2}");
+            Message message = client.sendWebMessage(organizationId, "DEMO-47359", receivers, params);
         } else {
             for (int i = 0; i < messages.size(); i++) {
                 System.out.println(messages.get(i));
@@ -98,7 +99,24 @@ public class MessageServiceImpl extends BaseAppService implements MessageService
     }
 
     @Override
-    public void checkAndSendFeishuMessage(String contextJson, String emailAddress, Long organizationId) {
+    public Message checkAndSendFeishuMessage(String contextJson, String emailAddress, Long organizationId) {
+        String serverCode = "FEIYU";
+        String messageTemplateCode = "DEMO-47359";
+        String lang ="en_US";
 
+        List<Map<String, String>> flyBookUserIdList = new ArrayList<>();
+        Map<String, String> userMap = new HashMap<>();
+        userMap.put("email", emailAddress);
+        flyBookUserIdList.add(userMap);
+
+        FlyBookMsgType textMessage = FlyBookMsgType.TEXT;
+        Map<String, Object> args = new HashMap<>();
+
+        User user = userRepository.selectByPrimaryKey(2280L);
+        args.put("email", user.getEmail());
+        args.put("id", user.getEmployeeNumber());
+        args.put("name", user.getEmployeeName());
+
+        return client.sendFlyBook(organizationId, serverCode, messageTemplateCode, textMessage, lang , flyBookUserIdList, args);
     }
 }

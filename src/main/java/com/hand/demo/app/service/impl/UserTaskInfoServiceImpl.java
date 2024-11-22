@@ -20,13 +20,11 @@ public class UserTaskInfoServiceImpl implements UserTaskService {
 
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
-    private final UserMapper userMapper;
 
     @Autowired
-    public UserTaskInfoServiceImpl(UserRepository userRepository, TaskRepository taskRepository, UserMapper userMapper) {
+    public UserTaskInfoServiceImpl(UserRepository userRepository, TaskRepository taskRepository) {
         this.userRepository = userRepository;
         this.taskRepository = taskRepository;
-        this.userMapper = userMapper;
     }
 
     @Override
@@ -46,28 +44,6 @@ public class UserTaskInfoServiceImpl implements UserTaskService {
 
     @Override
     public List<UserTaskInfoDTO> findList(UserTaskInfoDTO dto) {
-//        List<Task> tasks = taskRepository.selectAll();
-//        List<User> users = userMapper.selectUserTask();
-//
-//        List<UserTaskInfoDTO> userTaskInfos = new ArrayList<>();
-//        for (User user: users)  {
-//            List<Task> userTask = tasks
-//                                    .stream()
-//                                .filter(t -> t.getEmployeeId().equals(user.getId()))
-//                                .collect(Collectors.toList());
-//
-//            if (!userTask.isEmpty()) {
-//                UserTaskInfoDTO userTaskInfoDTO = new UserTaskInfoDTO();
-//                BeanUtils.copyProperties(user, userTaskInfoDTO);
-//                userTaskInfoDTO.setTasks(userTask);
-//                userTaskInfos.add(userTaskInfoDTO);
-//            }
-//        }
-//        return userTaskInfos;
-
-        // your version: search all data (use database server too many resource)
-        // find user only have task( select from user where exists(select
-        // 1 from task where task.empid = user.id ))
         return userRepository.selectUserWithTask(dto);
     }
 }

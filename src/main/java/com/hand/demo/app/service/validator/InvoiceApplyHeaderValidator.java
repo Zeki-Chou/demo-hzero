@@ -4,13 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
+import com.hand.demo.infra.constant.BaseConstant;
 import com.hand.demo.infra.constant.InvApplyHeaderConstant;
+import com.hand.demo.infra.util.Utils;
 import org.hzero.boot.imported.app.service.BatchValidatorHandler;
 import org.hzero.boot.imported.infra.validator.annotation.ImportValidator;
 import org.hzero.boot.imported.infra.validator.annotation.ImportValidators;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 
+import javax.rmi.CORBA.Util;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,24 +34,10 @@ public class InvoiceApplyHeaderValidator extends BatchValidatorHandler {
 
     @Override
     public boolean validate(List<String> data) {
-
-        List<String> applyStatusList = lovAdapter
-                .queryLovValue("DEMO-47359.INV_APPLY_HEADER.APPLY_STATUS", 0L)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
-
-        List<String> invoiceColorList = lovAdapter
-                .queryLovValue("DEMO-47359.INV_APPLY_HEADER.INV_COLOR", 0L)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
-
-        List<String> invoiceTypeList = lovAdapter
-                .queryLovValue("DEMO-47359.INV_APPLY_HEADER.INV_TYPE", 0L)
-                .stream()
-                .map(LovValueDTO::getValue)
-                .collect(Collectors.toList());
+        Long organizationId = 0L;
+        List<String> applyStatusList = Utils.getListLovValues(lovAdapter, BaseConstant.InvApplyHeader.APPLY_STATUS_CODE, organizationId);
+        List<String> invoiceColorList = Utils.getListLovValues(lovAdapter, BaseConstant.InvApplyHeader.INVOICE_COLOR_CODE, organizationId);
+        List<String> invoiceTypeList = Utils.getListLovValues(lovAdapter, BaseConstant.InvApplyHeader.INVOICE_TYPE_CODE, organizationId);
 
         boolean flag = true;
         for (int i = 0; i < data.size(); i++) {
