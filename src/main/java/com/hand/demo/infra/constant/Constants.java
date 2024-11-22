@@ -20,8 +20,10 @@ public class Constants {
     public   static final String INVOICE_HEADER_QUEUE = "invoiceInfo-47360";
     public  static  final  String REMOTE_SERVICE_TENANT_ADMIN_FLAG = "tenantAdminFlag";
     public  static  final  String REMOTE_SERVICE_TENANT_SUPER_ADMIN_FLAG = "superTenantAdminFlag";
-
-    public  static  final  String REMOTE_SERVICE_TENANT_Name = "tenantName";
+    public  static  final  String REMOTE_SERVICE_USER_ID = "id";
+    public  static  final  String REMOTE_SERVICE_TENANT_ID = "organizationId";
+    public  static  final  String REMOTE_SERVICE_TENANT_NAME = "tenantName";
+    public  static  final  String REMOTE_SERVICE_REAL_NAME ="realName";
     private Constants() {}
 
 

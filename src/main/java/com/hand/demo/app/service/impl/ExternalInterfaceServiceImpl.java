@@ -19,6 +19,8 @@ public class ExternalInterfaceServiceImpl implements ExternalInterfaceService {
     public ResponsePayloadDTO invokeInterface(Long organizationId, ExternalInterfaceDTO externalInterfaceDTO){
         RequestPayloadDTO requestPayloadDTO = new RequestPayloadDTO();
         requestPayloadDTO.setRequestParamMap(externalInterfaceDTO.getRequestMap());
+        requestPayloadDTO.setPathVariableMap(externalInterfaceDTO.getPathMap());
+        requestPayloadDTO.setHeaderParamMap(externalInterfaceDTO.getHeaederMap());
         requestPayloadDTO.setPayload(externalInterfaceDTO.getPayload());
         requestPayloadDTO.setMediaType(externalInterfaceDTO.getMediaType());
         return interfaceInvokeSdk.invoke(externalInterfaceDTO.getNamespace(), externalInterfaceDTO.getServerCode(),

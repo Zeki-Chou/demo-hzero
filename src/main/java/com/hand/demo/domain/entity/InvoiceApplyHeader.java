@@ -81,7 +81,7 @@ public class InvoiceApplyHeader extends AuditDomain {
     @ExcelColumn(en = "Apply Header Number", order = 1)
     private String applyHeaderNumber;
 
-    @ApiModelProperty(value = "（need Value Set） D : Draft S : Success F : Fail C : Canceled")
+    @ApiModelProperty(value = "（need Value Set）D : Draft S : Success F : Fail C : Canceled")
     @LovValue(lovCode = Constants.LOV_INV_APPLY_HEADER_APPLY_STATUS)
     @ExcelColumn(en = "Apply Status", order = 2)
     private String applyStatus;

@@ -29,6 +29,7 @@ import springfox.documentation.annotations.ApiIgnore;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -73,7 +74,8 @@ public class InvoiceApplyHeaderController extends BaseController {
     @PostMapping
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public ResponseEntity<List<InvoiceApplyHeaderDTO>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
-        validObject(invoiceApplyHeaders);
+        validObject(invoiceApplyHeaders, InvoiceApplyHeaderDTO.class);
+
 //        SecurityTokenHelper.validTokenIgnoreInsert(invoiceApplyHeaders);
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
         invoiceApplyHeaderService.saveData(invoiceApplyHeaders);
@@ -105,7 +107,7 @@ public class InvoiceApplyHeaderController extends BaseController {
     @ApiOperation(value = "Report")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/report")
-    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @ProcessLovValue(targetField = "body.invoiceApplyHeaderDTOS")
     public ResponseEntity<InvoiceApplyHeaderReportDTO> report(@PathVariable Long organizationId, InvoiceApplyHeaderReportDTO invoiceApplyHeaderReportDTO) {
         InvoiceApplyHeaderReportDTO returnedInvoiceApplyHeaderReportDTO = invoiceApplyHeaderService.report(organizationId, invoiceApplyHeaderReportDTO);
         return Results.success(returnedInvoiceApplyHeaderReportDTO);

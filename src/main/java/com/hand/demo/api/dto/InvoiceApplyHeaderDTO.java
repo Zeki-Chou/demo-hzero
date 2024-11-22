@@ -5,6 +5,7 @@ import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.infra.constant.Constants;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import org.hzero.boot.platform.lov.annotation.LovValue;
 import org.hzero.export.annotation.ExcelColumn;
@@ -25,4 +26,5 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @ExcelColumn(en = "Invoice Apply Line List", order = 12)
     private List<InvoiceApplyLine> invoiceApplyLineList;
     private Boolean tenantAdminFlag;
+    private String lineInvoiceNames;
 }

@@ -11,6 +11,8 @@ import java.util.List;
 @Getter
 @Setter
 public class InvoiceApplyHeaderReportDTO {
+    private Boolean isPopulatingLines;
+    private String userName;
     private String applyHeaderNumberFrom;
     private String applyHeaderNumberTo;
     private Date creationDateFrom;
@@ -20,7 +22,9 @@ public class InvoiceApplyHeaderReportDTO {
     private String tenantName;
     private List<String> applyStatusMeanings;
     private List<String> applyStatuses;
+    private String applyStatusMulti;
     private String invoiceType;
     private String invoiceTypeMeaning;
-    private List<InvoiceApplyHeaderDTO> InvoiceApplyHeaderDTOS;
+    private String invoiceTypeSingle;
+    private List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS;
 }

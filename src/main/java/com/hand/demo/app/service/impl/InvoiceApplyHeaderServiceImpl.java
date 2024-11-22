@@ -13,6 +13,7 @@ import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.lov.adapter.LovAdapter;
+import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.boot.platform.lov.dto.LovDTO;
 import org.hzero.boot.platform.lov.dto.LovValueDTO;
 import org.hzero.core.base.BaseConstants;
@@ -56,7 +57,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     public Page<InvoiceApplyHeaderDTO> selectList(PageRequest pageRequest, InvoiceApplyHeaderDTO invoiceApplyHeaderDTO) {
         Page<InvoiceApplyHeader> page =  PageHelper.doPageAndSort(pageRequest, () -> invoiceApplyHeaderRepository.selectList(invoiceApplyHeaderDTO));
 
-        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = convertHeadersToHeaderDTOS(page.getContent());
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = convertHeadersToHeaderDTOS(page.getContent(),true);
         Page<InvoiceApplyHeaderDTO> convertedPage = new Page<>();
         BeanUtils.copyProperties(page,convertedPage);
         convertedPage.setContent(invoiceApplyHeaderDTOS);
@@ -69,7 +70,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = getHeaderByCache(id);
         if(invoiceApplyHeaderDTO == null) {
             InvoiceApplyHeader invoiceApplyHeader = invoiceApplyHeaderRepository.selectByPrimary(id);
-            invoiceApplyHeaderDTO = convertHeadersToHeaderDTOS(Collections.singletonList(invoiceApplyHeader)).get(0);
+            invoiceApplyHeaderDTO = convertHeadersToHeaderDTOS(Collections.singletonList(invoiceApplyHeader),true).get(0);
             setHeaderByCache(invoiceApplyHeaderDTO);
         }
 
@@ -112,16 +113,17 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             List<Map<String,Object>> applyStatusLoVs = lovAdapter.queryLovData(Constants.LOV_INV_APPLY_HEADER_APPLY_STATUS,organizationId,null,null,null,null);
             List<String> applyStatuses = applyStatusLoVs.stream().filter(lov->applyStatusMeanings.contains(lov.get("meaning").toString())).map(lov->lov.get("value").toString()).collect(Collectors.toList());
             invoiceApplyHeaderReportDTO.setApplyStatuses(applyStatuses);
+            invoiceApplyHeaderReportDTO.setApplyStatusMulti(String.join(",", invoiceApplyHeaderReportDTO.getApplyStatusMeanings()));
         }
         if(invoiceTypeMeaning != null){
             List<Map<String,Object>> invoiceTypeLoVs = lovAdapter.queryLovData(Constants.LOV_INV_APPLY_HEADER_INV_TYPE,organizationId,null,null,null,null);
             String invoiceType = invoiceTypeLoVs.stream().filter(lov -> lov.get("meaning").toString().equals(invoiceTypeMeaning)).map(lov->lov.get("value").toString()).collect(Collectors.toList()).get(0);
             invoiceApplyHeaderReportDTO.setInvoiceType(invoiceType);
+            invoiceApplyHeaderReportDTO.setInvoiceTypeSingle(invoiceApplyHeaderReportDTO.getInvoiceTypeMeaning());
         }
 
         List<InvoiceApplyHeader> invoiceApplyHeaders =  invoiceApplyHeaderRepository.report(invoiceApplyHeaderReportDTO);
-        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = convertHeadersToHeaderDTOS(invoiceApplyHeaders);
-
+        List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = convertHeadersToHeaderDTOS(invoiceApplyHeaders,invoiceApplyHeaderReportDTO.getIsPopulatingLines());
         invoiceApplyHeaderReportDTO.setInvoiceApplyHeaderDTOS(invoiceApplyHeaderDTOS);
         return invoiceApplyHeaderReportDTO;
 
@@ -167,7 +169,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
             invoiceApplyHeaderDTO.setTaxAmount(oldExcludeTaxAmount);
         }
         invoiceApplyHeaderRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(invoiceApplyHeaderDTOS));
-
     }
 
     private void insertLines(List<InvoiceApplyLine> invoiceApplyLines){
@@ -199,22 +200,6 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         redisHelper.delKeys(redisKeys);
     }
 
-    private void populateLines(List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS){
-        Map<String,InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOMap = new HashMap<>();
-        Condition condition = new Condition(InvoiceApplyLine.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        for(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO: invoiceApplyHeaderDTOS){
-            invoiceApplyHeaderDTO.setInvoiceApplyLineList(new ArrayList<>());
-            String headerId = invoiceApplyHeaderDTO.getApplyHeaderId().toString();
-            invoiceApplyHeaderDTOMap.put(headerId,invoiceApplyHeaderDTO);
-            criteria.orEqualTo(InvoiceApplyLine.FIELD_APPLY_HEADER_ID,headerId);
-        }
-        List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.selectByCondition(condition);
-
-        for(InvoiceApplyLine invoiceApplyLine:invoiceApplyLines){
-            invoiceApplyHeaderDTOMap.get(invoiceApplyLine.getApplyHeaderId().toString()).getInvoiceApplyLineList().add(invoiceApplyLine);
-        }
-    }
     public void addAmounts(List<InvoiceApplyHeaderDTO> invoiceApplyHeadersDTOS){
         for(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO:invoiceApplyHeadersDTOS){
             if(invoiceApplyHeaderDTO.getTotalAmount()==null) {
@@ -305,18 +290,35 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         }
     }
 
-    private List<InvoiceApplyHeaderDTO> convertHeadersToHeaderDTOS(List<InvoiceApplyHeader> invoiceApplyHeaders){
+    private List<InvoiceApplyHeaderDTO> convertHeadersToHeaderDTOS(List<InvoiceApplyHeader> invoiceApplyHeaders, Boolean isPopulatingLines){
         List<InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOS = new ArrayList<>();
+        Map<String,InvoiceApplyHeaderDTO> invoiceApplyHeaderDTOMap = new HashMap<>();
+        Condition condition = new Condition(InvoiceApplyLine.class);
+        Condition.Criteria criteria = condition.createCriteria();
         for(InvoiceApplyHeader invoiceApplyHeader: invoiceApplyHeaders){
             InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = new InvoiceApplyHeaderDTO();
             BeanUtils.copyProperties(invoiceApplyHeader,invoiceApplyHeaderDTO);
             invoiceApplyHeaderDTOS.add(invoiceApplyHeaderDTO);
+
+            invoiceApplyHeaderDTO.setInvoiceApplyLineList(new ArrayList<>());
+            String headerId = invoiceApplyHeaderDTO.getApplyHeaderId().toString();
+            invoiceApplyHeaderDTOMap.put(headerId,invoiceApplyHeaderDTO);
+            criteria.orEqualTo(InvoiceApplyLine.FIELD_APPLY_HEADER_ID,headerId);
         }
-        populateLines(invoiceApplyHeaderDTOS);
+
+        List<InvoiceApplyLine> invoiceApplyLines = invoiceApplyLineRepository.selectByCondition(condition);
+        for(InvoiceApplyLine invoiceApplyLine:invoiceApplyLines){
+            InvoiceApplyHeaderDTO invoiceApplyHeaderDTO = invoiceApplyHeaderDTOMap.get(invoiceApplyLine.getApplyHeaderId().toString());
+            String lineInvoiceNames = invoiceApplyHeaderDTO.getLineInvoiceNames()==null?invoiceApplyLine.getInvoiceName():invoiceApplyHeaderDTO.getLineInvoiceNames()+","+invoiceApplyLine.getInvoiceName();
+            invoiceApplyHeaderDTO.setLineInvoiceNames(lineInvoiceNames);
+            if(isPopulatingLines) {
+                invoiceApplyHeaderDTO.getInvoiceApplyLineList().add(invoiceApplyLine);
+            }
+        }
         return  invoiceApplyHeaderDTOS;
     }
-    public void validate(List<InvoiceApplyHeader> invoiceApplyHeaders, LovAdapter lovAdapter, InvoiceApplyHeaderRepository invoiceApplyHeaderRepository){
 
+    public void validate(List<InvoiceApplyHeader> invoiceApplyHeaders, LovAdapter lovAdapter, InvoiceApplyHeaderRepository invoiceApplyHeaderRepository){
         List<LovValueDTO> applyStatusLov = lovAdapter.queryLovValue(Constants.LOV_INV_APPLY_HEADER_APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> invTypeLov = lovAdapter.queryLovValue(Constants.LOV_INV_APPLY_HEADER_INV_TYPE, BaseConstants.DEFAULT_TENANT_ID);
         List<LovValueDTO> invColorLov = lovAdapter.queryLovValue(Constants.LOV_INV_APPLY_HEADER_INV_COLOR, BaseConstants.DEFAULT_TENANT_ID);

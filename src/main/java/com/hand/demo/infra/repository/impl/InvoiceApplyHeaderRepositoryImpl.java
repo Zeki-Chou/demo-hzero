@@ -40,7 +40,8 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     public List<InvoiceApplyHeader> report(InvoiceApplyHeaderReportDTO invoiceApplyHeaderReportDTO) {
         String userJson = iamRemoteService.selectSelf().getBody();
         JSONObject jsonObject= new JSONObject(userJson);
-        invoiceApplyHeaderReportDTO.setTenantName(jsonObject.getString(Constants.REMOTE_SERVICE_TENANT_Name));
+        invoiceApplyHeaderReportDTO.setTenantName(jsonObject.getString(Constants.REMOTE_SERVICE_TENANT_NAME));
+        invoiceApplyHeaderReportDTO.setUserName(jsonObject.getString(Constants.REMOTE_SERVICE_REAL_NAME));
         return invoiceApplyHeaderMapper.report(invoiceApplyHeaderReportDTO);
     }
 
@@ -61,13 +62,25 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
         JSONObject jsonObject= new JSONObject(userJson);
 
         boolean tenantAdminFlag = false;
+        Long organizationId = null;
+        Long userId = null;
         if (jsonObject.has(Constants.REMOTE_SERVICE_TENANT_ADMIN_FLAG)){
             tenantAdminFlag=jsonObject.getBoolean(Constants.REMOTE_SERVICE_TENANT_ADMIN_FLAG);
         } else if (jsonObject.has(Constants.REMOTE_SERVICE_TENANT_SUPER_ADMIN_FLAG)) {
             tenantAdminFlag=jsonObject.getBoolean(Constants.REMOTE_SERVICE_TENANT_SUPER_ADMIN_FLAG);
         }
 
+        if(jsonObject.has(Constants.REMOTE_SERVICE_TENANT_ID)){
+            organizationId=jsonObject.getLong(Constants.REMOTE_SERVICE_TENANT_ID);
+        }
+
+        if(jsonObject.has(Constants.REMOTE_SERVICE_USER_ID)){
+            userId= jsonObject.getLong(Constants.REMOTE_SERVICE_USER_ID);
+        }
+
         invoiceApplyHeaderDTO.setTenantAdminFlag(tenantAdminFlag);
+        invoiceApplyHeaderDTO.setTenantId(organizationId);
+        invoiceApplyHeaderDTO.setCreatedBy(userId);
     }
 }
 

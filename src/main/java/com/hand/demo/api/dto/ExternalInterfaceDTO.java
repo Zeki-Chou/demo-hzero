@@ -12,6 +12,8 @@ public class ExternalInterfaceDTO {
     private String serverCode;
     private String interfaceCode;
     private Map<String,String> requestMap;
+    private Map<String,String> pathMap;
+    private Map<String,String> heaederMap;
     private String payload;
     private String mediaType;
 }
