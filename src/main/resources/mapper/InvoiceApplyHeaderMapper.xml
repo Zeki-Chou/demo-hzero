@@ -34,10 +34,10 @@
         iah.tax_amount,
         iah.tenant_id,
         iah.total_amount,
-        iah.creation_date, 
-        iah.created_by, 
-        iah.last_updated_by, 
-        iah.last_update_date, 
+        iah.creation_date,
+        iah.created_by,
+        iah.last_updated_by,
+        iah.last_update_date,
         iah.object_version_number
     </sql>
 
@@ -144,6 +144,73 @@
             </if>
         </where>
     </select>
+
+    <select id="selectHeaderInfo" resultType="com.hand.demo.api.dto.InvoiceApplyHeaderDTO">
+        SELECT
+        iah.apply_header_number AS applyHeaderNumber,
+        iah.apply_status AS applyStatus,
+        iah.exclude_tax_amount AS excludeTaxAmount,
+        iah.invoice_color AS invoiceColor,
+        iah.invoice_type AS invoiceType,
+        iah.submit_time AS submitTime,
+        iah.tax_amount AS taxAmount,
+        iah.creation_date AS creation_date,
+        iah.total_amount AS totalAmount,
+        GROUP_CONCAT(ial.invoice_name SEPARATOR ', ') AS invoiceName
+        FROM t47355_invoice_apply_header iah
+        LEFT JOIN 47355_invoice_apply_line ial
+        ON iah.apply_header_id = ial.apply_header_id
+        <where>
+            iah.del_flag = 0
+            <if test="invoiceApplyNumberFrom != null and invoiceApplyNumberTo != null">
+                AND iah.apply_header_number BETWEEN #{invoiceApplyNumberFrom} AND #{invoiceApplyNumberTo}
+            </if>
+            <if test="invoiceApplyNumberFrom != null and invoiceApplyNumberTo == null">
+                AND iah.apply_header_number &gt;= #{invoiceApplyNumberFrom}
+            </if>
+            <if test="invoiceApplyNumberFrom == null and invoiceApplyNumberTo != null">
+                AND iah.apply_header_number &lt;= #{invoiceApplyNumberTo}
+            </if>
+            <if test="invoiceCreationDateFrom != null and invoiceCreationDateTo != null">
+                AND iah.creation_date BETWEEN CONCAT(#{invoiceCreationDateFrom}, ' 00:00:00') AND CONCAT(#{invoiceCreationDateTo}, ' 23:59:59')
+            </if>
+            <if test="invoiceCreationDateFrom != null and invoiceCreationDateTo == null">
+                AND iah.creation_date &gt;= CONCAT(#{invoiceCreationDateFrom}, ' 00:00:00')
+            </if>
+            <if test="invoiceCreationDateFrom == null and invoiceCreationDateTo != null">
+                AND iah.creation_date &lt;= CONCAT(#{invoiceCreationDateTo}, ' 23:59:59')
+            </if>
+            <if test="submitTimeFrom != null and submitTimeTo != null">
+                AND iah.submit_time BETWEEN CONCAT(#{submitTimeFrom}, ' 00:00:00') AND CONCAT(#{submitTimeTo}, ' 23:59:59')
+            </if>
+            <if test="submitTimeFrom != null and submitTimeTo == null">
+                AND iah.submit_time &gt;= CONCAT(#{submitTimeFrom}, ' 00:00:00')
+            </if>
+            <if test="submitTimeFrom == null and submitTimeTo != null">
+                AND iah.submit_time &lt;= CONCAT(#{submitTimeTo}, ' 23:59:59')
+            </if>
+            <if test="applyStatus != null and applyStatus.size > 0">
+                AND iah.apply_status IN
+                <foreach item="status" collection="applyStatus" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+            <if test="invoiceType != null">
+                AND iah.invoice_type = #{invoiceType}
+            </if>
+        </where>
+        GROUP BY
+        iah.apply_header_id,
+        iah.apply_header_number,
+        iah.apply_status,
+        iah.exclude_tax_amount,
+        iah.invoice_color,
+        iah.invoice_type,
+        iah.submit_time,
+        iah.tax_amount,
+        iah.total_amount
+    </select>
+
 
     <update id="softDeleteById">
         UPDATE t47355_invoice_apply_header

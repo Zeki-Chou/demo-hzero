@@ -1,6 +1,7 @@
 package com.hand.demo.infra.mapper;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
 import io.choerodon.mybatis.common.BaseMapper;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 
@@ -22,5 +23,7 @@ public interface InvoiceApplyHeaderMapper extends BaseMapper<InvoiceApplyHeader>
     List<InvoiceApplyHeader> selectList(InvoiceApplyHeaderDTO invoiceApplyHeader);
 
     void softDeleteById(Long applyHeaderId);
+
+    List<InvoiceApplyHeaderDTO> selectHeaderInfo(InvoiceApplyInfoDTO infoDTO);
 }
 

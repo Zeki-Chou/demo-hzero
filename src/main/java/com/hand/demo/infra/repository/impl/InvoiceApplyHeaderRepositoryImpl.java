@@ -1,6 +1,7 @@
 package com.hand.demo.infra.repository.impl;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.stereotype.Component;
@@ -9,6 +10,7 @@ import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import com.hand.demo.infra.mapper.InvoiceApplyHeaderMapper;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,6 +43,11 @@ public class InvoiceApplyHeaderRepositoryImpl extends BaseRepositoryImpl<Invoice
     @Override
     public void softDeleteById(Long applyHeaderId) {
         invoiceApplyHeaderMapper.softDeleteById(applyHeaderId);
+    }
+
+    @Override
+    public List<InvoiceApplyHeaderDTO> selectHeaderInfo(InvoiceApplyInfoDTO infoDTO) {
+        return invoiceApplyHeaderMapper.selectHeaderInfo(infoDTO);
     }
 
 }

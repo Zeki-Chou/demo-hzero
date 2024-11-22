@@ -1,6 +1,7 @@
 package com.hand.demo.domain.repository;
 
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
+import com.hand.demo.api.dto.InvoiceApplyInfoDTO;
 import org.hzero.mybatis.base.BaseRepository;
 import com.hand.demo.domain.entity.InvoiceApplyHeader;
 
@@ -30,5 +31,7 @@ public interface InvoiceApplyHeaderRepository extends BaseRepository<InvoiceAppl
     InvoiceApplyHeader selectByPrimary(Long applyHeaderId);
 
     void softDeleteById(Long applyHeaderId);
+
+    List<InvoiceApplyHeaderDTO> selectHeaderInfo(InvoiceApplyInfoDTO infoDTO);
 
 }

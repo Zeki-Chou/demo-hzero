@@ -1,6 +1,7 @@
 package com.hand.demo.infra.feign.fallback;
 
 import com.hand.demo.api.dto.CalculatorRequest;
+import com.hand.demo.api.dto.RezaListHeaderRequestDTO;
 import com.hand.demo.api.dto.TranslationRequest;
 import com.hand.demo.infra.feign.ExternalTranslationService;
 import lombok.AllArgsConstructor;
@@ -32,5 +33,15 @@ public class ExternalTranslationServiceImpl implements ExternalTranslationServic
         payload.setPayload(request.getParam());
         payload.setMediaType("application/soap+xml");
         return interfaceInvokeSdk.invoke(request.getNamespace(), request.getServerCode(), request.getInterfaceCode(), payload);
+    }
+
+    @Override
+    public ResponsePayloadDTO invokeRezaInterface(RezaListHeaderRequestDTO requestDTO) {
+        RequestPayloadDTO payload = new RequestPayloadDTO();
+        payload.setPayload(requestDTO.getJsonString());
+        payload.setMediaType("application/json");
+        payload.setHeaderParamMap(requestDTO.getRequestParam());
+//        payload.setHeaderParamMap()
+        return interfaceInvokeSdk.invoke(requestDTO.getNamespace(), requestDTO.getServerCode(), requestDTO.getInterfaceCode(), payload);
     }
 }

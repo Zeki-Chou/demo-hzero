@@ -198,113 +198,169 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Override
     public InvoiceApplyInfoDTO getInvoiceApplyInfo(InvoiceApplyInfoDTO infoDTO) {
         JSONObject jsonObject = getIamRemoteObject();
-        Long tenantId = jsonObject.getLong("tenantId");
         String tenantName = jsonObject.getString("tenantName");
-        Condition condition = new Condition(InvoiceApplyHeader.class);
-        Condition.Criteria criteria = condition.createCriteria();
-        criteria.andEqualTo(InvoiceApplyHeader.FIELD_TENANT_ID, tenantId);
+        infoDTO.setTenantName(tenantName);
 
-        setDateCondition(criteria, InvoiceApplyHeader.FIELD_CREATION_DATE, infoDTO.getInvoiceCreationDateFrom(), infoDTO.getInvoiceCreationDateTo());
-        setDateCondition(criteria, InvoiceApplyHeader.FIELD_SUBMIT_TIME, infoDTO.getSubmitTimeFrom(), infoDTO.getSubmitTimeTo());
-        setApplyNumberCondition(criteria, InvoiceApplyHeader.FIELD_APPLY_HEADER_NUMBER, infoDTO.getInvoiceApplyNumberFrom(), infoDTO.getInvoiceApplyNumberTo());
-        setApplyStatusCondition(criteria, infoDTO.getApplyStatus());
-        setInvoiceTypeCondition(criteria, infoDTO.getInvoiceType());
+        List<String> applyStatuses = infoDTO.getApplyStatus();
+        if (applyStatuses != null && !applyStatuses.isEmpty()) {
+            List<String> newApplyStatuses = getApplyStatusCondition(applyStatuses);
+            if (newApplyStatuses != null && !newApplyStatuses.isEmpty()) {
+                infoDTO.setApplyStatus(newApplyStatuses);
+            }
+        }
 
-        List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderRepository.selectByCondition(condition);
+        String invoiceType = infoDTO.getInvoiceType();
+        if (invoiceType != null && !invoiceType.isEmpty()) {
+            String newInvoiceType = getInvoiceTypeCondition(invoiceType);
+            infoDTO.setInvoiceType(newInvoiceType);
+        }
 
-        List<InvoiceApplyHeaderDTO> headerDTOs = invoiceApplyHeaders.stream()
+        List<InvoiceApplyHeaderDTO> headerDTOS = invoiceApplyHeaderRepository.selectHeaderInfo(infoDTO);
+
+        List<InvoiceApplyHeaderDTO> headerDTOs = headerDTOS.stream()
                 .map(header -> {
                     InvoiceApplyHeaderDTO headerDTO = new InvoiceApplyHeaderDTO();
                     BeanUtils.copyProperties(header, headerDTO);
                     return headerDTO;
                 })
                 .collect(Collectors.toList());
-        infoDTO.setTenantName(tenantName);
+
         infoDTO.setInvoiceApplyHeaderList(headerDTOs);
-
-        Set<Long> applyHeaderIds = headerDTOs.stream().map(InvoiceApplyHeader::getApplyHeaderId).collect(Collectors.toSet());
-        Condition applyLineCondition = new Condition(InvoiceApplyLine.class);
-        Condition.Criteria applyLineCriteria = applyLineCondition.createCriteria();
-        applyLineCriteria.andIn(InvoiceApplyLine.FIELD_APPLY_HEADER_ID, applyHeaderIds);
-
-        if (!applyHeaderIds.isEmpty()) {
-            List<InvoiceApplyLine> applyLines = invoiceApplyLineRepository.selectByCondition(applyLineCondition);
-            Map<Long, List<InvoiceApplyLine>> lineByHeaderIds = applyLines.stream().collect(Collectors.groupingBy(InvoiceApplyLine::getApplyHeaderId));
-            for(InvoiceApplyHeaderDTO applyHeaderDTO : headerDTOs) {
-                List<InvoiceApplyLine> lines = lineByHeaderIds.get(applyHeaderDTO.getApplyHeaderId());
-                if (lines != null && !lines.isEmpty()) {
-                    String invoiceNames = lines.stream().map(InvoiceApplyLine::getInvoiceName).collect(Collectors.joining(", "));
-                    applyHeaderDTO.setInvoiceName(invoiceNames);
-                }
-            }
-        }
+        infoDTO.setApplyStatus(applyStatuses);
+        infoDTO.setInvoiceType(invoiceType);
 
         return infoDTO;
-
     }
+//    @Override
+//    public InvoiceApplyInfoDTO getInvoiceApplyInfo(InvoiceApplyInfoDTO infoDTO) {
+//        JSONObject jsonObject = getIamRemoteObject();
+//        Long tenantId = jsonObject.getLong("tenantId");
+//        String tenantName = jsonObject.getString("tenantName");
+//        Condition condition = new Condition(InvoiceApplyHeader.class);
+//        Condition.Criteria criteria = condition.createCriteria();
+//        criteria.andEqualTo(InvoiceApplyHeader.FIELD_TENANT_ID, tenantId);
+//
+//        setDateCondition(criteria, InvoiceApplyHeader.FIELD_CREATION_DATE, infoDTO.getInvoiceCreationDateFrom(), infoDTO.getInvoiceCreationDateTo());
+//        setDateCondition(criteria, InvoiceApplyHeader.FIELD_SUBMIT_TIME, infoDTO.getSubmitTimeFrom(), infoDTO.getSubmitTimeTo());
+//        setApplyNumberCondition(criteria, InvoiceApplyHeader.FIELD_APPLY_HEADER_NUMBER, infoDTO.getInvoiceApplyNumberFrom(), infoDTO.getInvoiceApplyNumberTo());
+//        setApplyStatusCondition(criteria, infoDTO.getApplyStatus());
+//        setInvoiceTypeCondition(criteria, infoDTO.getInvoiceType());
+//
+//        List<InvoiceApplyHeader> invoiceApplyHeaders = invoiceApplyHeaderRepository.selectByCondition(condition);
+//
+//        List<InvoiceApplyHeaderDTO> headerDTOs = invoiceApplyHeaders.stream()
+//                .map(header -> {
+//                    InvoiceApplyHeaderDTO headerDTO = new InvoiceApplyHeaderDTO();
+//                    BeanUtils.copyProperties(header, headerDTO);
+//                    return headerDTO;
+//                })
+//                .collect(Collectors.toList());
+//        infoDTO.setTenantName(tenantName);
+//        infoDTO.setInvoiceApplyHeaderList(headerDTOs);
+//
+//        Set<Long> applyHeaderIds = headerDTOs.stream().map(InvoiceApplyHeader::getApplyHeaderId).collect(Collectors.toSet());
+//        Condition applyLineCondition = new Condition(InvoiceApplyLine.class);
+//        Condition.Criteria applyLineCriteria = applyLineCondition.createCriteria();
+//        applyLineCriteria.andIn(InvoiceApplyLine.FIELD_APPLY_HEADER_ID, applyHeaderIds);
+//
+//        if (!applyHeaderIds.isEmpty()) {
+//            List<InvoiceApplyLine> applyLines = invoiceApplyLineRepository.selectByCondition(applyLineCondition);
+//            Map<Long, List<InvoiceApplyLine>> lineByHeaderIds = applyLines.stream().collect(Collectors.groupingBy(InvoiceApplyLine::getApplyHeaderId));
+//            for(InvoiceApplyHeaderDTO applyHeaderDTO : headerDTOs) {
+//                List<InvoiceApplyLine> lines = lineByHeaderIds.get(applyHeaderDTO.getApplyHeaderId());
+//                if (lines != null && !lines.isEmpty()) {
+//                    String invoiceNames = lines.stream().map(InvoiceApplyLine::getInvoiceName).collect(Collectors.joining(", "));
+//                    applyHeaderDTO.setInvoiceName(invoiceNames);
+//                }
+//            }
+//        }
+//
+//        return infoDTO;
+//    }
 
     private Date convertToDate(LocalDateTime date) {
         return Date.from(date.atZone(ZoneId.systemDefault()).toInstant());
     }
 
-    private void setDateCondition(Condition.Criteria criteria, String fieldName, LocalDate from, LocalDate to) {
-        if (from != null && to != null) {
-            LocalDateTime newFrom = from.atStartOfDay();
-            LocalDateTime newTo = to.atTime(LocalTime.MAX);
-            criteria.andBetween(fieldName, convertToDate(newFrom), convertToDate(newTo));
-        } else if (from != null) {
-            LocalDateTime newFrom = from.atStartOfDay();
-            criteria.andGreaterThanOrEqualTo(fieldName, convertToDate(newFrom));
-        } else if (to != null) {
-            LocalDateTime newTo = to.atTime(LocalTime.MAX);
-            criteria.andLessThanOrEqualTo(fieldName, convertToDate(newTo));
-        }
-    }
+//    private void setDateCondition(Condition.Criteria criteria, String fieldName, LocalDate from, LocalDate to) {
+//        if (from != null && to != null) {
+//            LocalDateTime newFrom = from.atStartOfDay();
+//            LocalDateTime newTo = to.atTime(LocalTime.MAX);
+//            criteria.andBetween(fieldName, convertToDate(newFrom), convertToDate(newTo));
+//        } else if (from != null) {
+//            LocalDateTime newFrom = from.atStartOfDay();
+//            criteria.andGreaterThanOrEqualTo(fieldName, convertToDate(newFrom));
+//        } else if (to != null) {
+//            LocalDateTime newTo = to.atTime(LocalTime.MAX);
+//            criteria.andLessThanOrEqualTo(fieldName, convertToDate(newTo));
+//        }
+//    }
+//
+//    private void setApplyNumberCondition(Condition.Criteria criteria, String fieldName, String from, String to) {
+//        if (from != null && to != null) {
+//            criteria.andBetween(fieldName, from, to);
+//        } else if (from != null) {
+//            criteria.andGreaterThanOrEqualTo(fieldName, from);
+//        } else if (to != null) {
+//            criteria.andLessThanOrEqualTo(fieldName, to);
+//        }
+//    }
 
-    private void setApplyNumberCondition(Condition.Criteria criteria, String fieldName, String from, String to) {
-        if (from != null && to != null) {
-            criteria.andBetween(fieldName, from, to);
-        } else if (from != null) {
-            criteria.andGreaterThanOrEqualTo(fieldName, from);
-        } else if (to != null) {
-            criteria.andLessThanOrEqualTo(fieldName, to);
-        }
-    }
-
-    private void setApplyStatusCondition(Condition.Criteria criteria, List<String> applyStatus) {
+    private List<String> getApplyStatusCondition(List<String> applyStatus) {
         if (applyStatus != null && !applyStatus.isEmpty()) {
-//            valueSetMeaningValidation(applyStatus);
             List<LovValueDTO> lovList = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
-
-            Set<String> valueSets = new HashSet<>();
-
-            for (String statusMeaning : applyStatus) {
-                for (LovValueDTO lov : lovList) {
-                    if (statusMeaning.equals(lov.getMeaning())) {
-                        valueSets.add(lov.getValue());
-                        break;
-                    }
-                }
-            }
-
-            if (!valueSets.isEmpty()) {
-                criteria.andIn(InvoiceApplyHeader.FIELD_APPLY_STATUS, valueSets);
-            }
+            return lovList.stream().filter(lov -> applyStatus.contains(lov.getMeaning())).map(LovValueDTO::getValue).collect(Collectors.toList());
         }
+        return null;
     }
 
-    private void setInvoiceTypeCondition(Condition.Criteria criteria, String invoiceType) {
+//    private void setApplyStatusCondition(Condition.Criteria criteria, List<String> applyStatus) {
+//        if (applyStatus != null && !applyStatus.isEmpty()) {
+////            valueSetMeaningValidation(applyStatus);
+//            List<LovValueDTO> lovList = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_APPLY_STATUS, BaseConstants.DEFAULT_TENANT_ID);
+//
+//            Set<String> valueSets = new HashSet<>();
+//
+//            for (String statusMeaning : applyStatus) {
+//                for (LovValueDTO lov : lovList) {
+//                    if (statusMeaning.equals(lov.getMeaning())) {
+//                        valueSets.add(lov.getValue());
+//                        break;
+//                    }
+//                }
+//            }
+//
+//            if (!valueSets.isEmpty()) {
+//                criteria.andIn(InvoiceApplyHeader.FIELD_APPLY_STATUS, valueSets);
+//            }
+//        }
+//    }
+
+    private String getInvoiceTypeCondition(String invoiceType) {
         if(invoiceType != null) {
             List<LovValueDTO> lovList = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE, BaseConstants.DEFAULT_TENANT_ID);
 
             for (LovValueDTO lov : lovList) {
                 if(invoiceType.equals(lov.getMeaning())) {
-                    criteria.andEqualTo(InvoiceApplyHeader.FIELD_INVOICE_TYPE, lov.getValue());
-                    break;
+                    return lov.getValue();
                 }
             }
         }
+        return null;
     }
+
+//    private void setInvoiceTypeCondition(Condition.Criteria criteria, String invoiceType) {
+//        if(invoiceType != null) {
+//            List<LovValueDTO> lovList = lovAdapter.queryLovValue(InvoiceApplyConstants.INV_APPLY_HEADER_INV_TYPE, BaseConstants.DEFAULT_TENANT_ID);
+//
+//            for (LovValueDTO lov : lovList) {
+//                if(invoiceType.equals(lov.getMeaning())) {
+//                    criteria.andEqualTo(InvoiceApplyHeader.FIELD_INVOICE_TYPE, lov.getValue());
+//                    break;
+//                }
+//            }
+//        }
+//    }
 
 
     private void valueSetValidation(List<InvoiceApplyHeaderDTO> dtos) {
