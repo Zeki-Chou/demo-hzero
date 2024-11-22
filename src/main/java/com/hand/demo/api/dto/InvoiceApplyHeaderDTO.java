@@ -8,6 +8,7 @@ import io.choerodon.mybatis.annotation.VersionAudit;
 import io.swagger.annotations.ApiModel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.hzero.export.annotation.ExcelColumn;
 import org.hzero.export.annotation.ExcelSheet;
 import org.json.JSONObject;

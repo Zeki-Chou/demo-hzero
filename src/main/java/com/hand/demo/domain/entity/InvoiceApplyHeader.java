@@ -21,6 +21,7 @@ import java.util.Date;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.hzero.boot.platform.lov.annotation.LovValue;
 import org.hzero.export.annotation.ExcelColumn;
 
@@ -38,6 +39,7 @@ import org.hzero.export.annotation.ExcelColumn;
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "T47356_invoice_apply_header")
+@Accessors(chain = true)
 public class InvoiceApplyHeader extends AuditDomain {
     private static final long serialVersionUID = 211828222303523875L;
 
