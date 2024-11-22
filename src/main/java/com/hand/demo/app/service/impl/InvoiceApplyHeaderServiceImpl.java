@@ -1,6 +1,7 @@
 package com.hand.demo.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.hand.demo.api.dto.InfoHeaderDTO;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.dto.InvoiceHeaderReportDTO;
 import com.hand.demo.app.service.InvoiceApplyLineService;
@@ -10,7 +11,6 @@ import com.hand.demo.infra.constant.InvHeaderConstant;
 import com.hand.demo.infra.constant.TaskConstant;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
-import io.choerodon.core.oauth.CustomUserDetails;
 import io.choerodon.core.oauth.DetailsHelper;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -30,7 +30,6 @@ import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -115,7 +114,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     @Transactional(rollbackFor = Exception.class)
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
     public void saveData(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
-        validationOfHeader(invoiceApplyHeaders);
+//        validationOfHeader(invoiceApplyHeaders);
 
         Map<String, String> variableMap = new HashMap<>();
         Map<String, List<InvoiceApplyLine>> stringListMap = new HashMap<>();
@@ -341,6 +340,73 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
         if (errorMessages.length() > 0) {
             throw new CommonException(finalErrorMessages);
         }
+    }
+
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @Override
+    public InfoHeaderDTO validationOfHeaderLowCode(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
+        List<LovValueDTO> validApplyTypesList = lovAdapter.queryLovValue(InvHeaderConstant.APPLY_TYPE_CODE,
+                Long.valueOf(TaskConstant.TENANT_ID));
+        List<LovValueDTO> validColorTypesList = lovAdapter.queryLovValue(InvHeaderConstant.INVOICE_COLOR_CODE,
+                Long.valueOf(TaskConstant.TENANT_ID));
+        List<LovValueDTO> validStatusTypesList = lovAdapter.queryLovValue(InvHeaderConstant.APPLY_STATUS_CODE,
+                Long.valueOf(TaskConstant.TENANT_ID));
+
+        List<String> validColorTypes = validColorTypesList.stream()
+                .map(LovValueDTO::getValue)
+                .collect(Collectors.toList());
+
+        List<String> validApplyTypes = validApplyTypesList.stream()
+                .map(LovValueDTO::getValue)
+                .collect(Collectors.toList());
+
+        List<String> validStatusTypes = validStatusTypesList.stream()
+                .map(LovValueDTO::getValue)
+                .collect(Collectors.toList());
+
+        StringBuilder errorMessages = new StringBuilder();
+        InfoHeaderDTO infoHeaderDTO = new InfoHeaderDTO();
+//        for (int i = 0; i < invoiceApplyHeaders.size(); i++) {
+        for (InvoiceApplyHeaderDTO invoiceApplyHeader : invoiceApplyHeaders) {
+            StringBuilder lineError = new StringBuilder();
+
+            if (!validColorTypes.contains(invoiceApplyHeader.getInvoiceColor())) {
+//                lineError.append("Invoice color: ").append(invoiceApplyHeader.getInvoiceColor()).append(", ");
+                invoiceApplyHeader.setErrorMsg(String.valueOf(lineError.append("Invoice color: ")
+                        .append(invoiceApplyHeader.getInvoiceColor()).append(", ")));
+            }
+            if (!validApplyTypes.contains(invoiceApplyHeader.getInvoiceType())) {
+//                lineError.append("Invoice Type: ").append(invoiceApplyHeader.getInvoiceType()).append(", ");
+                invoiceApplyHeader.setErrorMsg(String.valueOf(lineError.append("Invoice Type: ")
+                        .append(invoiceApplyHeader.getInvoiceType()).append(", ")));
+            }
+            if (!validStatusTypes.contains(invoiceApplyHeader.getApplyStatus())) {
+//                lineError.append("Apply status: ").append(invoiceApplyHeader.getApplyStatus()).append(", ");
+                invoiceApplyHeader.setErrorMsg(String.valueOf( lineError.append("Apply status: ")
+                        .append(invoiceApplyHeader.getApplyStatus()).append(", ")));
+            }
+
+            if (lineError.length() > 0) {
+                errorMessages.append(lineError.append("\n"));
+            }
+        }
+
+        infoHeaderDTO.setErrorMsgList(
+                invoiceApplyHeaders.stream()
+                        .filter(header -> header.getErrorMsg() != null)
+                        .collect(Collectors.toList())
+        );
+        infoHeaderDTO.setErrorMsg(errorMessages.toString());
+        if (errorMessages.length() == 0 ) {
+            infoHeaderDTO.setSuccessMsg("Success");
+        }
+
+//        String finalErrorMessages = errorMessages.toString();
+//        if (errorMessages.length() > 0) {
+//            throw new CommonException(finalErrorMessages);
+//        }
+
+        return infoHeaderDTO;
     }
 
     private InvoiceApplyHeaderDTO changeToDTO(InvoiceApplyHeader invoiceApplyHeaderDTO) {

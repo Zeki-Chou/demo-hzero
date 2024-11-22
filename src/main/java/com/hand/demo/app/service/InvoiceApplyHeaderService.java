@@ -1,9 +1,12 @@
 package com.hand.demo.app.service;
 
+import com.hand.demo.api.dto.InfoHeaderDTO;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.dto.InvoiceHeaderReportDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
+import org.hzero.core.base.BaseConstants;
 
 import java.util.List;
 
@@ -36,5 +39,7 @@ public interface InvoiceApplyHeaderService {
     InvoiceApplyHeaderDTO detail(Long id);
 
     InvoiceHeaderReportDTO detailReportExcel(InvoiceApplyHeaderDTO invoiceApplyHeaderDTO, Long organizationId);
+
+    InfoHeaderDTO validationOfHeaderLowCode(List<InvoiceApplyHeaderDTO> invoiceApplyHeaders);
 }
 

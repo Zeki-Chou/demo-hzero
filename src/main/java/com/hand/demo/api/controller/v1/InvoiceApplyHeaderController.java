@@ -1,5 +1,6 @@
 package com.hand.demo.api.controller.v1;
 
+import com.hand.demo.api.dto.InfoHeaderDTO;
 import com.hand.demo.api.dto.InvoiceApplyHeaderDTO;
 import com.hand.demo.api.dto.InvoiceHeaderReportDTO;
 import io.choerodon.core.domain.Page;
@@ -131,5 +132,14 @@ public class InvoiceApplyHeaderController extends BaseController {
         return Results.success(list);
     }
 
+    @ApiOperation(value = "Validation Low Code")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @PostMapping("validation")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    public ResponseEntity<InfoHeaderDTO> validation(
+            @PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
+        InfoHeaderDTO result = invoiceApplyHeaderService.validationOfHeaderLowCode(invoiceApplyHeaders); // Call the validation method
+        return ResponseEntity.ok(result);
+    }
 }
 

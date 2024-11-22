@@ -5,6 +5,7 @@ import com.hand.demo.domain.entity.InvoiceApplyLine;
 import com.hand.demo.infra.constant.InvHeaderConstant;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.hzero.export.annotation.ExcelColumn;
 import org.hzero.export.annotation.ExcelSheet;
 
@@ -15,6 +16,7 @@ import java.util.List;
 @Getter
 @Setter
 @ExcelSheet(en = "Invoice Apply Header")
+@Accessors(chain = true)
 public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     @ExcelColumn(order = 20, child = true)
     private List<InvoiceApplyLine> invoiceApplyLines;
@@ -39,4 +41,5 @@ public class InvoiceApplyHeaderDTO extends InvoiceApplyHeader {
     private String userIamName;
     private String tenantName;
     private String submitTimeString;
+    private String errorMsg;
 }
