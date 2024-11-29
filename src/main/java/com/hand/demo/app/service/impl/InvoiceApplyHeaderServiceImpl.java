@@ -194,7 +194,7 @@ public class InvoiceApplyHeaderServiceImpl implements InvoiceApplyHeaderService 
     private void validateInvoiceDTO(int lineNumber, InvoiceApplyHeaderDTO invoiceDTO, List<String> validApplyStatus,
                                     List<String> validInvoiceType, List<String> validInvoiceColor) {
         if (!validApplyStatus.contains(invoiceDTO.getApplyStatus())) {
-            invoiceDTO.setErrorMsg("Line " + lineNumber + " Apply Status is Invalid");
+            invoiceDTO.setErrorMsg("Line " + lineNumber + " Apply Status is Invalid ");
         }
         if (!validInvoiceType.contains(invoiceDTO.getInvoiceType())) {
             invoiceDTO.setErrorMsg("Line " + lineNumber + " Invoice Type is Invalid");

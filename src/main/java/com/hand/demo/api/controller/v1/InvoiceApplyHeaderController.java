@@ -9,15 +9,14 @@ import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
-import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
-import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.core.util.Results;
 import org.hzero.export.annotation.ExcelExport;
 import org.hzero.export.vo.ExportParam;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +26,7 @@ import com.hand.demo.domain.repository.InvoiceApplyHeaderRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -72,8 +71,14 @@ public class InvoiceApplyHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<InvoiceApplyHeaderDTO>> save(@PathVariable Long organizationId, @RequestBody List<InvoiceApplyHeaderDTO> invoiceApplyHeaders) {
-        validObject(invoiceApplyHeaders);
-//        SecurityTokenHelper.validTokenIgnoreInsert(new ArrayList<InvoiceApplyHeader>(invoiceApplyHeaders));
+        List<InvoiceApplyHeader> headers = new LinkedList<>();
+        for (InvoiceApplyHeaderDTO dto : invoiceApplyHeaders){
+            InvoiceApplyHeader header = new InvoiceApplyHeader();
+            BeanUtils.copyProperties(dto, header);
+            headers.add(header);
+        }
+        validObject(headers);
+        SecurityTokenHelper.validTokenIgnoreInsert(headers);
         invoiceApplyHeaders.forEach(item -> item.setTenantId(organizationId));
         invoiceApplyHeaderService.saveData(invoiceApplyHeaders);
         return Results.success(invoiceApplyHeaders);
